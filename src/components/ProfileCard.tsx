@@ -64,7 +64,10 @@ export function ProfileCard({ name, state, role, verified, headline, example, on
 
 const styles = StyleSheet.create({
   card: {
-    width: 280,
+    // Fills one column: full width on phones, ~3 across on desktop.
+    flexGrow: 1,
+    flexBasis: 300,
+    maxWidth: 560,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -72,7 +75,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photo: {
-    height: 300,
+    height: 340,
     alignItems: 'center',
     justifyContent: 'flex-end',
     overflow: 'hidden',

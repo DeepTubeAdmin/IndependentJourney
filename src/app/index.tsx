@@ -54,6 +54,22 @@ const EXAMPLE_PROFILES: ProfileCardProps[] = [
     headline: "Single mom by choice · Attorney consulted · Close relationship",
     example: true,
   },
+  {
+    name: "Brooke, 34",
+    state: "Ohio",
+    role: "surrogate",
+    verified: true,
+    headline: "3 prior births · Experienced surrogate · Ready now",
+    example: true,
+  },
+  {
+    name: "Sam & Jordan",
+    state: "Washington",
+    role: "intended_parents",
+    verified: true,
+    headline: "Still choosing a clinic · Open to twins · Regular updates",
+    example: true,
+  },
 ];
 
 const TRUST_POINTS = [
@@ -123,20 +139,15 @@ export default function Home() {
           </Text>
           <Text style={styles.sectionNote}>
             Example cards. Real verified members who opt in will appear here.
-            Swipe to see more.
+            Scroll down to see more.
           </Text>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.cardRow}
-          style={styles.cardScroller}
-        >
+        <View style={styles.cardGrid}>
           {EXAMPLE_PROFILES.map((p) => (
             <ProfileCard key={p.name} {...p} />
           ))}
-        </ScrollView>
+        </View>
 
         <View style={styles.trust}>
           <Text style={styles.trustTitle}>Built for trust, not fees</Text>
@@ -237,8 +248,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSubtle,
   },
-  cardScroller: { flexGrow: 0 },
-  cardRow: { gap: space.md, paddingVertical: space.sm, paddingRight: space.md },
+  // Vertical feed: one column on phones, wraps into 2 to 3 columns on wider screens.
+  cardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: space.md,
+    paddingVertical: space.sm,
+  },
   trust: {
     marginTop: space.lg,
     backgroundColor: colors.surfaceSoft,
