@@ -1,0 +1,31 @@
+# Netlify build settings for the website.
+# Netlify reads this file automatically, so you don't need to type build
+# settings into the dashboard.
+
+[build]
+  command = "npm run build:web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Basic security headers on every page.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000"
+
+# Long-term caching for the app's bundled JavaScript (file names change on every build).
+[[headers]]
+  for = "/_expo/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Label deploy previews (Netlify already hides previews from search engines).
+[context.deploy-preview]
+  [context.deploy-preview.environment]
+    EXPO_PUBLIC_APP_ENV = "preview"
