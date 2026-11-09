@@ -2,11 +2,8 @@
  * Large profile card used on the homepage and in browse.
  *
  * Shows only "limited preview" fields: first name, state, role, verified
- * label, and a few headline preferences. Surrogate photos are shown blurred
- * in previews, per the access rules in the master prompt.
- *
- * With a photoUrl it shows the member's preview image (a tiny 24px copy for
- * surrogates, so it always looks blurred); without one, a soft silhouette.
+ * label, a few headline preferences and the member's first photo (unblurred);
+ * without a photo, a soft silhouette.
  */
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -33,7 +30,6 @@ const ROLE_LABEL = {
 
 export function ProfileCard({ name, state, role, verified, headline, example, photoUrl, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
-  const blur = role === 'surrogate';
   return (
     <Pressable
       onPress={onPress}
@@ -43,11 +39,11 @@ export function ProfileCard({ name, state, role, verified, headline, example, ph
     >
       <View style={[styles.photo, tint]}>
         {photoUrl ? (
-          <Image source={{ uri: photoUrl }} style={styles.img} blurRadius={blur ? 18 : 0} accessibilityIgnoresInvertColors />
+          <Image source={{ uri: photoUrl }} style={styles.img} accessibilityIgnoresInvertColors />
         ) : (
           <>
-            <View style={[styles.silhouetteHead, blur && styles.blurred]} />
-            <View style={[styles.silhouetteBody, blur && styles.blurred]} />
+            <View style={styles.silhouetteHead} />
+            <View style={styles.silhouetteBody} />
           </>
         )}
         <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
@@ -106,7 +102,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 95,
     backgroundColor: 'rgba(79,74,68,0.35)',
   },
-  blurred: { opacity: 0.55 },
   badge: {
     position: 'absolute',
     top: 12,

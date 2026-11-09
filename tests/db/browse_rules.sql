@@ -148,5 +148,13 @@ do $$ begin
   assert (select count(*) from public.saved_profiles) = 0, 'unsaved';
 end $$;
 
+-- Migration 5: the preview photo is the member's first photo.
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ begin
+  assert (select preview_photo_path from public.browse_profiles('{"id":"00000000-0000-0000-0000-000000000011"}'))
+         = (select storage_path from public.photos where profile_id = '00000000-0000-0000-0000-000000000011' order by position limit 1),
+         'preview photo is the first photo';
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;

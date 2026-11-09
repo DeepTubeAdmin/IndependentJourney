@@ -79,7 +79,7 @@ do $$ begin
   assert (select role from public.profiles where id <> auth.uid()) = 'surrogate', 'ip1 must not see other IPs';
   assert (select count(*) from public.surrogate_details) = 0, 'ip1 without membership must not see surrogate details';
   assert (select count(*) from public.health_self_reports) = 0, 'ip1 must never see health reports';
-  assert (select count(*) from public.photos where profile_id <> auth.uid()) = 3, 'ip1 sees s1 photos (blur is applied in the app)';
+  assert (select count(*) from public.photos where profile_id <> auth.uid()) = 3, 'ip1 sees s1 photo list';
 end $$;
 -- ip1 cannot verify themselves or change role
 do $$ begin
