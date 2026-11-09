@@ -1,5 +1,5 @@
 -- =============================================================================
--- Browsing / preview / interest / share-link tests (Phase 5).
+-- Browsing / preview / saved-profile / share-link tests (Phase 5).
 -- =============================================================================
 begin;
 
@@ -71,7 +71,7 @@ do $$ begin
   assert (select count(*) from public.featured_profiles()) = 1, 'only verified + opted-in + public profiles are featured';
 end $$;
 
--- Free IP (incomplete profile): previews of surrogates only, no full details, no interest.
+-- Free IP (incomplete profile): previews of surrogates only, no full details, can save profiles.
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
 do $$ begin
   assert (select count(*) from public.browse_profiles('{}')) = 2, 'free IP sees the 2 live surrogates (public and members-only)';
@@ -81,13 +81,16 @@ do $$ begin
   assert (select count(*) from public.browse_profiles('{"state": "CO"}')) = 0, 'state filter works';
   assert public.my_access_to('00000000-0000-0000-0000-000000000011') = 'preview', 'free IP gets preview access only';
   assert (select count(*) from public.surrogate_details) = 0, 'free IP cannot read surrogate details';
+  -- Saving a profile is allowed for anyone who can see its preview.
+  insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000011');
+  assert (select count(*) from public.saved_profiles) = 1, 'free IP saved a profile';
   begin
-    insert into public.interests (from_id, to_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000011');
-    raise exception 'free IP must not be able to express interest';
+    insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000021');
+    raise exception 'IP must not be able to save another IP';
   exception when insufficient_privilege or check_violation then null; end;
 end $$;
 
--- Admin grants the IP a membership (logged). Now full access + interest.
+-- Admin grants the IP a membership (logged). Now full access.
 select pg_temp.login('00000000-0000-0000-0000-00000000009a', 'aal2');
 select public.admin_grant_membership('00000000-0000-0000-0000-000000000022', 3, 'testing');
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
@@ -96,14 +99,12 @@ do $$ begin
   assert public.my_access_to('00000000-0000-0000-0000-000000000011') = 'full', 'member IP gets full access';
   assert (select count(*) from public.surrogate_details) = 2, 'member IP reads surrogate details of live surrogates';
   assert (select count(*) from public.health_self_reports) = 0, 'health reports stay private even for members';
-  insert into public.interests (from_id, to_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000011');
-  assert (select count(*) from public.interests) = 1, 'member IP expressed interest';
 end $$;
 
--- Surrogate s1 sees the interest, sees IPs only, full IP details (complete surrogate), can create a share link (verified).
+-- Surrogate s1 sees IPs only, full IP details (complete surrogate), can create a share link (verified).
 select pg_temp.login('00000000-0000-0000-0000-000000000011');
 do $$ declare t text; begin
-  assert (select count(*) from public.interests where to_id = auth.uid()) = 1, 'surrogate sees interest received';
+  assert (select count(*) from public.saved_profiles) = 0, 'saved profiles are private: the saved surrogate sees nothing';
   assert (select count(*) from public.browse_profiles('{}')) = 1, 'surrogate sees the one live IP';
   assert not exists (select 1 from public.browse_profiles('{}') where role = 'surrogate'), 'surrogate never sees surrogates';
   assert public.my_access_to('00000000-0000-0000-0000-000000000021') = 'full', 'complete surrogate gets full IP access';
@@ -137,15 +138,14 @@ do $$ declare t text; begin
   assert public.share_view(t) is null, 'revoked link returns nothing';
 end $$;
 
--- Brand-new incomplete surrogate: full IP profiles, no interest yet (needs a complete profile).
+-- Brand-new incomplete surrogate: full IP profiles, and can save profiles for later.
 select pg_temp.login('00000000-0000-0000-0000-000000000014');
 do $$ begin
   assert public.my_access_to('00000000-0000-0000-0000-000000000021') = 'full', 'incomplete surrogate sees full IP profiles';
   assert (select count(*) from public.browse_profiles('{}')) = 1, 'incomplete surrogate browses IPs';
-  begin
-    insert into public.interests (from_id, to_id) values ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000021');
-    raise exception 'incomplete surrogate must not express interest yet';
-  exception when insufficient_privilege or check_violation then null; end;
+  insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000021');
+  delete from public.saved_profiles where profile_id = '00000000-0000-0000-0000-000000000021';
+  assert (select count(*) from public.saved_profiles) = 0, 'unsaved';
 end $$;
 
 select 'BROWSE RULES OK' as result;

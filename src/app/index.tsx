@@ -89,7 +89,7 @@ const STEPS = [
   ],
   [
     "Browse and connect",
-    "Look for the Verified label, express interest and start a conversation.",
+    "Look for the Verified label, save profiles you like and send a message when you are ready.",
   ],
   [
     "Take it from here",

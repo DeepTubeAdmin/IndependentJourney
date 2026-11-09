@@ -1,5 +1,5 @@
 /**
- * Browsing, previews, interest and share links (Phase 5).
+ * Browsing, previews, saved profiles and share links (Phase 5).
  * The database decides what each viewer may see; this file just asks it.
  */
 import { supabase } from '@/lib/supabase';
@@ -89,33 +89,24 @@ export async function loadFullProfile(profileId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Interest
+// Saved profiles (private bookmarks). No "interest" or matching: members who
+// want to connect simply send a message.
 // ---------------------------------------------------------------------------
-export type Interest = { id: number; from_id: string; to_id: string; created_at: string; seen_at: string | null };
-
-export async function expressInterest(fromId: string, toId: string): Promise<string | null> {
+export async function saveProfile(userId: string, profileId: string): Promise<string | null> {
   if (!supabase) return 'Not connected.';
-  const { error } = await supabase.from('interests').insert({ from_id: fromId, to_id: toId });
-  if (!error) return null;
-  if (error.code === '23505') return null; // already interested: fine
-  if (error.code === '42501') return 'Interest is available to intended parents with an active membership and to surrogates with a complete profile.';
+  const { error } = await supabase.from('saved_profiles').insert({ user_id: userId, profile_id: profileId });
+  if (!error || error.code === '23505') return null;
   return error.message;
 }
 
-export async function withdrawInterest(fromId: string, toId: string) {
-  await supabase?.from('interests').delete().eq('from_id', fromId).eq('to_id', toId);
+export async function unsaveProfile(userId: string, profileId: string) {
+  await supabase?.from('saved_profiles').delete().eq('user_id', userId).eq('profile_id', profileId);
 }
 
-export async function listInterests(userId: string): Promise<{ sent: Interest[]; received: Interest[] }> {
-  if (!supabase) return { sent: [], received: [] };
-  const { data } = await supabase.from('interests').select('*').or(`from_id.eq.${userId},to_id.eq.${userId}`).order('created_at', { ascending: false });
-  const all = (data ?? []) as Interest[];
-  return { sent: all.filter((i) => i.from_id === userId), received: all.filter((i) => i.to_id === userId) };
-}
-
-export async function markInterestSeen(ids: number[]) {
-  if (!supabase || ids.length === 0) return;
-  await supabase.from('interests').update({ seen_at: new Date().toISOString() }).in('id', ids).is('seen_at', null);
+export async function listSavedIds(userId: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from('saved_profiles').select('profile_id').eq('user_id', userId).order('created_at', { ascending: false });
+  return (data ?? []).map((r) => r.profile_id as string);
 }
 
 // ---------------------------------------------------------------------------

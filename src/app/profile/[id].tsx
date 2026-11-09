@@ -12,7 +12,7 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, expressInterest, listInterests, loadFullProfile, myAccessTo, prettyAnswers, withdrawInterest, type Access, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const [access, setAccess] = useState<Access | null>(null);
   const [preview, setPreview] = useState<PreviewRow | null>(null);
   const [full, setFull] = useState<Awaited<ReturnType<typeof loadFullProfile>>>(null);
-  const [interested, setInterested] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState<ReportReason>('scam_or_money');
@@ -35,10 +35,7 @@ export default function ProfilePage() {
       setPreview(rows[0] ?? null);
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
-      if (session) {
-        const { sent } = await listInterests(session.user.id);
-        setInterested(sent.some((i) => i.to_id === id));
-      }
+      if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
     })();
   }, [id, loading, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -54,17 +51,17 @@ export default function ProfilePage() {
   const isIpViewer = me?.role === 'intended_parent';
   const isMine = session?.user.id === id;
 
-  async function toggleInterest() {
+  // Private bookmark: keep browsing, come back later to message.
+  async function toggleSave() {
     if (!session) return router.push('/join');
-    if (interested) {
-      await withdrawInterest(session.user.id, id);
-      setInterested(false);
+    if (saved) {
+      await unsaveProfile(session.user.id, id);
+      setSaved(false);
       return;
     }
-    const err = await expressInterest(session.user.id, id);
+    const err = await saveProfile(session.user.id, id);
     if (err) return setMsg({ kind: 'error', text: err });
-    setInterested(true);
-    setMsg({ kind: 'info', text: `${preview!.display_name} will see that you're interested.` });
+    setSaved(true);
   }
 
   async function sendReport() {
@@ -128,12 +125,12 @@ export default function ProfilePage() {
 
       {!isMine ? (
         <View style={styles.actions}>
-          <Button label={interested ? 'Interested ✓ (tap to withdraw)' : "I'm interested"} onPress={toggleInterest} variant={interested ? 'secondary' : 'primary'} />
-          <Button label="Message" variant="secondary" disabled onPress={() => {}} />
+          <Button label="Message" disabled onPress={() => {}} />
+          <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
           <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
         </View>
       ) : null}
-      {!isMine ? <Text style={styles.note}>Messaging opens in the next update. Never send money to anyone you meet here.</Text> : null}
+      {!isMine ? <Text style={styles.note}>Messaging opens in the next update. Saved profiles are private to you. Never send money to anyone you meet here.</Text> : null}
 
       {reporting ? (
         <View style={styles.reportBox}>

@@ -49,7 +49,7 @@ export default function Home() {
         </Text>
         <View style={styles.row}>
           <Button label="Browse" onPress={() => router.push('/browse')} />
-          <Button label="Interest" variant="secondary" onPress={() => router.push('/interest')} />
+          <Button label="Saved profiles" variant="secondary" onPress={() => router.push('/saved')} />
         </View>
       </View>
 

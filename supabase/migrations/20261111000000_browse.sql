@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 4: browsing, limited previews, interest, share links, memberships
+-- Migration 4: browsing, limited previews, saved profiles, share links, memberships
 --
 -- Implements the access table from the master prompt for browsing:
 --   anonymous   -> up to 5 limited previews of opted-in profiles (both sides)
@@ -242,40 +242,34 @@ create policy "Anyone reads preview photos of opted-in profiles"
   );
 
 -- -----------------------------------------------------------------------------
--- Interest: "I'm interested" from one member to another.
---   IPs need an active membership; surrogates need a complete profile.
+-- Saved profiles: a private bookmark so a member can keep browsing and come
+-- back later to send a message. Nobody else ever sees who saved whom.
+-- (Seth's decision, 2026-11-09: no "interest", "like" or matching features.)
 -- -----------------------------------------------------------------------------
-create table public.interests (
-  id          bigint generated always as identity primary key,
-  from_id     uuid not null references public.profiles (id) on delete cascade,
-  to_id       uuid not null references public.profiles (id) on delete cascade,
-  created_at  timestamptz not null default now(),
-  seen_at     timestamptz,
-  unique (from_id, to_id),
-  check (from_id <> to_id)
-);
-create index interests_to_idx on public.interests (to_id, created_at desc);
-alter table public.interests enable row level security;
+-- If an earlier draft of this migration was run, remove the old interest table.
+drop table if exists public.interests cascade;
 
-create policy "Express interest"
-  on public.interests for insert to authenticated
+create table public.saved_profiles (
+  user_id     uuid not null references public.profiles (id) on delete cascade,
+  profile_id  uuid not null references public.profiles (id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (user_id, profile_id),
+  check (user_id <> profile_id)
+);
+alter table public.saved_profiles enable row level security;
+
+create policy "Save a profile you can see"
+  on public.saved_profiles for insert to authenticated
   with check (
-    from_id = auth.uid()
-    and exists (select 1 from public.profiles p where p.id = to_id and public.can_preview(p))
-    and (
-      (public.my_role() = 'intended_parent' and public.has_active_membership())
-      or (public.my_role() = 'surrogate' and public.my_profile_complete())
-    )
+    user_id = auth.uid()
+    and exists (select 1 from public.profiles p where p.id = profile_id and public.can_preview(p))
   );
-create policy "See interest sent or received"
-  on public.interests for select to authenticated
-  using (from_id = auth.uid() or to_id = auth.uid() or public.is_admin());
-create policy "Withdraw interest"
-  on public.interests for delete to authenticated
-  using (from_id = auth.uid());
-create policy "Mark interest seen"
-  on public.interests for update to authenticated
-  using (to_id = auth.uid()) with check (to_id = auth.uid());
+create policy "See your own saved profiles"
+  on public.saved_profiles for select to authenticated
+  using (user_id = auth.uid());
+create policy "Remove your own saved profiles"
+  on public.saved_profiles for delete to authenticated
+  using (user_id = auth.uid());
 
 -- -----------------------------------------------------------------------------
 -- Share links: a verified, complete member can create one public link to
