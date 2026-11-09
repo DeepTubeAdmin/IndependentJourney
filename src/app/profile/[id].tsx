@@ -146,7 +146,7 @@ export default function ProfilePage() {
               <Row key={r.label} label={r.label} value={r.value} />
             ))}
           </Section>
-          <Text style={styles.note}>Health self-reports are shared by the member only inside a conversation, never on the profile.</Text>
+          <Text style={styles.note}>Health details are never part of a profile. Members discuss those directly, and clinics make all medical determinations.</Text>
         </>
       ) : (
         <Text style={styles.note}>Loading full profile…</Text>

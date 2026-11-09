@@ -156,18 +156,6 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 
--- Health sharing -------------------------------------------------------------
-select pg_temp.login('00000000-0000-0000-0000-000000000021');
-do $$ begin
-  assert (select count(*) from public.health_self_reports where id = '00000000-0000-0000-0000-000000000011') = 0, 'health not visible before sharing';
-end $$;
-select pg_temp.login('00000000-0000-0000-0000-000000000011');
-insert into public.health_shares (owner_id, viewer_id) values ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000021');
-select pg_temp.login('00000000-0000-0000-0000-000000000021');
-do $$ begin
-  assert (select count(*) from public.health_self_reports where id = '00000000-0000-0000-0000-000000000011') = 1, 'health visible after the surrogate shares it';
-end $$;
-
 -- Admin review is logged; non-admin refused ------------------------------------
 select pg_temp.login('00000000-0000-0000-0000-000000000021');
 do $$ begin

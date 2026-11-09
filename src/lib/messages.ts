@@ -113,23 +113,6 @@ export async function haveBlocked(myId: string, targetId: string): Promise<boole
   return Boolean(data);
 }
 
-// Health self-report sharing (surrogate decides, per intended parent).
-export async function healthShared(ownerId: string, viewerId: string): Promise<boolean> {
-  if (!supabase) return false;
-  const { data } = await supabase.from('health_shares').select('viewer_id').eq('owner_id', ownerId).eq('viewer_id', viewerId).maybeSingle();
-  return Boolean(data);
-}
-export async function setHealthShared(ownerId: string, viewerId: string, shared: boolean) {
-  if (!supabase) return;
-  if (shared) await supabase.from('health_shares').insert({ owner_id: ownerId, viewer_id: viewerId });
-  else await supabase.from('health_shares').delete().eq('owner_id', ownerId).eq('viewer_id', viewerId);
-}
-export async function loadSharedHealth(ownerId: string): Promise<Record<string, unknown> | null> {
-  if (!supabase) return null;
-  const { data } = await supabase.from('health_self_reports').select('*').eq('id', ownerId).maybeSingle();
-  return (data as Record<string, unknown> | null) ?? null;
-}
-
 // Notices from the safety team.
 export type Notice = { id: number; body: string; created_at: string; seen_at: string | null };
 export async function myNotices(): Promise<Notice[]> {
