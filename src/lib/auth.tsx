@@ -23,6 +23,10 @@ export type Profile = {
   featured_opt_in: boolean;
   is_complete: boolean;
   is_verified: boolean;
+  /** Approximate location from ZIP (null until the member adds one). */
+  approx_lat?: number | null;
+  approx_lng?: number | null;
+  last_active_at?: string;
 };
 
 type SessionState = {
@@ -60,6 +64,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       setSession(data.session);
       await loadProfile(data.session?.user.id);
       setLoading(false);
+      // Tell the database this member is active (it records at most once an hour).
+      if (data.session) supabase?.rpc('touch_activity').then(() => {});
     });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, next) => {
       setSession(next);

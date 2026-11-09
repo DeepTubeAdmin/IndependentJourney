@@ -14,7 +14,9 @@ import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
+import { BrowseMap } from '@/components/BrowseMap';
 import { browseProfiles, type BrowseFilters, type PreviewRow } from '@/lib/browse';
+import { formatDistance } from '@/lib/geo';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 const PAGE = 24;
@@ -29,18 +31,22 @@ export default function Browse() {
   const [busy, setBusy] = useState(true);
   const [more, setMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState<'list' | 'map'>('list');
+  // Where "near me" is measured from: the member's own ZIP area.
+  const myPoint = profile?.approx_lat != null && profile?.approx_lng != null ? { lat: profile.approx_lat, lng: profile.approx_lng } : null;
 
   async function load(offset = 0) {
     setBusy(true);
-    const data = await browseProfiles(filters, PAGE, offset);
+    // The map wants everyone at once; the list pages.
+    const data = await browseProfiles(filters, view === 'map' ? 200 : PAGE, offset);
     setRows((r) => (offset === 0 ? data : [...r, ...data]));
-    setMore(!anon && data.length === PAGE);
+    setMore(!anon && view === 'list' && data.length === PAGE);
     setBusy(false);
   }
 
   useEffect(() => {
     if (!loading) load(0);
-  }, [loading, filters, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, filters, view, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: keyof BrowseFilters, v: unknown) => setFilters((f) => ({ ...f, [k]: v }));
 
@@ -60,6 +66,8 @@ export default function Browse() {
         <View style={styles.filterBar}>
           <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
+          {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
+          <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
         </View>
       ) : null}
@@ -67,6 +75,16 @@ export default function Browse() {
       {showFilters && !anon ? (
         <View style={styles.filters}>
           <SelectField label="State" options={US_STATES} value={filters.state ?? null} onChange={(v) => set('state', v)} />
+          {myPoint ? (
+            <ChoiceField
+              label="Distance from me"
+              options={[{ value: '50', label: 'Within 50 mi' }, { value: '150', label: 'Within 150 mi' }, { value: '500', label: 'Within 500 mi' }]}
+              value={filters.radius_miles ? String(filters.radius_miles) : null}
+              onChange={(v) => set('radius_miles', v ? Number(v) : undefined)}
+            />
+          ) : (
+            !anon && <Text style={styles.note}>Add your ZIP code to your profile to filter and sort by distance and to appear on the map.</Text>
+          )}
           <ChoiceField
             label="Relationship during the journey"
             options={[
@@ -92,20 +110,25 @@ export default function Browse() {
         </View>
       ) : null}
 
-      <View style={styles.grid}>
-        {rows.map((p) => (
-          <ProfileCard
-            key={p.id}
-            name={p.display_name}
-            state={p.state}
-            role={p.role}
-            verified={p.is_verified}
-            headline={p.headline_tags.join(' · ') || 'Profile complete'}
-            photoUrl={p.photo_url}
-            onPress={() => router.push(`/profile/${p.id}`)}
-          />
-        ))}
-      </View>
+      {view === 'map' ? (
+        <BrowseMap rows={rows} center={myPoint} onOpen={(id) => router.push(`/profile/${id}`)} />
+      ) : (
+        <View style={styles.grid}>
+          {rows.map((p) => (
+            <ProfileCard
+              key={p.id}
+              name={p.display_name}
+              state={p.state}
+              role={p.role}
+              verified={p.is_verified}
+              headline={p.headline_tags.join(' · ') || 'Profile complete'}
+              photoUrl={p.photo_url}
+              meta={[formatDistance(p.distance_miles), p.recently_active === false ? 'Not active recently' : null].filter(Boolean).join(' · ') || undefined}
+              onPress={() => router.push(`/profile/${p.id}`)}
+            />
+          ))}
+        </View>
+      )}
 
       {busy ? <Text style={styles.note}>Loading…</Text> : null}
       {!busy && rows.length === 0 ? <Text style={styles.note}>{anon ? 'No one has opted in to public previews yet. Join free to be the first.' : 'No profiles match yet. Try fewer filters, or check back soon.'}</Text> : null}
