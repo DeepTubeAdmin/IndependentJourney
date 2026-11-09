@@ -1,7 +1,6 @@
 /**
  * Reading and saving profile answers, photos and consents.
  */
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import type { Field, Step } from '@/config/questionnaire';
 import { supabase } from '@/lib/supabase';
@@ -127,47 +126,11 @@ export async function uploadPhoto(userId: string, uri: string, position: number)
   if (upErr) return upErr.message;
   const { error } = await supabase.from('photos').insert({ profile_id: userId, storage_path: path, position });
   if (error) return error.message;
-  await refreshPreviewPhoto(userId);
   return null;
 }
 
-/**
- * Makes the small "preview" copy of the member's first photo, used in limited
- * previews. Surrogate previews are 24px wide so they can only ever appear
- * blurred; intended parent previews are 600px wide. Saved at <id>/preview.jpg.
- */
-export async function refreshPreviewPhoto(userId: string): Promise<void> {
-  if (!supabase) return;
-  const [{ data: first }, { data: me }] = await Promise.all([
-    supabase.from('photos').select('storage_path').eq('profile_id', userId).order('position').limit(1).maybeSingle(),
-    supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
-  ]);
-  const previewPath = `${userId}/preview.jpg`;
-  if (!first) {
-    await supabase.storage.from('profile-photos').remove([previewPath]);
-    await supabase.from('profiles').update({ preview_photo_path: null }).eq('id', userId);
-    return;
-  }
-  const { data: signed } = await supabase.storage.from('profile-photos').createSignedUrl(first.storage_path, 120);
-  if (!signed) return;
-  try {
-    const width = me?.role === 'surrogate' ? 24 : 600;
-    const ctx = ImageManipulator.manipulate(signed.signedUrl);
-    ctx.resize({ width });
-    const rendered = await ctx.renderAsync();
-    const out = await rendered.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
-    const blob = await (await fetch(out.uri)).blob();
-    const { error } = await supabase.storage.from('profile-photos').upload(previewPath, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) return;
-    await supabase.from('profiles').update({ preview_photo_path: previewPath }).eq('id', userId);
-  } catch {
-    // If image processing fails (rare), the card shows the placeholder instead.
-  }
-}
-
-export async function deletePhoto(photo: Photo, userId: string) {
+export async function deletePhoto(photo: Photo) {
   if (!supabase) return;
   await supabase.storage.from('profile-photos').remove([photo.storage_path]);
   await supabase.from('photos').delete().eq('id', photo.id);
-  await refreshPreviewPhoto(userId);
 }

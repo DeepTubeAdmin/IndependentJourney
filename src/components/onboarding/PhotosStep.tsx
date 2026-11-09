@@ -1,6 +1,6 @@
 /**
  * Upload 3 to 6 photos. Stored in the private "profile-photos" bucket.
- * Surrogate photos are shown blurred in previews (applied when displayed).
+ * Your first photo is the one shown on your limited preview.
  */
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
@@ -58,7 +58,7 @@ export function PhotosStep({ header, onBack, onNext }: { header: React.ReactNode
 
   async function remove(photo: Photo) {
     setBusy(true);
-    if (session) await deletePhoto(photo, session.user.id);
+    if (session) await deletePhoto(photo);
     await reload();
     await refreshProfile();
     setBusy(false);
