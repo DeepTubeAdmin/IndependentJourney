@@ -12,7 +12,16 @@ import { Platform } from 'react-native';
 
 // Trim stray spaces or quotes that sometimes get pasted into dashboard settings.
 const clean = (v: string | undefined) => (v ?? '').trim().replace(/^["']|["']$/g, '');
-const supabaseUrl = clean(process.env.EXPO_PUBLIC_SUPABASE_URL);
+// Keep only the "https://xxxx.supabase.co" part: anything pasted after it
+// (like /rest/v1 or /auth/v1) would send requests to the wrong place.
+const toOrigin = (v: string) => {
+  try {
+    return new URL(v).origin;
+  } catch {
+    return v;
+  }
+};
+const supabaseUrl = toOrigin(clean(process.env.EXPO_PUBLIC_SUPABASE_URL));
 const supabaseAnonKey = clean(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 
 // The URL must look like https://xxxx.supabase.co. If it doesn't, we warn and
