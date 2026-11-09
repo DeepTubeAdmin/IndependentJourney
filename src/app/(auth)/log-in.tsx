@@ -1,0 +1,52 @@
+import { Link, router } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
+
+import { Button } from '@/components/Button';
+import { FormMessage, TextField } from '@/components/form';
+import { Screen } from '@/components/Screen';
+import { friendlyAuthError } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { colors, fonts } from '@/lib/theme';
+
+export default function LogIn() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    if (!supabase) return setError('The app is not connected to a database yet.');
+    setBusy(true);
+    setError('');
+    const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    setBusy(false);
+    if (err) return setError(friendlyAuthError(err.message));
+    router.replace('/welcome');
+  }
+
+  return (
+    <Screen title="Welcome back" intro="Log in to your Independent Journey account.">
+      {error ? <FormMessage kind="error" text={error} /> : null}
+      <TextField label="Email" required value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
+      <TextField label="Password" required value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />
+      <Button label={busy ? 'Logging in…' : 'Log in'} onPress={submit} disabled={busy} />
+      <Text style={styles.footer}>
+        <Link href="/forgot-password" style={styles.link}>
+          Forgot your password?
+        </Link>
+      </Text>
+      <Text style={styles.footer}>
+        New here?{' '}
+        <Link href="/join" style={styles.link}>
+          Create a free account
+        </Link>
+      </Text>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  link: { fontFamily: fonts.bodyBold, color: colors.primary },
+  footer: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, textAlign: 'center' },
+});

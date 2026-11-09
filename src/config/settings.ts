@@ -29,3 +29,10 @@ export const SITE = {
   url: 'https://independentjourney.com',
   tagline: 'Where intended parents and surrogates meet, on their own terms.',
 } as const;
+
+/**
+ * Version label of the legal documents (Terms, Privacy Policy, Disclaimer,
+ * message-review notice). Bump it when the attorney-approved text changes so
+ * we know which version each member agreed to.
+ */
+export const LEGAL_VERSION = '2026-11-draft';

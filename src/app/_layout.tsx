@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { SessionProvider } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
 export default function RootLayout() {
@@ -23,7 +24,8 @@ export default function RootLayout() {
   });
 
   return (
-    <>
+    // SessionProvider keeps track of who is signed in for every screen.
+    <SessionProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -31,6 +33,6 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       />
-    </>
+    </SessionProvider>
   );
 }

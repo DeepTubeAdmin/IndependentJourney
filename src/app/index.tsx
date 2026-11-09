@@ -4,6 +4,7 @@
  * The profile row shows clearly labelled example cards so the layout can be
  * reviewed. In Phase 5 it is replaced by real, opted-in, verified members.
  */
+import { router } from 'expo-router';
 import type { Metadata } from "expo-router/server";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -105,7 +106,7 @@ export default function Home() {
             </View>
             <Text style={styles.wordmark}>{SITE.name}</Text>
           </View>
-          <Button label="Join free" size="sm" />
+          <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
         </View>
 
         <View style={styles.hero}>
@@ -123,8 +124,8 @@ export default function Home() {
             match fees. Surrogates always join free.
           </Text>
           <View style={styles.ctaRow}>
-            <Button label="I'm a surrogate" />
-            <Button label="We're intended parents" variant="secondary" />
+            <Button label="I'm a surrogate" onPress={() => router.push('/sign-up?role=surrogate')} />
+            <Button label="We're intended parents" variant="secondary" onPress={() => router.push('/sign-up?role=intended_parent')} />
           </View>
           <View style={styles.soonPill}>
             <Text style={styles.soonText}>
