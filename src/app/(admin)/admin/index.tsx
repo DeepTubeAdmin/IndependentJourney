@@ -1,0 +1,50 @@
+/** Admin overview: the numbers that matter today. */
+import { Link } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { AdminShell, Panel } from '@/components/admin/AdminShell';
+import { FormMessage } from '@/components/form';
+import { admin, useAdminData } from '@/lib/admin';
+import { colors, fonts, radius, space } from '@/lib/theme';
+
+export default function AdminHome() {
+  const { data, error } = useAdminData(() => admin.overview());
+  const n = (k: string) => (data ? String(data[k] ?? 0) : '…');
+  return (
+    <AdminShell title="Overview" intro="A quick picture of the community and what needs attention.">
+      {error ? <FormMessage kind="error" text={error} /> : null}
+      <View style={styles.grid}>
+        <Stat label="Members" value={n('members_total')} />
+        <Stat label="Surrogates" value={n('surrogates')} />
+        <Stat label="Intended parents" value={n('intended_parents')} />
+        <Stat label="Complete profiles" value={n('complete')} />
+        <Stat label="Verified" value={n('verified')} />
+        <Stat label="New this week" value={n('new_this_week')} />
+        <Stat label="Open reports" value={n('open_reports')} href="/admin/reports" warn={Number(data?.open_reports) > 0} />
+        <Stat label="Open flags" value={n('open_flags')} href="/admin/flags" warn={Number(data?.open_flags) > 0} />
+      </View>
+      <Panel title="Coming in later phases">
+        <Text style={styles.note}>Message review with search (Phase 6), membership and payment overview (Phase 7), and the connection to an ID verification provider. Until then, you can mark members Verified by hand from their member page; every change is written to the audit log.</Text>
+      </Panel>
+    </AdminShell>
+  );
+}
+
+function Stat({ label, value, href, warn }: { label: string; value: string; href?: string; warn?: boolean }) {
+  const body = (
+    <View style={[styles.stat, warn && styles.statWarn]}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+  return href ? <Link href={href as never}>{body}</Link> : body;
+}
+
+const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  stat: { minWidth: 150, flexGrow: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md },
+  statWarn: { borderColor: '#E6B980', backgroundColor: '#FFF8EE' },
+  statValue: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
+  statLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSubtle },
+  note: { fontFamily: fonts.body, fontSize: 14, color: colors.textMuted, lineHeight: 21 },
+});
