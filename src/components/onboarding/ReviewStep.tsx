@@ -49,8 +49,21 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
       {header}
       {profile.is_complete ? (
         <FormMessage kind="info" text="You're all set. Verifying your identity (free, optional) ranks your profile higher and shows a Verified label. You can do that from your profile page." />
-      ) : (
+      ) : null}
+
+      {/* Every section, so a member can change answers at any time. */}
+      <Text style={styles.sectionTitle}>Edit a section</Text>
+      <View style={styles.list}>
+        {steps.map((s, i) => (
+          <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(`/onboarding/${i}`)} />
+        ))}
+        <Row text="Photos" action="Edit" onPress={() => router.push('/onboarding/photos')} />
+        <Row text="Bio, visibility and homepage feature" action="Edit" onPress={() => router.push('/onboarding/bio')} />
+      </View>
+
+      {!profile.is_complete ? (
         <View style={styles.list}>
+          <Text style={styles.sectionTitle}>Still needed</Text>
           {photosMissing > 0 ? <Row text={`Add ${photosMissing} more photo${photosMissing === 1 ? '' : 's'}`} onPress={() => router.push('/onboarding/photos')} /> : null}
           {bioMissing ? <Row text="Write your bio" onPress={() => router.push('/onboarding/bio')} /> : null}
           {missing.map((m) => (
@@ -60,7 +73,7 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
             <Text style={styles.note}>Everything looks filled in. Give it a moment and refresh; if this message stays, tell us.</Text>
           ) : null}
         </View>
-      )}
+      ) : null}
       <View style={styles.nav}>
         <Button label="Back" variant="secondary" onPress={onBack} />
         <Button label={profile.is_complete ? 'Go to my account' : 'Save and finish later'} onPress={() => router.replace('/home')} />
@@ -70,17 +83,18 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
   );
 }
 
-function Row({ text, onPress }: { text: string; onPress: () => void }) {
+function Row({ text, action = 'Fix', onPress }: { text: string; action?: string; onPress: () => void }) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowText}>{text}</Text>
-      <Button label="Fix" size="sm" variant="secondary" onPress={onPress} />
+      <Button label={action} size="sm" variant="secondary" onPress={onPress} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   list: { gap: space.sm },
+  sectionTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.text, marginTop: space.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
