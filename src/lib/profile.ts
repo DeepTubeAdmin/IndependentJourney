@@ -3,6 +3,7 @@
  */
 
 import type { Field, Step } from '@/config/questionnaire';
+import { setLocationFromZip } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 
 export type Answers = Record<string, unknown>;
@@ -47,9 +48,17 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
   profileRow.headline_tags = tags;
   byTable.set('profiles', profileRow);
 
+  // ZIP code: must be 5 digits and known, and becomes the approximate map point.
+  const zip = byTable.get('profile_private')?.zip;
+  if (typeof zip === 'string' && zip !== '' && !/^[0-9]{5}$/.test(zip)) return 'Enter a 5-digit ZIP code.';
+
   for (const [table, row] of byTable) {
     const { error } = await supabase.from(table).update(row).eq('id', userId);
     if (error) return error.message;
+  }
+  if (typeof zip === 'string' && zip !== '') {
+    const err = await setLocationFromZip(userId, zip);
+    if (err) return err;
   }
   return null;
 }

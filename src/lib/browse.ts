@@ -13,6 +13,12 @@ export type PreviewRow = {
   headline_tags: string[];
   preview_photo_path: string | null;
   created_at: string;
+  /** Approximate location (ZIP area), if the member gave a ZIP. */
+  approx_lat?: number | null;
+  approx_lng?: number | null;
+  recently_active?: boolean;
+  /** Miles from the viewer's approximate location, when both are known. */
+  distance_miles?: number | null;
   /** Filled in by withPreviewUrls(). */
   photo_url?: string;
 };
@@ -29,6 +35,11 @@ export type BrowseFilters = {
   family_structure?: string;
   embryos_status?: string;
   id?: string;
+  /** 'active' (default): recently active first. 'distance': closest first (active still first). */
+  sort?: 'active' | 'distance';
+  near_lat?: number;
+  near_lng?: number;
+  radius_miles?: number;
 };
 
 /** Removes empty filter values so the database treats them as "any". */

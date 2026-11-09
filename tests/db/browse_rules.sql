@@ -156,5 +156,32 @@ do $$ begin
          'preview photo is the first photo';
 end $$;
 
+-- Migration 6: recently active first, inactive (3+ months) last, distance sort, activity touch.
+reset role;
+update public.profiles set last_active_at = now() - interval '100 days', approx_lat = 30.27, approx_lng = -97.74 where id = '00000000-0000-0000-0000-000000000011'; -- Megan: verified but inactive, Austin
+update public.profiles set last_active_at = now() - interval '1 day',    approx_lat = 32.78, approx_lng = -96.80 where id = '00000000-0000-0000-0000-000000000012'; -- Brooke: unverified, active, Dallas
+update public.profiles set last_active_at = now() - interval '3 days',   approx_lat = 29.76, approx_lng = -95.37 where id = '00000000-0000-0000-0000-000000000022'; -- viewer in Houston
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ declare r record; begin
+  select * into r from public.browse_profiles('{}') limit 1;
+  assert r.display_name = 'Brooke', 'active unverified member ranks above inactive verified member, got ' || r.display_name;
+  assert r.recently_active, 'Brooke is recently active';
+  assert abs(r.distance_miles - 225) < 10, 'distance from Houston to Dallas ~225 mi, got ' || r.distance_miles;
+  select * into r from public.browse_profiles('{"id":"00000000-0000-0000-0000-000000000011"}');
+  assert not r.recently_active, 'Megan is inactive';
+  assert abs(r.distance_miles - 146) < 10, 'Houston to Austin ~146 mi, got ' || r.distance_miles;
+  assert (select count(*) from public.browse_profiles('{"radius_miles": 160}')) = 1, 'radius filter keeps only Austin';
+  assert (select count(*) from public.browse_profiles('{"near_lat": 32.78, "near_lng": -96.80, "radius_miles": 5}')) = 1, 'explicit location: only Dallas within 5 mi';
+  perform public.touch_activity();
+  assert (select last_active_at > now() - interval '1 minute' from public.profiles where id = auth.uid()), 'touch_activity bumps last_active_at';
+end $$;
+reset role;
+update public.app_settings set value = '400' where key = 'inactive_after_days';
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ declare r record; begin
+  select * into r from public.browse_profiles('{}') limit 1;
+  assert r.display_name = 'Megan', 'with a 400-day threshold Megan is active again and verified ranks first, got ' || r.display_name;
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;

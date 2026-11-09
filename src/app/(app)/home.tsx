@@ -30,13 +30,16 @@ export default function Home() {
   const name = profile.display_name || (isSurrogate ? 'there' : 'intended parents');
 
   return (
-    <Screen title={`Welcome, ${name}`} intro={isSurrogate ? 'Thank you for being here. Your profile is free, always.' : 'Your account is ready. Browsing surrogate profiles opens in the next update.'}>
+    <Screen title={`Welcome, ${name}`} intro={isSurrogate ? 'Thank you for being here. Your profile is free, always.' : 'Your account is ready. Browse surrogate previews and save the ones you like.'}>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Your profile</Text>
         <Text style={styles.status}>
           {profile.is_complete ? 'Complete and visible to members' : 'Not finished yet: it stays hidden until every required question is answered and 3 photos are added.'}
         </Text>
         <Text style={styles.status}>{profile.is_verified ? 'Identity: Verified' : 'Identity: Not verified (free optional verification coming soon)'}</Text>
+        {profile.is_complete && profile.approx_lat == null ? (
+          <Text style={styles.status}>New: add your ZIP code (in “About you”) to appear on the map and sort by distance. Only your approximate area is shown.</Text>
+        ) : null}
         <Button label={profile.is_complete ? 'Edit my profile' : 'Finish my profile'} onPress={() => router.push(profile.is_complete ? '/onboarding/review' : '/onboarding/0')} />
       </View>
 

@@ -19,6 +19,8 @@ export type ProfileCardProps = {
   example?: boolean;
   /** Signed URL of the preview image, when the viewer is allowed one. */
   photoUrl?: string;
+  /** Small extra line, e.g. distance from the viewer. */
+  meta?: string;
   onPress?: () => void;
 };
 
@@ -28,7 +30,7 @@ const ROLE_LABEL = {
   intended_parents: 'Intended parents',
 } as const;
 
-export function ProfileCard({ name, state, role, verified, headline, example, photoUrl, onPress }: ProfileCardProps) {
+export function ProfileCard({ name, state, role, verified, headline, example, photoUrl, meta, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
   return (
     <Pressable
@@ -62,6 +64,7 @@ export function ProfileCard({ name, state, role, verified, headline, example, ph
           {name} · {state}
         </Text>
         <Text style={styles.headline}>{headline}</Text>
+        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
     </Pressable>
   );
@@ -116,4 +119,5 @@ const styles = StyleSheet.create({
   body: { padding: space.md, gap: 4 },
   name: { fontFamily: fonts.heading, fontSize: 19, color: colors.text },
   headline: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.textMuted },
+  meta: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, marginTop: 4 },
 });
