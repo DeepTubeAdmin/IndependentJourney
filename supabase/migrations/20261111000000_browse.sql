@@ -15,13 +15,13 @@
 -- time (24px wide for surrogates so it can only ever look blurred, 600px for
 -- intended parents). Stored at <user id>/preview.jpg in the private bucket.
 -- -----------------------------------------------------------------------------
-alter table public.profiles add column preview_photo_path text;
+alter table public.profiles add column if not exists preview_photo_path text;
 
 -- -----------------------------------------------------------------------------
 -- Memberships. Phase 7 fills this from RevenueCat; until then admins can
 -- grant a membership by hand (for testing and support), always logged.
 -- -----------------------------------------------------------------------------
-create table public.memberships (
+create table if not exists public.memberships (
   user_id             uuid primary key references public.profiles (id) on delete cascade,
   status              text not null check (status in ('active', 'lapsed', 'cancelled')),
   current_period_end  timestamptz not null,
@@ -30,6 +30,7 @@ create table public.memberships (
   updated_at          timestamptz not null default now()
 );
 alter table public.memberships enable row level security;
+drop policy if exists "Members read their own membership" on public.memberships;
 create policy "Members read their own membership"
   on public.memberships for select to authenticated
   using (user_id = auth.uid() or public.is_admin());
@@ -208,6 +209,7 @@ end $$;
 -- -----------------------------------------------------------------------------
 drop policy if exists "Members read previewable photos" on storage.objects;
 
+drop policy if exists "Members read full photos when allowed the full profile" on storage.objects;
 create policy "Members read full photos when allowed the full profile"
   on storage.objects for select to authenticated
   using (
@@ -218,6 +220,7 @@ create policy "Members read full photos when allowed the full profile"
     )
   );
 
+drop policy if exists "Members read preview photos of previewable profiles" on storage.objects;
 create policy "Members read preview photos of previewable profiles"
   on storage.objects for select to authenticated
   using (
@@ -229,6 +232,7 @@ create policy "Members read preview photos of previewable profiles"
     )
   );
 
+drop policy if exists "Anyone reads preview photos of opted-in profiles" on storage.objects;
 create policy "Anyone reads preview photos of opted-in profiles"
   on storage.objects for select to anon
   using (
@@ -249,7 +253,7 @@ create policy "Anyone reads preview photos of opted-in profiles"
 -- If an earlier draft of this migration was run, remove the old interest table.
 drop table if exists public.interests cascade;
 
-create table public.saved_profiles (
+create table if not exists public.saved_profiles (
   user_id     uuid not null references public.profiles (id) on delete cascade,
   profile_id  uuid not null references public.profiles (id) on delete cascade,
   created_at  timestamptz not null default now(),
@@ -258,15 +262,18 @@ create table public.saved_profiles (
 );
 alter table public.saved_profiles enable row level security;
 
+drop policy if exists "Save a profile you can see" on public.saved_profiles;
 create policy "Save a profile you can see"
   on public.saved_profiles for insert to authenticated
   with check (
     user_id = auth.uid()
     and exists (select 1 from public.profiles p where p.id = profile_id and public.can_preview(p))
   );
+drop policy if exists "See your own saved profiles" on public.saved_profiles;
 create policy "See your own saved profiles"
   on public.saved_profiles for select to authenticated
   using (user_id = auth.uid());
+drop policy if exists "Remove your own saved profiles" on public.saved_profiles;
 create policy "Remove your own saved profiles"
   on public.saved_profiles for delete to authenticated
   using (user_id = auth.uid());
@@ -275,16 +282,18 @@ create policy "Remove your own saved profiles"
 -- Share links: a verified, complete member can create one public link to
 -- their profile. Unguessable token, revocable, and the page is noindex.
 -- -----------------------------------------------------------------------------
-create table public.share_links (
+create table if not exists public.share_links (
   token       text primary key default replace(gen_random_uuid()::text, '-', ''),  -- 32 random hex chars
   profile_id  uuid not null references public.profiles (id) on delete cascade,
   created_at  timestamptz not null default now(),
   revoked_at  timestamptz
 );
-create index share_links_profile_idx on public.share_links (profile_id);
+create index if not exists share_links_profile_idx on public.share_links (profile_id);
 alter table public.share_links enable row level security;
+drop policy if exists "Owner sees their share links" on public.share_links;
 create policy "Owner sees their share links"
   on public.share_links for select to authenticated using (profile_id = auth.uid() or public.is_admin());
+drop policy if exists "Owner revokes their share links" on public.share_links;
 create policy "Owner revokes their share links"
   on public.share_links for update to authenticated
   using (profile_id = auth.uid()) with check (profile_id = auth.uid());
@@ -330,6 +339,7 @@ begin
   );
 end $$;
 
+drop policy if exists "Anyone reads photos of shared profiles" on storage.objects;
 create policy "Anyone reads photos of shared profiles"
   on storage.objects for select to anon, authenticated
   using (
