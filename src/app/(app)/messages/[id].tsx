@@ -1,7 +1,7 @@
 /**
  * One conversation. Polls for new messages every few seconds while open.
  * Shows the safety banner, an unverified-sender warning, and scam warnings
- * on flagged incoming messages. Block, report and health sharing live here.
+ * on flagged incoming messages. Block and report live here.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -11,10 +11,9 @@ import { Button } from '@/components/Button';
 import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { prettyAnswers } from '@/lib/browse';
 import {
-  blockMember, conversationMessages, haveBlocked, healthShared, loadSharedHealth, markRead, myConversations,
-  NEVER_SEND_MONEY, SCAM_WARNING, sendMessage, setHealthShared, unblockMember, UNVERIFIED_WARNING,
+  blockMember, conversationMessages, haveBlocked, markRead, myConversations,
+  NEVER_SEND_MONEY, SCAM_WARNING, sendMessage, unblockMember, UNVERIFIED_WARNING,
   type ConversationRow, type Message,
 } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
@@ -29,8 +28,6 @@ export default function Conversation() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const [shared, setShared] = useState(false);
-  const [theirHealth, setTheirHealth] = useState<Record<string, unknown> | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState<ReportReason>('scam_or_money');
   const [details, setDetails] = useState('');
@@ -57,9 +54,7 @@ export default function Conversation() {
   useEffect(() => {
     if (!conv || !session) return;
     haveBlocked(session.user.id, conv.other_id).then(setBlocked);
-    if (profile?.role === 'surrogate') healthShared(session.user.id, conv.other_id).then(setShared);
-    else if (!conv.locked) loadSharedHealth(conv.other_id).then(setTheirHealth);
-  }, [conv?.other_id, conv?.locked, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conv?.other_id, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!session || !profile || conv === undefined) return <Screen title="Loading…"><Text style={styles.note}>One moment.</Text></Screen>;
   if (conv === null) {
@@ -69,8 +64,6 @@ export default function Conversation() {
       </Screen>
     );
   }
-
-  const isSurrogate = profile.role === 'surrogate';
 
   async function send() {
     if (!text.trim() || !conv) return;
@@ -91,12 +84,6 @@ export default function Conversation() {
     else await blockMember(session!.user.id, conv.other_id);
     setBlocked(!blocked);
     setMsg({ kind: 'info', text: blocked ? 'Unblocked.' : `${conv.other_name} is blocked. Neither of you can message the other.` });
-  }
-
-  async function toggleShare() {
-    if (!conv) return;
-    await setHealthShared(session!.user.id, conv.other_id, !shared);
-    setShared(!shared);
   }
 
   async function sendReport() {
@@ -161,22 +148,6 @@ export default function Conversation() {
         </View>
       ) : null}
 
-      {isSurrogate && !conv.locked ? (
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>Your health self-report</Text>
-          <Text style={styles.boxText}>Your health answers are never on your profile. You can choose to let {conv.other_name} see them in this conversation, and turn that off any time.</Text>
-          <Button label={shared ? `Stop sharing with ${conv.other_name}` : `Share with ${conv.other_name}`} variant="secondary" size="sm" onPress={toggleShare} />
-        </View>
-      ) : null}
-      {!isSurrogate && theirHealth ? (
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>{conv.other_name}&apos;s health self-report (shared with you)</Text>
-          <Text style={styles.boxText}>Self-reported by the member. Medical eligibility is always determined by a clinic.</Text>
-          {prettyAnswers(theirHealth).map((r) => (
-            <Text key={r.label} style={styles.kv}><Text style={styles.k}>{r.label}: </Text>{r.value}</Text>
-          ))}
-        </View>
-      ) : null}
     </Screen>
   );
 }
@@ -200,7 +171,5 @@ const styles = StyleSheet.create({
   stamp: { fontFamily: fonts.body, fontSize: 11, color: colors.textSubtle },
   scam: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.danger, maxWidth: 520 },
   compose: { gap: space.xs },
-  kv: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
-  k: { fontFamily: fonts.bodyMedium, color: colors.textMuted },
   note: { fontFamily: fonts.body, fontSize: 14, color: colors.textSubtle },
 });
