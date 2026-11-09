@@ -11,6 +11,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
+import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard, type ProfileCardProps } from "@/components/ProfileCard";
 import { featuredProfiles, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
@@ -106,15 +107,7 @@ export default function Home() {
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.inner}>
-        <View style={styles.header}>
-          <View style={styles.wordmarkRow}>
-            <View style={styles.mark}>
-              <View style={styles.markDot} />
-            </View>
-            <Text style={styles.wordmark}>{SITE.name}</Text>
-          </View>
-          <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
-        </View>
+        <SiteHeader />
 
         <View style={styles.hero}>
           <Text

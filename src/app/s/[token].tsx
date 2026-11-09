@@ -9,7 +9,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { Disclaimer } from '@/components/Disclaimer';
 import { Screen } from '@/components/Screen';
-import { loadShareView, prettyAnswers } from '@/lib/browse';
+import { compensationLine, loadShareView, prettyAnswers } from '@/lib/browse';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 export function generateMetadata(): Metadata {
@@ -50,7 +50,10 @@ export default function ShareView() {
       ) : null}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About the journey</Text>
-        {prettyAnswers(view.surrogate ?? view.ip, ['compensation_min_usd', 'compensation_max_usd', 'clinic_name']).map((r) => (
+        {view.surrogate && compensationLine(view.surrogate) ? (
+          <View style={styles.row}><Text style={styles.rowLabel}>Compensation</Text><Text style={styles.rowValue}>{compensationLine(view.surrogate)}</Text></View>
+        ) : null}
+        {prettyAnswers(view.surrogate ?? view.ip, ['compensation_min_usd', 'compensation_max_usd', 'compensation_open', 'clinic_name']).map((r) => (
           <View key={r.label} style={styles.row}>
             <Text style={styles.rowLabel}>{r.label}</Text>
             <Text style={styles.rowValue}>{r.value}</Text>

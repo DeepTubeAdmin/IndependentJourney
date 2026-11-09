@@ -151,12 +151,30 @@ export async function loadShareView(token: string) {
 }
 
 /** Turns stored answers into readable "Label: value" pairs for the full profile. */
+/** "Compensation range: $40,000 – $55,000" (or "Open to discuss"). Null when nothing to show. */
+export function compensationLine(sd: Record<string, unknown> | null | undefined): string | null {
+  if (!sd) return null;
+  const lo = sd.compensation_min_usd as number | null | undefined;
+  const hi = sd.compensation_max_usd as number | null | undefined;
+  const fmt = (n: number) => '$' + Number(n).toLocaleString('en-US');
+  if (lo && hi) return `${fmt(lo)} – ${fmt(hi)}`;
+  if (lo) return `From ${fmt(lo)}`;
+  if (hi) return `Up to ${fmt(hi)}`;
+  return sd.compensation_open ? 'Open to discuss' : null;
+}
+
 export function prettyAnswers(obj: Record<string, unknown> | null | undefined, skip: string[] = []): { label: string; value: string }[] {
   if (!obj) return [];
   return Object.entries(obj)
     .filter(([k, v]) => !skip.includes(k) && k !== 'id' && v !== null && v !== '' && v !== undefined)
     .map(([k, v]) => ({
       label: k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()),
-      value: Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v).replace(/_/g, ' '),
+      value: Array.isArray(v)
+        ? v.join(', ')
+        : typeof v === 'boolean'
+          ? (v ? 'Yes' : 'No')
+          : k.endsWith('_usd')
+            ? '$' + Number(v).toLocaleString('en-US')
+            : String(v).replace(/_/g, ' '),
     }));
 }

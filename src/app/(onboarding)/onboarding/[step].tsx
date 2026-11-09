@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { ChoiceField, FormMessage, MultiChoiceField, SelectField, TextField, YesNoField } from '@/components/form';
+import { ChoiceField, DateField, FormMessage, MoneyField, MultiChoiceField, SelectField, TextField, YesNoField } from '@/components/form';
 import { BioStep } from '@/components/onboarding/BioStep';
 import { PhotosStep } from '@/components/onboarding/PhotosStep';
 import { ReviewStep } from '@/components/onboarding/ReviewStep';
@@ -109,18 +109,21 @@ export default function OnboardingStep() {
 function FieldControl({ field, value, onChange, error }: { field: Field; value: unknown; onChange: (v: unknown) => void; error?: string }) {
   const common = { label: field.label, help: field.help, required: field.required, error };
   switch (field.type) {
+    case 'date':
+      return <DateField {...common} value={typeof value === 'string' ? value : ''} onChange={onChange} years={field.years ?? 'past'} />;
+    case 'money':
+      return <MoneyField {...common} value={value == null ? '' : String(value)} onChange={onChange} />;
     case 'text':
     case 'textarea':
     case 'number':
-    case 'date':
       return (
         <TextField
           {...common}
           value={value == null ? '' : String(value)}
           onChangeText={onChange}
           multiline={field.type === 'textarea'}
-          placeholder={field.placeholder ?? (field.type === 'date' ? 'YYYY-MM-DD' : undefined)}
-          keyboardType={field.type === 'number' ? 'number-pad' : field.type === 'date' ? 'numbers-and-punctuation' : 'default'}
+          placeholder={field.placeholder}
+          keyboardType={field.type === 'number' ? 'number-pad' : 'default'}
           maxLength={field.maxLength}
         />
       );

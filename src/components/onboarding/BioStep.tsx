@@ -1,5 +1,5 @@
 /**
- * Short bio, plus the visibility choice (surrogates) and homepage opt-in.
+ * Short bio, plus the visibility choice and homepage opt-in.
  */
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -16,7 +16,6 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
   const [bio, setBio] = useState('');
   const [visibility, setVisibility] = useState<'members_only' | 'public_previews'>('members_only');
   const [featured, setFeatured] = useState(false);
-  const [lastInitial, setLastInitial] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -25,7 +24,6 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
     setBio(profile.bio);
     setVisibility(profile.visibility);
     setFeatured(profile.featured_opt_in);
-    setLastInitial(profile.last_initial);
   }, [profile]);
 
   if (!profile || !session) return null;
@@ -34,12 +32,11 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
   async function save() {
     if (!supabase) return;
     if (bio.trim().length < 40) return setError('Tell people a little more: at least a few sentences (40 characters).');
-    if (isSurrogate && !/^[A-Za-z]$/.test(lastInitial)) return setError('Enter the first letter of your last name.');
     setBusy(true);
     setError('');
     const { error: err } = await supabase
       .from('profiles')
-      .update({ bio: bio.trim(), visibility, featured_opt_in: featured, ...(isSurrogate ? { last_initial: lastInitial.toUpperCase() } : {}) })
+      .update({ bio: bio.trim(), visibility, featured_opt_in: featured })
       .eq('id', session!.user.id);
     setBusy(false);
     if (err) return setError(err.message);
@@ -51,9 +48,6 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
     <Screen title="In your own words" intro="Your bio is shown on your full profile. Keep it personal and leave out last names, contact details and anything that would let someone find you off the platform.">
       {header}
       {error ? <FormMessage kind="error" text={error} /> : null}
-      {isSurrogate ? (
-        <TextField label="Last initial" required help="Shown as, for example, “Megan R.”" value={lastInitial} onChangeText={(v) => setLastInitial(v.slice(0, 1))} maxLength={1} autoCapitalize="characters" />
-      ) : null}
       <TextField
         label="Short bio"
         required

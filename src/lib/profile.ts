@@ -46,6 +46,9 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
     .slice(0, 3);
   const profileRow = byTable.get('profiles') ?? {};
   profileRow.headline_tags = tags;
+  // The public "last initial" (e.g. "Megan R.") comes from the private last name.
+  const lastName = byTable.get('profile_private')?.last_name;
+  if (typeof lastName === 'string' && lastName.trim()) profileRow.last_initial = lastName.trim().slice(0, 1).toUpperCase();
   byTable.set('profiles', profileRow);
 
   // ZIP code: must be 5 digits and known, and becomes the approximate map point.
@@ -65,8 +68,8 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
 
 function normalize(field: Field, value: unknown): unknown {
   if (value === '' || value === undefined) return field.type === 'text' || field.type === 'textarea' ? '' : null;
-  if (field.type === 'number') {
-    const n = Number(value);
+  if (field.type === 'number' || field.type === 'money') {
+    const n = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(n) ? n : null;
   }
   if (field.boolean && typeof value === 'string') return value === 'true';
@@ -80,7 +83,7 @@ export function validateStep(step: Step, answers: Answers): Record<string, strin
     const v = answers[f.key];
     const empty = v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
     if (f.required && empty) errors[f.key] = 'Please answer this one.';
-    if (f.type === 'date' && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) errors[f.key] = 'Use the format YYYY-MM-DD.';
+    if (f.type === 'date' && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) errors[f.key] = 'Pick a month, day and year.';
     if (f.key === 'date_of_birth' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
       const age = yearsSince(v);
       if (age < 21) errors[f.key] = 'Surrogates must be 21 or older.';

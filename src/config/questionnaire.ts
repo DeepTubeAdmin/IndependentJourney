@@ -11,7 +11,7 @@
  */
 import type { Role } from '@/lib/auth';
 
-export type FieldType = 'text' | 'textarea' | 'number' | 'date' | 'state' | 'single' | 'multi' | 'yesno';
+export type FieldType = 'text' | 'textarea' | 'number' | 'money' | 'date' | 'state' | 'single' | 'multi' | 'yesno';
 
 export type Option = { value: string; label: string };
 
@@ -27,6 +27,8 @@ export type Field = {
   /** For 'yesno': store true/false (boolean) instead of yes/no text. */
   boolean?: boolean;
   maxLength?: number;
+  /** For 'date': which years the drop-down offers. 'past' = birthdays, 'future' = start dates. */
+  years?: 'past' | 'future';
   /** When set, this field is also saved into profiles.headline_tags for preview cards. */
   headlineTag?: (value: unknown) => string | null;
 };
@@ -83,7 +85,7 @@ export const SURROGATE_STEPS: Step[] = [
       { key: 'first_name', table: 'profile_private', label: 'First name', type: 'text', required: true },
       { key: 'last_name', table: 'profile_private', label: 'Last name', type: 'text', required: true, help: 'Never shown to other members.' },
       { key: 'display_name', table: 'profiles', label: 'Name to show on your profile', type: 'text', required: true, placeholder: 'Usually your first name' },
-      { key: 'date_of_birth', table: 'profile_private', label: 'Date of birth', type: 'date', required: true, help: 'You must be 21 or older. Only your age is shown.' },
+      { key: 'date_of_birth', table: 'profile_private', label: 'Date of birth', type: 'date', years: 'past', required: true, help: 'You must be 21 or older. Only your age is shown.' },
       { key: 'city', table: 'profile_private', label: 'City', type: 'text', required: true, help: 'Private. Only your state is shown.' },
       { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.' },
       { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true },
@@ -126,15 +128,15 @@ export const SURROGATE_STEPS: Step[] = [
     title: 'Your preferences',
     fields: [
       { key: 'compensation_open', table: 'surrogate_details', label: 'Compensation', type: 'single', required: true, options: [{ value: 'true', label: 'Open to discuss' }, { value: 'false', label: 'I have a range in mind' }], boolean: true },
-      { key: 'compensation_min_usd', table: 'surrogate_details', label: 'Range from (USD, optional)', type: 'number' },
-      { key: 'compensation_max_usd', table: 'surrogate_details', label: 'Range to (USD, optional)', type: 'number' },
+      { key: 'compensation_min_usd', table: 'surrogate_details', label: 'Range from (optional)', type: 'money' },
+      { key: 'compensation_max_usd', table: 'surrogate_details', label: 'Range to (optional)', type: 'money' },
       { key: 'open_to_twins', table: 'surrogate_details', label: 'Open to carrying twins?', type: 'single', required: true, options: COMFORT, headlineTag: (v) => (v === 'comfortable' ? 'Open to twins' : null) },
       { key: 'termination_comfort', table: 'surrogate_details', label: 'Comfort with termination for medical reasons', type: 'single', required: true, options: COMFORT },
       { key: 'reduction_comfort', table: 'surrogate_details', label: 'Comfort with selective reduction', type: 'single', options: COMFORT },
       { key: 'relationship_level', table: 'surrogate_details', label: 'Relationship with intended parents', type: 'single', required: true, options: RELATIONSHIP_LEVEL, headlineTag: (v) => RELATIONSHIP_LEVEL.find((o) => o.value === v)?.label ?? null },
       { key: 'open_to_ip_types', table: 'surrogate_details', label: 'Open to working with', type: 'multi', options: [{ value: 'couples', label: 'Couples' }, { value: 'single_parents', label: 'Single parents' }, { value: 'lgbtq_families', label: 'LGBTQ+ families' }, { value: 'international', label: 'Parents living abroad' }], help: 'Choose all that apply. Leave blank if you are open to everyone.' },
       { key: 'carry_donor_embryos', table: 'surrogate_details', label: 'Willing to carry embryos made with donor eggs or sperm?', type: 'single', required: true, options: YES_NO_DISCUSS },
-      { key: 'earliest_start', table: 'surrogate_details', label: 'Earliest you could start', type: 'date', required: true, headlineTag: (v) => (typeof v === 'string' && v ? `Ready ${new Date(v + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : null) },
+      { key: 'earliest_start', table: 'surrogate_details', label: 'Earliest you could start', type: 'date', years: 'future', required: true, headlineTag: (v) => (typeof v === 'string' && v ? `Ready ${new Date(v + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : null) },
     ],
   },
 ];
@@ -164,7 +166,7 @@ export const IP_STEPS: Step[] = [
       { key: 'embryo_count_range', table: 'ip_details', label: 'Number of embryos (optional)', type: 'single', options: [{ value: '1', label: '1' }, { value: '2_3', label: '2 to 3' }, { value: '4_plus', label: '4 or more' }, PREFER_NOT] },
       { key: 'children_hoped_for', table: 'ip_details', label: 'Children you hope for', type: 'single', required: true, options: [{ value: '1', label: 'One' }, { value: '2_plus', label: 'Two or more' }, { value: 'open', label: 'Open' }], headlineTag: (v) => (v === '1' ? 'First child' : null) },
       { key: 'open_to_twins', table: 'ip_details', label: 'Open to twins?', type: 'single', required: true, options: COMFORT, headlineTag: (v) => (v === 'comfortable' ? 'Open to twins' : null) },
-      { key: 'desired_start', table: 'ip_details', label: 'When would you like to start?', type: 'date', required: true, headlineTag: (v) => (typeof v === 'string' && v ? `Hoping to start ${new Date(v + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : null) },
+      { key: 'desired_start', table: 'ip_details', label: 'When would you like to start?', type: 'date', years: 'future', required: true, headlineTag: (v) => (typeof v === 'string' && v ? `Hoping to start ${new Date(v + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : null) },
     ],
   },
   {
