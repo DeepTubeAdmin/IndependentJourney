@@ -10,16 +10,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Trim stray spaces or quotes that sometimes get pasted into dashboard settings.
+const clean = (v: string | undefined) => (v ?? '').trim().replace(/^["']|["']$/g, '');
+const supabaseUrl = clean(process.env.EXPO_PUBLIC_SUPABASE_URL);
+const supabaseAnonKey = clean(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+// The URL must look like https://xxxx.supabase.co. If it doesn't, we warn and
+// run without Supabase instead of crashing the build.
+const urlLooksValid = /^https?:\/\/[^\s/]+/.test(supabaseUrl);
+if (supabaseUrl && !urlLooksValid) {
+  console.warn(`EXPO_PUBLIC_SUPABASE_URL is not a valid URL (got "${supabaseUrl}"). Supabase is disabled.`);
+}
+
+export const isSupabaseConfigured = Boolean(urlLooksValid && supabaseAnonKey);
 
 // During the static web build there is no browser, so we skip session storage.
 const isServerRender = Platform.OS === 'web' && typeof window === 'undefined';
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+  ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: isServerRender ? undefined : AsyncStorage,
         autoRefreshToken: !isServerRender,
