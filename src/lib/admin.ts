@@ -108,6 +108,8 @@ export const admin = {
   clearFlag: (flagId: number, note: string) => rpc<void>('admin_clear_flag', { p_flag_id: flagId, p_note: note }),
   resolveReport: (reportId: number, status: Report['status'], note: string) => rpc<void>('admin_resolve_report', { p_report_id: reportId, p_status: status, p_note: note }),
   setSetting: (key: string, value: unknown) => rpc<void>('admin_set_setting', { p_key: key, p_value: value }),
+  grantMembership: (id: string, months: number, reason: string) => rpc<void>('admin_grant_membership', { p_target: id, p_months: months, p_reason: reason }),
+  endMembership: (id: string, reason: string) => rpc<void>('admin_end_membership', { p_target: id, p_reason: reason }),
 
   async listReports(openOnly: boolean): Promise<Report[]> {
     if (!supabase) return [];

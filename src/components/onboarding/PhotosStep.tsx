@@ -58,7 +58,7 @@ export function PhotosStep({ header, onBack, onNext }: { header: React.ReactNode
 
   async function remove(photo: Photo) {
     setBusy(true);
-    await deletePhoto(photo);
+    if (session) await deletePhoto(photo, session.user.id);
     await reload();
     await refreshProfile();
     setBusy(false);

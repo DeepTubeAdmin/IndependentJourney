@@ -5,12 +5,14 @@
  * reviewed. In Phase 5 it is replaced by real, opted-in, verified members.
  */
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import type { Metadata } from "expo-router/server";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ProfileCard, type ProfileCardProps } from "@/components/ProfileCard";
+import { featuredProfiles, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { colors, fonts, radius, space } from "@/lib/theme";
 
@@ -96,6 +98,11 @@ const STEPS = [
 ];
 
 export default function Home() {
+  // Real featured members (verified, opted in). Falls back to example cards.
+  const [featured, setFeatured] = useState<PreviewRow[]>([]);
+  useEffect(() => {
+    featuredProfiles(6).then(setFeatured).catch(() => setFeatured([]));
+  }, []);
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.inner}>
@@ -139,15 +146,30 @@ export default function Home() {
             Browsing right now
           </Text>
           <Text style={styles.sectionNote}>
-            Example cards. Real verified members who opt in will appear here.
-            Scroll down to see more.
+            {featured.length > 0
+              ? "Verified members who chose to be featured. Tap a card to see their preview, or browse everyone."
+              : "Example cards. Real verified members who opt in will appear here. Scroll down to see more."}
           </Text>
         </View>
 
         <View style={styles.cardGrid}>
-          {EXAMPLE_PROFILES.map((p) => (
-            <ProfileCard key={p.name} {...p} />
-          ))}
+          {featured.length > 0
+            ? featured.map((p) => (
+                <ProfileCard
+                  key={p.id}
+                  name={p.display_name}
+                  state={p.state}
+                  role={p.role}
+                  verified={p.is_verified}
+                  headline={p.headline_tags.join(" · ")}
+                  photoUrl={p.photo_url}
+                  onPress={() => router.push(`/profile/${p.id}`)}
+                />
+              ))
+            : EXAMPLE_PROFILES.map((p) => <ProfileCard key={p.name} {...p} />)}
+        </View>
+        <View style={styles.ctaRow}>
+          <Button label="Browse all profiles" variant="secondary" onPress={() => router.push("/browse")} />
         </View>
 
         <View style={styles.trust}>

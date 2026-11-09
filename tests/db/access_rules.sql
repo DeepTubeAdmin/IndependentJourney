@@ -62,11 +62,13 @@ do $$ begin
 end $$;
 reset role;
 
--- As incomplete surrogate s2: sees IP previews, but NOT full IP details.
+-- As incomplete surrogate s2: sees IP previews AND full IP details
+-- (Seth's rule, 2026-11-09: every surrogate account sees full IP profiles;
+-- a complete profile is only needed to message).
 select pg_temp.login('00000000-0000-0000-0000-000000000002');
 do $$ begin
   assert (select count(*) from public.profiles where id <> auth.uid()) = 1, 's2 sees ip1 preview';
-  assert (select count(*) from public.ip_details) = 0, 's2 (incomplete) must not see full IP details';
+  assert (select count(*) from public.ip_details) = 1, 's2 (incomplete) sees full IP details';
 end $$;
 reset role;
 
