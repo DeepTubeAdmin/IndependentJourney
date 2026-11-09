@@ -22,9 +22,11 @@ export default function AdminHome() {
         <Stat label="New this week" value={n('new_this_week')} />
         <Stat label="Open reports" value={n('open_reports')} href="/admin/reports" warn={Number(data?.open_reports) > 0} />
         <Stat label="Open flags" value={n('open_flags')} href="/admin/flags" warn={Number(data?.open_flags) > 0} />
+        <Stat label="Messages this week" value={n('messages_this_week')} href="/admin/messages" />
+        <Stat label="Flagged messages (30 days)" value={n('flagged_messages_open')} href="/admin/messages?flagged=1" warn={Number(data?.flagged_messages_open) > 0} />
       </View>
       <Panel title="Coming in later phases">
-        <Text style={styles.note}>Message review with search (Phase 6), membership and payment overview (Phase 7), and the connection to an ID verification provider. Until then, you can mark members Verified by hand from their member page; every change is written to the audit log.</Text>
+        <Text style={styles.note}>Membership and payment overview (Phase 7), and the connection to an ID verification provider. Until then, you can mark members Verified by hand from their member page; every change is written to the audit log.</Text>
       </Panel>
     </AdminShell>
   );

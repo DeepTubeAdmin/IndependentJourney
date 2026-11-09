@@ -13,6 +13,7 @@ import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { browseProfiles, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
+import { canMessage, CAN_MESSAGE_TEXT, clearDraft, loadDraft, saveDraft, sendMessage, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -27,6 +28,10 @@ export default function ProfilePage() {
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState<ReportReason>('scam_or_money');
   const [details, setDetails] = useState('');
+  const [can, setCan] = useState<CanMessage | null>(null);
+  const [composing, setComposing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (loading || !id) return;
@@ -36,6 +41,10 @@ export default function ProfilePage() {
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
       if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
+      setCan(session ? await canMessage(id) : 'sign_in');
+      // A visitor who wrote a message before joining finds it waiting here.
+      const kept = loadDraft(id);
+      if (kept) { setDraft(kept); setComposing(true); }
     })();
   }, [id, loading, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -62,6 +71,26 @@ export default function ProfilePage() {
     const err = await saveProfile(session.user.id, id);
     if (err) return setMsg({ kind: 'error', text: err });
     setSaved(true);
+  }
+
+  function startMessage() {
+    if (!session) {
+      saveDraft(id, draft);
+      return router.push('/join');
+    }
+    setComposing(true);
+  }
+
+  async function sendFirst() {
+    if (!draft.trim()) return;
+    if (!session) { saveDraft(id, draft); return router.push('/join'); }
+    setSending(true);
+    const r = await sendMessage(id, draft.trim());
+    setSending(false);
+    if (r.error) return setMsg({ kind: 'error', text: r.error });
+    clearDraft(id);
+    if (r.status === 'locked') setMsg({ kind: 'info', text: `Delivered. ${preview!.display_name} will see your message once they have an active membership.` });
+    router.push(`/messages/${r.conversationId}`);
   }
 
   async function sendReport() {
@@ -125,12 +154,23 @@ export default function ProfilePage() {
 
       {!isMine ? (
         <View style={styles.actions}>
-          <Button label="Message" disabled onPress={() => {}} />
+          {can !== 'same_role' ? <Button label="Message" disabled={can !== null && can !== 'ok' && can !== 'sign_in'} onPress={startMessage} /> : null}
           <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
           <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
         </View>
       ) : null}
-      {!isMine ? <Text style={styles.note}>Messaging opens in the next update. Saved profiles are private to you. Never send money to anyone you meet here.</Text> : null}
+      {!isMine && can && can !== 'ok' && can !== 'same_role' ? <Text style={styles.note}>{CAN_MESSAGE_TEXT[can]}</Text> : null}
+      {!isMine && composing && (can === 'ok' || can === 'sign_in') ? (
+        <View style={styles.reportBox}>
+          <TextField label={`Message to ${preview.display_name}`} value={draft} onChangeText={setDraft} multiline maxLength={4000} placeholder="Say hello: who you are, what drew you to this profile, and what you hope for. Leave out contact details for now." />
+          <Text style={styles.note}>Never send money to anyone you meet here. Messages may be reviewed by our safety team to protect members.</Text>
+          <View style={styles.actions}>
+            <Button label={sending ? 'Sending…' : !session ? 'Join free to send' : 'Send'} onPress={sendFirst} disabled={sending || !draft.trim()} />
+            <Button label="Cancel" variant="secondary" onPress={() => setComposing(false)} />
+          </View>
+        </View>
+      ) : null}
+      {!isMine ? <Text style={styles.note}>Saved profiles are private to you. Never send money to anyone you meet here.</Text> : null}
 
       {reporting ? (
         <View style={styles.reportBox}>

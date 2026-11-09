@@ -13,6 +13,7 @@ import { admin } from '@/lib/admin';
 import { createShareLink, getShareLink, revokeShareLink } from '@/lib/browse';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
+import { dismissNotice, draftProfileIds, myNotices, unreadCount, type Notice } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 export default function Home() {
@@ -21,8 +22,13 @@ export default function Home() {
   const [isAdminCandidate, setIsAdminCandidate] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareMsg, setShareMsg] = useState('');
+  const [unread, setUnread] = useState(0);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const drafts = draftProfileIds();
   useEffect(() => {
     admin.amICandidate().then((r) => setIsAdminCandidate(Boolean(r.data)));
+    unreadCount().then(setUnread);
+    myNotices().then(setNotices);
     if (profile) getShareLink(profile.id).then(setShareToken);
   }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!profile) return null;
@@ -31,6 +37,26 @@ export default function Home() {
 
   return (
     <Screen title={`Welcome, ${name}`} intro={isSurrogate ? 'Thank you for being here. Your profile is free, always.' : 'Your account is ready. Browse surrogate previews and save the ones you like.'}>
+      {notices.map((n) => (
+        <View key={n.id} style={[styles.card, styles.noticeCard]}>
+          <Text style={styles.cardTitle}>A note from our safety team</Text>
+          <Text style={styles.status}>{n.body}</Text>
+          <Button label="Got it" variant="secondary" size="sm" onPress={() => { dismissNotice(n.id); setNotices((l) => l.filter((x) => x.id !== n.id)); }} />
+        </View>
+      ))}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Messages</Text>
+        <Text style={styles.status}>{unread > 0 ? `You have ${unread} unread message${unread === 1 ? '' : 's'}.` : 'No unread messages.'}</Text>
+        <Button label={unread > 0 ? `Open messages (${unread})` : 'Open messages'} onPress={() => router.push('/messages')} />
+        {drafts.length > 0 && profile.is_complete ? (
+          <>
+            <Text style={styles.status}>You wrote a message before joining. It is saved and ready to send.</Text>
+            <Button label="Finish sending it" variant="secondary" size="sm" onPress={() => router.push(`/profile/${drafts[0]}`)} />
+          </>
+        ) : null}
+      </View>
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Your profile</Text>
         <Text style={styles.status}>
@@ -47,8 +73,8 @@ export default function Home() {
         <Text style={styles.cardTitle}>{isSurrogate ? 'Intended parents' : 'Surrogates'}</Text>
         <Text style={styles.status}>
           {isSurrogate
-            ? 'Read full intended-parent profiles any time. Complete your own profile to start conversations (messaging arrives in the next update).'
-            : 'Browse limited previews for free. A membership unlocks full profiles and messaging (opening in a coming update).'}
+            ? 'Read full intended-parent profiles any time. Complete your own profile to start conversations.'
+            : 'Browse limited previews for free. A membership unlocks full profiles and messaging (memberships open in a coming update).'}
         </Text>
         <View style={styles.row}>
           <Button label="Browse" onPress={() => router.push('/browse')} />
@@ -92,6 +118,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  noticeCard: { borderColor: colors.danger },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
   cardTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text },
   status: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, lineHeight: 22 },

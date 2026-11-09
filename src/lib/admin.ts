@@ -49,6 +49,19 @@ export type Flag = {
   profile?: { display_name: string; role: string } | null;
 };
 
+export type AdminMessageRow = {
+  id: number;
+  conversation_id: string;
+  sender_id: string;
+  sender_name: string;
+  recipient_id: string;
+  recipient_name: string;
+  body: string;
+  scam_flags: string[];
+  admin_hidden: boolean;
+  created_at: string;
+};
+
 export type AuditRow = {
   id: number;
   admin_id: string;
@@ -110,6 +123,12 @@ export const admin = {
   setSetting: (key: string, value: unknown) => rpc<void>('admin_set_setting', { p_key: key, p_value: value }),
   grantMembership: (id: string, months: number, reason: string) => rpc<void>('admin_grant_membership', { p_target: id, p_months: months, p_reason: reason }),
   endMembership: (id: string, reason: string) => rpc<void>('admin_end_membership', { p_target: id, p_reason: reason }),
+  // Message review: every call is written to the audit log by the database.
+  searchMessages: (q: string, member: string | null, flaggedOnly: boolean, limit = 50, offset = 0) =>
+    rpc<AdminMessageRow[]>('admin_search_messages', { p_query: q.trim(), p_member: member, p_flagged_only: flaggedOnly, p_limit: limit, p_offset: offset }),
+  conversation: (id: string) => rpc<Record<string, any>>('admin_conversation', { p_conversation: id }),
+  hideMessage: (id: number, hidden: boolean, reason: string) => rpc<void>('admin_hide_message', { p_message: id, p_hidden: hidden, p_reason: reason }),
+  warnMember: (id: string, body: string, reason: string) => rpc<void>('admin_warn_member', { p_target: id, p_body: body, p_reason: reason }),
 
   async listReports(openOnly: boolean): Promise<Report[]> {
     if (!supabase) return [];
