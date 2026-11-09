@@ -8,4 +8,4 @@ DB=${TEST_DB:-ij_test}
 psql -q -d postgres -c "drop database if exists $DB" -c "create database $DB"
 psql -q -d "$DB" -v ON_ERROR_STOP=1 -f tests/db/supabase_stubs.sql
 for f in supabase/migrations/*.sql; do psql -q -d "$DB" -v ON_ERROR_STOP=1 -f "$f"; done
-psql -q -d "$DB" -v ON_ERROR_STOP=1 -f tests/db/access_rules.sql
+for t in tests/db/*_rules.sql; do psql -q -d "$DB" -v ON_ERROR_STOP=1 -f "$t"; done
