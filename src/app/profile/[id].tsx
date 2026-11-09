@@ -1,0 +1,184 @@
+/**
+ * One member's page. The database says whether the viewer gets the limited
+ * preview or the full profile; this screen shows the right one and explains
+ * what unlocks more.
+ */
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
+
+import { Button } from '@/components/Button';
+import { ChoiceField, FormMessage, TextField } from '@/components/form';
+import { ProfileCard } from '@/components/ProfileCard';
+import { Screen } from '@/components/Screen';
+import { useSession } from '@/lib/auth';
+import { browseProfiles, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
+import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
+import { colors, fonts, radius, space } from '@/lib/theme';
+
+export default function ProfilePage() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { session, profile: me, loading } = useSession();
+  const [access, setAccess] = useState<Access | null>(null);
+  const [preview, setPreview] = useState<PreviewRow | null>(null);
+  const [full, setFull] = useState<Awaited<ReturnType<typeof loadFullProfile>>>(null);
+  const [saved, setSaved] = useState(false);
+  const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const [reason, setReason] = useState<ReportReason>('scam_or_money');
+  const [details, setDetails] = useState('');
+
+  useEffect(() => {
+    if (loading || !id) return;
+    (async () => {
+      const [rows, a] = await Promise.all([browseProfiles({ id }, 1), session ? myAccessTo(id) : Promise.resolve<Access>('preview')]);
+      setPreview(rows[0] ?? null);
+      setAccess(rows[0] ? a : 'none');
+      if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
+      if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
+    })();
+  }, [id, loading, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading || access === null) return <Screen title="Loading…"><Text style={styles.note}>One moment.</Text></Screen>;
+  if (!preview || access === 'none') {
+    return (
+      <Screen title="Profile not available" intro="This profile is private, not finished yet, or no longer on the platform.">
+        <Button label="Browse profiles" onPress={() => router.replace('/browse')} />
+      </Screen>
+    );
+  }
+
+  const isIpViewer = me?.role === 'intended_parent';
+  const isMine = session?.user.id === id;
+
+  // Private bookmark: keep browsing, come back later to message.
+  async function toggleSave() {
+    if (!session) return router.push('/join');
+    if (saved) {
+      await unsaveProfile(session.user.id, id);
+      setSaved(false);
+      return;
+    }
+    const err = await saveProfile(session.user.id, id);
+    if (err) return setMsg({ kind: 'error', text: err });
+    setSaved(true);
+  }
+
+  async function sendReport() {
+    if (!session) return router.push('/log-in');
+    const err = await reportMember(session.user.id, id, reason, details);
+    setReporting(false);
+    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Thank you. Our safety team will review this report.' });
+  }
+
+  return (
+    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={preview.is_verified ? 'Identity verified' : 'Identity not verified'}>
+      {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
+
+      {access === 'preview' ? (
+        <>
+          <View style={styles.previewWrap}>
+            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} photoUrl={preview.photo_url} />
+          </View>
+          <View style={styles.wall}>
+            <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>
+            <Text style={styles.wallText}>
+              {!session
+                ? 'Members see more than previews. Surrogates join free and read full intended-parent profiles right away.'
+                : isIpViewer
+                  ? 'A membership unlocks full surrogate profiles, photos and messaging. Memberships open in a coming update.'
+                  : 'Full profiles are shown once your account is active.'}
+            </Text>
+            {!session ? <Button label="Join free" onPress={() => router.push('/join')} /> : null}
+          </View>
+        </>
+      ) : full ? (
+        <>
+          <View style={styles.photos}>
+            {full.photoUrls.map((u, i) => (
+              <Image key={i} source={{ uri: u }} style={styles.photo} accessibilityLabel={`Photo ${i + 1} of ${preview.display_name}`} />
+            ))}
+          </View>
+          <View style={styles.tags}>
+            {preview.headline_tags.map((t) => (
+              <Text key={t} style={styles.tag}>{t}</Text>
+            ))}
+          </View>
+          <Text style={styles.bio}>{full.profile.bio}</Text>
+          {full.parents.length > 0 ? (
+            <Section title="The family">
+              {full.parents.map((p: any) => (
+                <Row key={p.position} label={`Parent ${p.position}`} value={`${p.first_name ?? ''}${p.age ? `, ${p.age}` : ''}`} />
+              ))}
+            </Section>
+          ) : null}
+          <Section title="About the journey">
+            {prettyAnswers((full.surrogate ?? full.ip) as Record<string, unknown> | null, ['compensation_min_usd', 'compensation_max_usd', 'clinic_name']).map((r) => (
+              <Row key={r.label} label={r.label} value={r.value} />
+            ))}
+          </Section>
+          <Text style={styles.note}>Health self-reports are shared by the member only inside a conversation, never on the profile.</Text>
+        </>
+      ) : (
+        <Text style={styles.note}>Loading full profile…</Text>
+      )}
+
+      {!isMine ? (
+        <View style={styles.actions}>
+          <Button label="Message" disabled onPress={() => {}} />
+          <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
+          <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
+        </View>
+      ) : null}
+      {!isMine ? <Text style={styles.note}>Messaging opens in the next update. Saved profiles are private to you. Never send money to anyone you meet here.</Text> : null}
+
+      {reporting ? (
+        <View style={styles.reportBox}>
+          <ChoiceField label="What's wrong?" options={REPORT_OPTIONS} value={reason} onChange={(v) => setReason(v as ReportReason)} />
+          <TextField label="Details" value={details} onChangeText={setDetails} multiline placeholder="Anything that helps our safety team" />
+          <View style={styles.actions}>
+            <Button label="Send report" onPress={sendReport} />
+            <Button label="Cancel" variant="secondary" onPress={() => setReporting(false)} />
+          </View>
+        </View>
+      ) : null}
+    </Screen>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  previewWrap: { alignItems: 'center' },
+  wall: { backgroundColor: colors.surfaceSoft, borderRadius: radius.lg, padding: space.lg, gap: space.sm, alignItems: 'center' },
+  wallTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text },
+  wallText: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
+  photos: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  photo: { width: 260, height: 320, borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, flexGrow: 1, maxWidth: 420 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
+  tag: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, backgroundColor: colors.surfaceSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5, overflow: 'hidden' },
+  bio: { fontFamily: fonts.body, fontSize: 17, lineHeight: 27, color: colors.text },
+  section: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.xs },
+  sectionTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text, marginBottom: space.xs },
+  row: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', paddingVertical: 4 },
+  rowLabel: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSubtle, minWidth: 220 },
+  rowValue: { fontFamily: fonts.body, fontSize: 15, color: colors.text, flex: 1, minWidth: 160 },
+  actions: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', alignItems: 'center' },
+  reportBox: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  note: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle },
+});

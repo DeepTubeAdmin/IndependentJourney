@@ -81,6 +81,12 @@ export default function MemberDetail() {
             <Button label="Ban" variant="secondary" size="sm" disabled={busy} onPress={() => act('Ban', () => admin.setStatus(p.id, 'ban', reason))} />
           )}
         </View>
+        {!isSurrogate ? (
+          <View style={styles.actions}>
+            <Button label="Grant 3-month membership" variant="secondary" size="sm" disabled={busy} onPress={() => act('Grant membership', () => admin.grantMembership(p.id, 3, reason))} />
+            <Button label="End membership" variant="secondary" size="sm" disabled={busy} onPress={() => act('End membership', () => admin.endMembership(p.id, reason))} />
+          </View>
+        ) : null}
         <View style={styles.flagRow}>
           <View style={{ flex: 1 }}>
             <ChoiceField label="Add a flag" options={Object.entries(FLAG_KINDS).map(([value, label]) => ({ value, label }))} value={flagKind} onChange={setFlagKind} />

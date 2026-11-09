@@ -65,18 +65,20 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
       />
       <Text style={styles.counter}>{bio.length} / 1500</Text>
 
-      {isSurrogate ? (
-        <ChoiceField
-          label="Who can see your limited preview?"
-          help="A limited preview is your first name, state, a blurred photo, a few headline preferences and your verification label. Full profiles are only ever shown to intended parents with an active membership."
-          options={[
-            { value: 'members_only', label: 'Paying intended parents only (recommended)' },
-            { value: 'public_previews', label: 'Also in public previews on the homepage and browse page' },
-          ]}
-          value={visibility}
-          onChange={(v) => setVisibility(v as typeof visibility)}
-        />
-      ) : null}
+      <ChoiceField
+        label="Who can see your limited preview?"
+        help={
+          isSurrogate
+            ? 'A limited preview is your first name, state, a blurred photo, a few headline preferences and your verification label. Full profiles are only ever shown to intended parents with an active membership.'
+            : 'A limited preview is your first names, state, photo, a few headline preferences and your verification label. Full profiles are shown to surrogates who have joined.'
+        }
+        options={[
+          { value: 'members_only', label: isSurrogate ? 'Members only (recommended)' : 'Members only' },
+          { value: 'public_previews', label: 'Also in public previews on the homepage and browse page (visitors see up to 5 previews)' },
+        ]}
+        value={visibility}
+        onChange={(v) => setVisibility(v as typeof visibility)}
+      />
 
       <Checkbox
         checked={featured}

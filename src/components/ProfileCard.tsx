@@ -5,10 +5,10 @@
  * label, and a few headline preferences. Surrogate photos are shown blurred
  * in previews, per the access rules in the master prompt.
  *
- * Phase 2: renders a placeholder silhouette instead of a photo. Real photos
- * arrive with profiles in Phase 3.
+ * With a photoUrl it shows the member's preview image (a tiny 24px copy for
+ * surrogates, so it always looks blurred); without one, a soft silhouette.
  */
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -20,6 +20,8 @@ export type ProfileCardProps = {
   headline: string;
   /** Marks sample content so nobody reads it as a real member. */
   example?: boolean;
+  /** Signed URL of the preview image, when the viewer is allowed one. */
+  photoUrl?: string;
   onPress?: () => void;
 };
 
@@ -29,8 +31,9 @@ const ROLE_LABEL = {
   intended_parents: 'Intended parents',
 } as const;
 
-export function ProfileCard({ name, state, role, verified, headline, example, onPress }: ProfileCardProps) {
+export function ProfileCard({ name, state, role, verified, headline, example, photoUrl, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
+  const blur = role === 'surrogate';
   return (
     <Pressable
       onPress={onPress}
@@ -39,8 +42,14 @@ export function ProfileCard({ name, state, role, verified, headline, example, on
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
     >
       <View style={[styles.photo, tint]}>
-        <View style={[styles.silhouetteHead, role === 'surrogate' && styles.blurred]} />
-        <View style={[styles.silhouetteBody, role === 'surrogate' && styles.blurred]} />
+        {photoUrl ? (
+          <Image source={{ uri: photoUrl }} style={styles.img} blurRadius={blur ? 18 : 0} accessibilityIgnoresInvertColors />
+        ) : (
+          <>
+            <View style={[styles.silhouetteHead, blur && styles.blurred]} />
+            <View style={[styles.silhouetteBody, blur && styles.blurred]} />
+          </>
+        )}
         <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
           <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
             {verified ? 'Verified' : 'Not verified'}
@@ -80,6 +89,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
+  img: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   photoSky: { backgroundColor: '#DCE7EE' },
   photoLinen: { backgroundColor: '#EADFD3' },
   silhouetteHead: {
