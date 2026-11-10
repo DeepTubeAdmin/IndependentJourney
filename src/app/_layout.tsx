@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { BetaWelcome } from '@/components/BetaWelcome';
 import { SessionProvider } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
@@ -33,6 +34,8 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       />
+      {/* One-time "we just launched" note for visitors (admin setting beta_banner_enabled). */}
+      <BetaWelcome />
     </SessionProvider>
   );
 }
