@@ -12,7 +12,7 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, compensationLine, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
 import { canMessage, CAN_MESSAGE_TEXT, clearDraft, loadDraft, saveDraft, sendMessage, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -142,7 +142,8 @@ export default function ProfilePage() {
             </Section>
           ) : null}
           <Section title="About the journey">
-            {prettyAnswers((full.surrogate ?? full.ip) as Record<string, unknown> | null, ['compensation_min_usd', 'compensation_max_usd', 'clinic_name']).map((r) => (
+            {full.surrogate && compensationLine(full.surrogate) ? <Row label="Compensation" value={compensationLine(full.surrogate)!} /> : null}
+            {prettyAnswers((full.surrogate ?? full.ip) as Record<string, unknown> | null, ['compensation_min_usd', 'compensation_max_usd', 'compensation_open', 'clinic_name']).map((r) => (
               <Row key={r.label} label={r.label} value={r.value} />
             ))}
           </Section>

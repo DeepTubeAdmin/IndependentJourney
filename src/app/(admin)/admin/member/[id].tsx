@@ -138,7 +138,7 @@ export default function MemberDetail() {
 
       {isSurrogate ? (
         <>
-          <Panel title="Journey answers">{Object.entries(data.surrogate ?? {}).filter(([k]) => k !== 'id').map(([k, v]) => <KV key={k} k={pretty(k)} v={fmt(v)} />)}</Panel>
+          <Panel title="Journey answers">{Object.entries(data.surrogate ?? {}).filter(([k]) => k !== 'id').map(([k, v]) => <KV key={k} k={pretty(k)} v={k.endsWith('_usd') && v != null ? '$' + Number(v).toLocaleString('en-US') : fmt(v)} />)}</Panel>
           <Panel title="Health self-report (admin only)">{Object.entries(data.health ?? {}).filter(([k]) => k !== 'id').map(([k, v]) => <KV key={k} k={pretty(k)} v={fmt(v)} />)}</Panel>
         </>
       ) : (
