@@ -20,7 +20,9 @@ import { loadAnswers, saveStep, validateStep, type Answers } from '@/lib/profile
 import { colors, fonts, space } from '@/lib/theme';
 
 export default function OnboardingStep() {
-  const { step } = useLocalSearchParams<{ step: string }>();
+  // `from=review` means the member clicked Edit on the review page: save, then go straight back there.
+  const { step, from } = useLocalSearchParams<{ step: string; from?: string }>();
+  const fromReview = from === 'review';
   const { session, profile, refreshProfile } = useSession();
   const steps = useMemo(() => (profile ? stepsFor(profile.role) : []), [profile]);
   const total = steps.length + FINAL_STEPS.length;
@@ -83,6 +85,7 @@ export default function OnboardingStep() {
     setBusy(false);
     if (err) return setServerError(err);
     await refreshProfile();
+    if (fromReview) return router.replace('/onboarding/review');
     goTo(position + 1);
   }
 
@@ -99,9 +102,9 @@ export default function OnboardingStep() {
       ))}
       <View style={styles.nav}>
         <Button label="Back" variant="secondary" onPress={() => goTo(position - 1)} />
-        <Button label={busy ? 'Saving…' : 'Save and continue'} onPress={next} disabled={busy || !loaded} />
+        <Button label={busy ? 'Saving…' : fromReview ? 'Save and review' : 'Save and continue'} onPress={next} disabled={busy || !loaded} />
       </View>
-      <Text style={styles.saveNote}>Your answers save when you continue. You can come back and change them any time.</Text>
+      <Text style={styles.saveNote}>{fromReview ? 'Saving takes you back to the review page.' : `Your answers save when you continue. ${position + 1 < total ? 'The review page at the end shows whether your profile is live.' : ''}`}</Text>
     </Screen>
   );
 }
