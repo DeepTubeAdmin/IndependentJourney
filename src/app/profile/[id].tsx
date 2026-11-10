@@ -115,10 +115,11 @@ export default function ProfilePage() {
               {!session
                 ? 'Members see more than previews. Surrogates join free and read full intended-parent profiles right away.'
                 : isIpViewer
-                  ? 'A membership unlocks full surrogate profiles, photos and messaging. Memberships open in a coming update.'
+                  ? 'A membership unlocks full surrogate profiles, photos and messaging.'
                   : 'Full profiles are shown once your account is active.'}
             </Text>
             {!session ? <Button label="Join free" onPress={() => router.push('/join')} /> : null}
+            {session && isIpViewer ? <Button label="See membership options" onPress={() => router.push('/membership')} /> : null}
           </View>
         </>
       ) : full ? (

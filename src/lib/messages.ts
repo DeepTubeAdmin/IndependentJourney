@@ -16,7 +16,7 @@ export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   account_restricted: 'Your account is currently restricted. Contact us if you think this is a mistake.',
   blocked: 'Messaging is not available between you and this member.',
   profile_incomplete: 'Finish your profile to start conversations. Intended parents want to know who they are talking to.',
-  membership_required: 'A membership unlocks messaging and full surrogate profiles. Memberships open in a coming update.',
+  membership_required: 'A membership unlocks messaging and full surrogate profiles.',
 };
 
 export const NEVER_SEND_MONEY = 'Never send money to anyone you meet here. Surrogacy payments go through an attorney-managed escrow after a signed contract.';
