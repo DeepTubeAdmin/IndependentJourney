@@ -1,0 +1,13 @@
+{
+  "name": "Independent Journey",
+  "short_name": "Indep. Journey",
+  "description": "Where intended parents and gestational surrogates find each other, without an agency.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#F8F5EF",
+  "theme_color": "#F8F5EF",
+  "icons": [
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

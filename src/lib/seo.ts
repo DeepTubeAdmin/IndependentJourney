@@ -45,7 +45,6 @@ export function pageMeta({ title, description, path, noindex = false }: PageMeta
       images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: `${SITE.name}: ${SITE.tagline}` }],
     },
     twitter: { card: 'summary_large_image', title: fullTitle, description, images: [OG_IMAGE] },
-    icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
   } as Metadata;
 }
 
