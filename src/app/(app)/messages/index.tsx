@@ -8,6 +8,11 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { myConversations, NEVER_SEND_MONEY, timeAgo, type ConversationRow } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Messages');
+}
 
 export default function Inbox() {
   const { profile } = useSession();

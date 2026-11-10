@@ -9,6 +9,11 @@ import { Button } from '@/components/Button';
 import { FormMessage, TextField } from '@/components/form';
 import { admin, memberStatus, useAdminData, type MemberRow } from '@/lib/admin';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin members');
+}
 
 export default function Members() {
   const [q, setQ] = useState('');

@@ -7,6 +7,11 @@ import { FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Forgot password');
+}
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');

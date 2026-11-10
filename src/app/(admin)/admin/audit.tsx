@@ -6,6 +6,11 @@ import { AdminShell } from '@/components/admin/AdminShell';
 import { Table } from '@/components/admin/Table';
 import { admin, useAdminData, type AuditRow } from '@/lib/admin';
 import { colors, fonts } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin audit log');
+}
 
 export default function Audit() {
   const { data, loading } = useAdminData(() => admin.listAudit(300));

@@ -6,6 +6,16 @@ import { Button } from '@/components/Button';
 import { Disclaimer } from '@/components/Disclaimer';
 import { Screen } from '@/components/Screen';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'How Independent Surrogacy Matching Works',
+    description:
+      'Five plain-English steps to finding a surrogate or intended parents without an agency: create a free profile, browse, message, get to know each other, then work with your own clinic and attorney.',
+    path: '/how-it-works',
+  });
+}
 
 const STEPS = [
   { n: '1', title: 'Create a free profile', body: 'Surrogates join free, always. Intended parents browse limited previews for free and unlock full profiles and messaging with a membership. Everyone answers the same thoughtful questions about their journey, timeline and preferences.' },
@@ -22,7 +32,7 @@ export default function HowItWorks() {
         <View key={s.n} style={styles.step}>
           <View style={styles.num}><Text style={styles.numText}>{s.n}</Text></View>
           <View style={styles.stepBody}>
-            <Text style={styles.stepTitle}>{s.title}</Text>
+            <Text style={styles.stepTitle} accessibilityRole="header" aria-level={2}>{s.title}</Text>
             <Text style={styles.stepText}>{s.body}</Text>
           </View>
         </View>

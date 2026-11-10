@@ -19,6 +19,16 @@ import { LEGAL_VERSION } from '@/config/settings';
 import { friendlyAuthError, type Role } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Create Your Free Profile',
+    description:
+      'Sign up as a gestational surrogate or intended parent and start your independent surrogacy journey. Free for surrogates, no agency fees, no match fees.',
+    path: '/sign-up',
+  });
+}
 
 export default function SignUp() {
   const params = useLocalSearchParams<{ role?: string }>();

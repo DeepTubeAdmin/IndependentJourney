@@ -7,6 +7,11 @@ import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Verify your email');
+}
 
 export default function VerifyEmail() {
   const { email } = useLocalSearchParams<{ email?: string }>();

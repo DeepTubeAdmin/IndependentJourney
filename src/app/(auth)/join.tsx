@@ -7,6 +7,16 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Join Free',
+    description:
+      'Create a free Independent Journey profile. Surrogates always join free; intended parents browse previews free and unlock full profiles with a simple membership.',
+    path: '/join',
+  });
+}
 
 export default function Join() {
   return (

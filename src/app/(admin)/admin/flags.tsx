@@ -9,6 +9,11 @@ import { Button } from '@/components/Button';
 import { Checkbox, FormMessage } from '@/components/form';
 import { admin, FLAG_KINDS, useAdminData, type Flag } from '@/lib/admin';
 import { colors, fonts } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin flags');
+}
 
 export default function Flags() {
   const [openOnly, setOpenOnly] = useState(true);

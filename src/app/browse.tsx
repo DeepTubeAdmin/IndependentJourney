@@ -19,6 +19,16 @@ import { browseProfiles, type BrowseFilters, type PreviewRow } from '@/lib/brows
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Browse Surrogates and Intended Parents',
+    description:
+      'Browse profiles of gestational surrogates and intended parents planning an independent, agency-free surrogacy journey. Filter by state, timeline and preferences. Free to look.',
+    path: '/browse',
+  });
+}
 
 const PAGE = 24;
 

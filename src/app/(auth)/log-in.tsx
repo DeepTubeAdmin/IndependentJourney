@@ -8,6 +8,16 @@ import { Screen } from '@/components/Screen';
 import { friendlyAuthError } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Log In',
+    description:
+      'Log in to your Independent Journey account to browse profiles, read messages and manage your surrogacy journey.',
+    path: '/log-in',
+  });
+}
 
 export default function LogIn() {
   const [email, setEmail] = useState('');

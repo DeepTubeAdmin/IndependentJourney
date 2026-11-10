@@ -12,6 +12,11 @@ import { Button } from '@/components/Button';
 import { FormMessage, TextField } from '@/components/form';
 import { admin, memberStatus, useAdminData } from '@/lib/admin';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin conversation');
+}
 
 export default function AdminConversation() {
   const { id } = useLocalSearchParams<{ id: string }>();

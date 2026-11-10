@@ -16,6 +16,11 @@ import { browseProfiles, compensationLine, listSavedIds, loadFullProfile, myAcce
 import { blockMember, canMessage, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessage, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Member profile');
+}
 
 export default function ProfilePage() {
   const { id } = useLocalSearchParams<{ id: string }>();

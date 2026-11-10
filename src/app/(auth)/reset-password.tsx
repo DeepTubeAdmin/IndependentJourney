@@ -10,6 +10,11 @@ import { FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { friendlyAuthError, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Reset password');
+}
 
 export default function ResetPassword() {
   const { session, loading } = useSession();

@@ -8,6 +8,11 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { browseProfiles, listSavedIds, type PreviewRow } from '@/lib/browse';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Saved profiles');
+}
 
 export default function SavedPage() {
   const { session } = useSession();

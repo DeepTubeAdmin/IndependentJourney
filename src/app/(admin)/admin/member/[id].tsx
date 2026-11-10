@@ -13,6 +13,11 @@ import { Button } from '@/components/Button';
 import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { admin, FLAG_KINDS, memberStatus, REPORT_REASONS, useAdminData } from '@/lib/admin';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin member');
+}
 
 export default function MemberDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();

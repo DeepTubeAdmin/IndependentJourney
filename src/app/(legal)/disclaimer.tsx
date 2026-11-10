@@ -1,5 +1,15 @@
 import { LegalPage } from '@/components/LegalPage';
 import { SITE } from '@/config/settings';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Disclaimer',
+    description:
+      'Independent Journey introduces intended parents and surrogates. It is not an agency, law firm or medical provider and gives no legal, medical or surrogacy advice.',
+    path: '/disclaimer',
+  });
+}
 
 export default function Disclaimer() {
   return (

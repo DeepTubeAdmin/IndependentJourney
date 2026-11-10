@@ -18,6 +18,11 @@ import { FINAL_STEPS, stepsFor, US_STATES, type Field } from '@/config/questionn
 import { useSession } from '@/lib/auth';
 import { loadAnswers, saveStep, validateStep, type Answers } from '@/lib/profile';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Your profile');
+}
 
 export default function OnboardingStep() {
   // `from=review` means the member clicked Edit on the review page: save, then go straight back there.
