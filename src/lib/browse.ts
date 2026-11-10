@@ -2,6 +2,7 @@
  * Browsing, previews, saved profiles and share links (Phase 5).
  * The database decides what each viewer may see; this file just asks it.
  */
+import { IP_STEPS, SURROGATE_STEPS, type Field } from '@/config/questionnaire';
 import { supabase } from '@/lib/supabase';
 
 export type PreviewRow = {
@@ -163,18 +164,55 @@ export function compensationLine(sd: Record<string, unknown> | null | undefined)
   return sd.compensation_open ? 'Open to discuss' : null;
 }
 
+/** Nicer labels than the raw column names where title-casing is not enough. */
+const LABEL_OVERRIDES: Record<string, string> = {
+  us_resident: 'US resident',
+  open_to_ip_types: 'Open to working with',
+  carry_donor_embryos: 'Carry donor embryos',
+  earliest_start: 'Earliest start',
+  desired_start: 'Hoped-for start',
+  consulted_attorney: 'Has consulted an attorney',
+  aware_of_birth_state_law: 'Aware of birth-state law',
+  embryos_status: 'Embryos',
+  embryo_count_range: 'Number of embryos',
+  genetic_material_source: 'Genetic material',
+  reason_for_surrogacy: 'Why surrogacy',
+  surrogate_location_pref: 'Surrogate location preference',
+  other_preferences: 'Other preferences',
+};
+
+/** Columns that are bookkeeping, never shown on a profile. */
+const HIDDEN_KEYS = ['id', 'created_at', 'updated_at'];
+
+/** Every questionnaire field by key, so answers show the same words as the form. */
+const FIELD_BY_KEY: Record<string, Field> = Object.fromEntries([...SURROGATE_STEPS, ...IP_STEPS].flatMap((s) => s.fields).map((f) => [f.key, f]));
+
+/** A stored value as the member chose it on the form: option labels, Yes/No, "February 2027", "$1,000". */
+export function prettyValue(key: string, v: unknown): string {
+  const field = FIELD_BY_KEY[key];
+  const optionLabel = (x: unknown) => field?.options?.find((o) => o.value === x)?.label ?? String(x).replace(/_/g, ' ');
+  if (Array.isArray(v)) return v.map(optionLabel).join(', ');
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (key.endsWith('_usd')) return '$' + Number(v).toLocaleString('en-US');
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return new Date(v + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  if (field?.options) return optionLabel(v);
+  // Free text: shown as typed, with a capital first letter.
+  const text = String(v).trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function prettyLabel(key: string): string {
+  return LABEL_OVERRIDES[key] ?? key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** Rows for a profile's "About the journey" section, in questionnaire order. */
 export function prettyAnswers(obj: Record<string, unknown> | null | undefined, skip: string[] = []): { label: string; value: string }[] {
   if (!obj) return [];
+  const order = Object.keys(FIELD_BY_KEY);
   return Object.entries(obj)
-    .filter(([k, v]) => !skip.includes(k) && k !== 'id' && v !== null && v !== '' && v !== undefined)
-    .map(([k, v]) => ({
-      label: k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()),
-      value: Array.isArray(v)
-        ? v.join(', ')
-        : typeof v === 'boolean'
-          ? (v ? 'Yes' : 'No')
-          : k.endsWith('_usd')
-            ? '$' + Number(v).toLocaleString('en-US')
-            : String(v).replace(/_/g, ' '),
-    }));
+    .filter(([k, v]) => !skip.includes(k) && !HIDDEN_KEYS.includes(k) && v !== null && v !== '' && v !== undefined && !(Array.isArray(v) && v.length === 0))
+    .sort(([a], [b]) => (order.indexOf(a) === -1 ? 999 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 999 : order.indexOf(b)))
+    .map(([k, v]) => ({ label: prettyLabel(k), value: prettyValue(k, v) }));
 }
