@@ -13,10 +13,10 @@ import { colors, fonts, space } from '@/lib/theme';
 export default function Members() {
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
-  const { data, error, loading } = useAdminData(() => admin.searchMembers(query), [query]);
+  const { data, error, loading } = useAdminData(() => admin.searchMembers(query, 200), [query]);
 
   return (
-    <AdminShell title="Members" intro="Search by name, email, state code or member ID.">
+    <AdminShell title="Members" intro="Every member, newest account first. Search by name, email, state code or member ID.">
       <View style={styles.search}>
         <View style={{ flex: 1 }}>
           <TextField label="Search" value={q} onChangeText={setQ} placeholder="e.g. Megan, TX, someone@example.com" onSubmitEditing={() => setQuery(q)} returnKeyType="search" />
@@ -34,6 +34,7 @@ export default function Members() {
           { key: 'role', label: 'Role', render: (m) => (m.role === 'surrogate' ? 'Surrogate' : 'Intended parent') },
           { key: 'email', label: 'Email', flex: 2, render: (m) => m.email },
           { key: 'state', label: 'State', flex: 0.5, render: (m) => m.state || '—' },
+          { key: 'joined', label: 'Joined', render: (m) => new Date(m.created_at).toLocaleDateString() },
           { key: 'complete', label: 'Profile', render: (m) => <Pill text={m.is_complete ? 'Complete' : 'Incomplete'} tone={m.is_complete ? 'good' : 'neutral'} /> },
           { key: 'verified', label: 'Identity', render: (m) => <Pill text={m.is_verified ? 'Verified' : 'Not verified'} tone={m.is_verified ? 'good' : 'neutral'} /> },
           { key: 'status', label: 'Status', render: (m) => <Pill text={memberStatus(m)} tone={memberStatus(m) === 'Active' ? 'neutral' : 'bad'} /> },
