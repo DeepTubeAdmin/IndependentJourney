@@ -55,7 +55,7 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
       <Text style={styles.sectionTitle}>Edit a section</Text>
       <View style={styles.list}>
         {steps.map((s, i) => (
-          <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(`/onboarding/${i}`)} />
+          <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(`/onboarding/${i}?from=review`)} />
         ))}
         <Row text="Photos" action="Edit" onPress={() => router.push('/onboarding/photos')} />
         <Row text="Bio, visibility and homepage feature" action="Edit" onPress={() => router.push('/onboarding/bio')} />
@@ -67,10 +67,10 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
           {photosMissing > 0 ? <Row text={`Add ${photosMissing} more photo${photosMissing === 1 ? '' : 's'}`} onPress={() => router.push('/onboarding/photos')} /> : null}
           {bioMissing ? <Row text="Write your bio" onPress={() => router.push('/onboarding/bio')} /> : null}
           {missing.map((m) => (
-            <Row key={m.label} text={m.label} onPress={() => router.push(`/onboarding/${m.step}`)} />
+            <Row key={m.label} text={m.label} onPress={() => router.push(`/onboarding/${m.step}?from=review`)} />
           ))}
           {answers && missing.length === 0 && photosMissing === 0 && !bioMissing ? (
-            <Text style={styles.note}>Everything looks filled in. Give it a moment and refresh; if this message stays, tell us.</Text>
+            <Text style={styles.note}>Everything looks filled in. Go back and press Save on any section to refresh; if this message stays, email us.</Text>
           ) : null}
         </View>
       ) : null}
