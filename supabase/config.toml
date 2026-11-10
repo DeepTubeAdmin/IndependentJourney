@@ -10,3 +10,7 @@ verify_jwt = true
 
 [functions.create-verification]
 verify_jwt = true
+
+# Called by the Cron schedule with the CRON_SECRET header, not by logged-in members.
+[functions.send-emails]
+verify_jwt = false
