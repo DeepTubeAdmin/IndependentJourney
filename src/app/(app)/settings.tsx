@@ -12,7 +12,7 @@ import {
   NOTIFICATION_LABELS, type NotificationSettings, type SavedSearch,
   deleteSearch, describeFilters, listSavedSearches, myNotificationSettings, saveNotificationSettings, setSearchAlerts,
 } from '@/lib/notifications';
-import { deleteMyAccount } from '@/lib/profile';
+import { deleteMyAccount, exportMyData } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -26,6 +26,7 @@ export default function Settings() {
   const [deleteWord, setDeleteWord] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -43,6 +44,13 @@ export default function Settings() {
     if (err) return setMsg({ kind: 'error', text: err });
     await signOut();
     router.replace('/?deleted=1');
+  }
+
+  async function onExport() {
+    setExporting(true);
+    const err = await exportMyData();
+    setExporting(false);
+    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Your data file is ready.' });
   }
 
   // Each checkbox saves straight away; no separate Save button to forget.
@@ -76,6 +84,10 @@ export default function Settings() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>
         <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile. Blocked members are managed from inside a conversation.</Text>
+        <Text style={styles.text}>You can download everything we hold about you (your answers, photos list, saved profiles and messages) as one file.</Text>
+        <View style={styles.row}>
+          <Button label={exporting ? 'Preparing…' : 'Download a copy of my data'} variant="secondary" size="sm" onPress={onExport} disabled={exporting} />
+        </View>
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Email me about</Text>

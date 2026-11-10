@@ -1,8 +1,8 @@
 /**
- * Homepage (Phase 2 placeholder, styled in the "Linen & Sky" direction).
+ * Homepage, styled in the "Linen & Sky" direction.
  *
- * The profile row shows clearly labelled example cards so the layout can be
- * reviewed. In Phase 5 it is replaced by real, opted-in, verified members.
+ * The profile row shows real opted-in, verified members, and clearly labelled
+ * example cards until there are any.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -21,7 +21,7 @@ export function generateMetadata(): Metadata {
   return {
     title: `${SITE.name}: independent surrogacy matching`,
     description:
-      "A calm place for intended parents and gestational surrogates to find each other and plan an independent (non-agency) journey. Launching soon.",
+      "A calm place for intended parents and gestational surrogates to find each other and plan an independent (non-agency) journey. Free for surrogates.",
   };
 }
 
@@ -136,7 +136,7 @@ export default function Home() {
           </View>
           <View style={styles.soonPill}>
             <Text style={styles.soonText}>
-              Launching soon · sign-up opens shortly
+              Now open · in beta · surrogates always join free
             </Text>
           </View>
         </View>
