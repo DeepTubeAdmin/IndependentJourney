@@ -4,6 +4,8 @@
 
 import type { Field, Step } from '@/config/questionnaire';
 import { setLocationFromZip } from '@/lib/geo';
+import { Platform, Share } from 'react-native';
+
 import { supabase } from '@/lib/supabase';
 
 export type Answers = Record<string, unknown>;
@@ -202,4 +204,28 @@ export async function deleteMyAccount(userId: string, reason: string): Promise<s
   }
   const { error } = await supabase.rpc('delete_my_account', { p_reason: reason.trim().slice(0, 500) });
   return error ? error.message : null;
+}
+
+/**
+ * "Download a copy of your data": everything we hold about the signed-in
+ * member, as one JSON document. On the web it downloads a file; on the phone
+ * apps it opens the share sheet so it can be saved or sent anywhere.
+ */
+export async function exportMyData(): Promise<string | null> {
+  if (!supabase) return 'Not connected.';
+  const { data, error } = await supabase.rpc('export_my_data');
+  if (error) return error.message;
+  const text = JSON.stringify(data, null, 2);
+  const fileName = `independent-journey-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+  if (Platform.OS === 'web') {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  } else {
+    await Share.share({ message: text, title: fileName });
+  }
+  return null;
 }

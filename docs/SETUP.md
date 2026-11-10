@@ -99,3 +99,10 @@ See [STRIPE_SETUP.md](STRIPE_SETUP.md) for the full click-by-click guide: create
 ## 7. Resend (email notifications)
 
 See [RESEND_SETUP.md](RESEND_SETUP.md): create the Resend account, add DNS records in Netlify, run migration 11, deploy `send-emails`, add the secrets, and schedule it every 5 minutes with Supabase Cron.
+
+## 8. Launch (Phase 10)
+
+Before telling anyone about the site, work through `docs/LAUNCH_CHECKLIST.md`
+(an end-to-end test for every kind of account, then the production settings)
+and read `docs/SECURITY_REVIEW.md`. The phone-app store steps are in
+`docs/STORE_SUBMISSION.md`.
