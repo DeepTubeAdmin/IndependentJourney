@@ -24,15 +24,15 @@ export function SiteHeader() {
 
   return (
     <View style={styles.header}>
-      <View style={styles.left}>
-        <Link href="/" style={styles.wordmark}>{SITE.name}</Link>
+      <Link href="/" style={styles.wordmark}>{SITE.name}</Link>
+
+      {/* Everything else sits on the right: the main links, then Log in / Join free or the Account menu. */}
+      <View style={styles.right}>
         <View style={styles.nav}>
           {NAV.map((l) => (
             <Link key={l.href} href={l.href} style={styles.navLink}>{l.label}</Link>
           ))}
         </View>
-      </View>
-
       {session ? (
         <View style={styles.accountWrap}>
           <Pressable onPress={() => setOpen((v) => !v)} accessibilityRole="button" accessibilityLabel="Account menu" style={({ pressed }) => [styles.accountBtn, pressed && styles.pressed]}>
@@ -59,22 +59,23 @@ export function SiteHeader() {
           ) : null}
         </View>
       ) : (
-        <View style={styles.right}>
+        <View style={styles.authBtns}>
           <Button label="Log in" variant="secondary" size="sm" onPress={() => router.push('/log-in')} />
           <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
         </View>
       )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingVertical: space.md, flexWrap: 'wrap', zIndex: 10 },
-  left: { flexDirection: 'row', alignItems: 'center', gap: space.lg, flexWrap: 'wrap' },
   wordmark: { fontFamily: fonts.heading, fontSize: 20, color: colors.primary },
   nav: { flexDirection: 'row', gap: space.md, flexWrap: 'wrap' },
   navLink: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textMuted },
-  right: { flexDirection: 'row', gap: space.xs },
+  right: { flexDirection: 'row', alignItems: 'center', gap: space.lg, flexWrap: 'wrap', justifyContent: 'flex-end' },
+  authBtns: { flexDirection: 'row', gap: space.xs },
   accountWrap: { position: 'relative' },
   accountBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, maxWidth: 240 },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
