@@ -44,10 +44,18 @@ Deno.serve(async (req) => {
     const priceUsd = setting('membership_price_usd', 199);
     const termMonths = setting('membership_term_months', 3);
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { httpClient: Stripe.createFetchHttpClient() });
+    const secretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+    if (!secretKey.startsWith('sk_')) {
+      return json({ error: 'Payments are not set up yet: STRIPE_SECRET_KEY is missing or is not a secret key (it must start with sk_).' }, 500);
+    }
+    // Stripe rejects addresses like "me@test" that Supabase accepts, so only
+    // pre-fill an email that looks like a real one; otherwise Stripe asks for it.
+    const email = user.email && /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(user.email) ? user.email : undefined;
+
+    const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer_email: user.email ?? undefined,
+      customer_email: email,
       client_reference_id: user.id,
       metadata: { user_id: user.id, term_months: String(termMonths) },
       payment_intent_data: { metadata: { user_id: user.id } },
@@ -69,6 +77,8 @@ Deno.serve(async (req) => {
     return json({ url: session.url });
   } catch (e) {
     console.error('create-checkout failed', e);
-    return json({ error: 'Could not start checkout. Please try again in a moment.' }, 500);
+    // Stripe's own message is safe to show (no secrets) and tells us what to fix.
+    const detail = e instanceof Stripe.errors.StripeError ? ` (${e.message})` : '';
+    return json({ error: `Could not start checkout. Please try again in a moment.${detail}` }, 500);
   }
 });
