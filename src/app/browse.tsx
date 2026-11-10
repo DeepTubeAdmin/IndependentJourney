@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Checkbox, ChoiceField, SelectField } from '@/components/form';
+import { Checkbox, ChoiceField, FormMessage, SelectField, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
@@ -17,6 +17,7 @@ import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
 import { browseProfiles, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
+import { alertableFilters, saveSearch } from '@/lib/notifications';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 const PAGE = 24;
@@ -32,6 +33,18 @@ export default function Browse() {
   const [more, setMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<'list' | 'map'>('list');
+  // "Save this search": name box shown under the filter bar, then a one-line confirmation.
+  const [saving, setSaving] = useState(false);
+  const [searchName, setSearchName] = useState('');
+  const [saveMsg, setSaveMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+  const canSave = Object.keys(alertableFilters(filters)).length > 0;
+
+  async function onSaveSearch() {
+    if (!session) return;
+    const err = await saveSearch(session.user.id, searchName, filters);
+    setSaveMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Saved. We will email you when new profiles match. Manage saved searches under Settings.' });
+    if (!err) { setSaving(false); setSearchName(''); }
+  }
   // Where "near me" is measured from: the member's own ZIP area.
   const myPoint = profile?.approx_lat != null && profile?.approx_lng != null ? { lat: profile.approx_lat, lng: profile.approx_lng } : null;
 
@@ -69,8 +82,20 @@ export default function Browse() {
           {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
+          {canSave ? <Button label="Save this search" variant="secondary" size="sm" onPress={() => { setSaving((v) => !v); setSaveMsg(null); }} /> : null}
         </View>
       ) : null}
+
+      {saving && canSave && !anon ? (
+        <View style={styles.saveBox}>
+          <TextField label="Name this search" placeholder="e.g. Texas, verified" value={searchName} onChangeText={setSearchName} />
+          <View style={styles.filterBar}>
+            <Button label="Save and alert me" size="sm" onPress={onSaveSearch} />
+            <Button label="Cancel" variant="secondary" size="sm" onPress={() => setSaving(false)} />
+          </View>
+        </View>
+      ) : null}
+      {saveMsg ? <FormMessage kind={saveMsg.kind} text={saveMsg.text} /> : null}
 
       {showFilters && !anon ? (
         <View style={styles.filters}>
@@ -150,6 +175,7 @@ export default function Browse() {
 
 const styles = StyleSheet.create({
   filterBar: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' },
+  saveBox: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md, gap: space.sm, maxWidth: 480 },
   filters: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md, gap: space.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   note: { fontFamily: fonts.body, fontSize: 15, color: colors.textSubtle, textAlign: 'center' },

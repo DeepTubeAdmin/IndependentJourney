@@ -95,3 +95,7 @@ organization account later once you form an LLC.
 ## 6. Stripe (memberships and ID checks)
 
 See [STRIPE_SETUP.md](STRIPE_SETUP.md) for the full click-by-click guide: create the Stripe account, turn on Identity, run migration 10, deploy the three Edge Functions, add the secrets, and point a Stripe webhook at `stripe-webhook`.
+
+## 7. Resend (email notifications)
+
+See [RESEND_SETUP.md](RESEND_SETUP.md): create the Resend account, add DNS records in Netlify, run migration 11, deploy `send-emails`, add the secrets, and schedule it every 5 minutes with Supabase Cron.

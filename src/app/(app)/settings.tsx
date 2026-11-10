@@ -1,20 +1,42 @@
-/** Account settings: email, password reset, sign out, and how to delete the account. */
+/** Account settings: email, password reset, email preferences, saved searches, sign out, and how to delete the account. */
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { FormMessage } from '@/components/form';
+import { Checkbox, FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
+import {
+  NOTIFICATION_LABELS, type NotificationSettings, type SavedSearch,
+  deleteSearch, describeFilters, listSavedSearches, myNotificationSettings, saveNotificationSettings, setSearchAlerts,
+} from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 export default function Settings() {
   const { session, profile, signOut } = useSession();
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+  const [prefs, setPrefs] = useState<NotificationSettings | null>(null);
+  const [searches, setSearches] = useState<SavedSearch[]>([]);
+
+  useEffect(() => {
+    if (!session) return;
+    myNotificationSettings().then(setPrefs);
+    listSavedSearches().then(setSearches);
+  }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!session || !profile) return null;
+
+  // Each checkbox saves straight away; no separate Save button to forget.
+  async function togglePref(key: keyof NotificationSettings, value: boolean) {
+    if (!prefs) return;
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    const err = await saveNotificationSettings(next);
+    if (err) setMsg({ kind: 'error', text: err });
+  }
 
   async function sendReset() {
     if (!supabase || !session?.user.email) return;
@@ -38,6 +60,32 @@ export default function Settings() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>
         <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile. Blocked members are managed from inside a conversation.</Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Email me about</Text>
+        <Text style={styles.text}>Account and security emails (password resets, ID-check results) are always sent.</Text>
+        {prefs
+          ? NOTIFICATION_LABELS.map((n) => (
+              <Checkbox key={n.key} label={<Text><Text style={styles.v}>{n.label}</Text><Text style={styles.help}>{`  ${n.help}`}</Text></Text>} checked={prefs[n.key]} onChange={(v) => togglePref(n.key, v)} />
+            ))
+          : <Text style={styles.text}>Loading…</Text>}
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Saved searches</Text>
+        {searches.length === 0 ? (
+          <Text style={styles.text}>None yet. On the Browse page, set some filters and click “Save this search” to get an email when new profiles match.</Text>
+        ) : (
+          searches.map((sv) => (
+            <View key={sv.id} style={styles.search}>
+              <View style={{ flex: 1, minWidth: 180 }}>
+                <Text style={styles.v}>{sv.name}</Text>
+                <Text style={styles.help}>{describeFilters(sv.filters)}</Text>
+              </View>
+              <Checkbox label="Email alerts" checked={sv.alerts} onChange={async (v) => { await setSearchAlerts(sv.id, v); setSearches((all) => all.map((x) => (x.id === sv.id ? { ...x, alerts: v } : x))); }} />
+              <Button label="Delete" variant="secondary" size="sm" onPress={async () => { await deleteSearch(sv.id); setSearches((all) => all.filter((x) => x.id !== sv.id)); }} />
+            </View>
+          ))
+        )}
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Delete your account</Text>
@@ -65,4 +113,6 @@ const styles = StyleSheet.create({
   kv: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
   k: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSubtle, minWidth: 120 },
   v: { fontFamily: fonts.body, fontSize: 15, color: colors.text, flex: 1 },
+  help: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle },
+  search: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.sm, paddingVertical: space.xs, borderTopWidth: 1, borderTopColor: colors.border },
 });
