@@ -70,7 +70,6 @@ Deno.serve(async (req) => {
           },
         },
       }],
-      allow_promotion_codes: true,
       success_url: `${siteUrl()}/membership?status=success`,
       cancel_url: `${siteUrl()}/membership?status=cancelled`,
     });
