@@ -24,9 +24,11 @@ export default function AdminHome() {
         <Stat label="Open flags" value={n('open_flags')} href="/admin/flags" warn={Number(data?.open_flags) > 0} />
         <Stat label="Messages this week" value={n('messages_this_week')} href="/admin/messages" />
         <Stat label="Flagged messages (30 days)" value={n('flagged_messages_open')} href="/admin/messages?flagged=1" warn={Number(data?.flagged_messages_open) > 0} />
+        <Stat label="Active memberships" value={n('active_memberships')} />
+        <Stat label="Revenue this month" value={data ? `$${(Number(data.revenue_this_month_cents ?? 0) / 100).toLocaleString('en-US')}` : '…'} />
       </View>
-      <Panel title="Coming in later phases">
-        <Text style={styles.note}>Membership and payment overview (Phase 7), and the connection to an ID verification provider. Until then, you can mark members Verified by hand from their member page; every change is written to the audit log.</Text>
+      <Panel title="Payments and ID checks">
+        <Text style={styles.note}>Memberships are paid through Stripe and ID checks run through Stripe Identity. Refunds and card details live in your Stripe dashboard; a refund there ends the membership here automatically. Each member page shows their payments and ID-check history.</Text>
       </Panel>
     </AdminShell>
   );

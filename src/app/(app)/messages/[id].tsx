@@ -119,7 +119,8 @@ export default function Conversation() {
       {conv.locked ? (
         <View style={styles.box}>
           <Text style={styles.boxTitle}>{conv.unread > 0 ? `${conv.other_name} has written to you` : 'Messages are locked'}</Text>
-          <Text style={styles.boxText}>A membership lets you read and reply, and unlocks full surrogate profiles. Memberships open in a coming update. You can still view {conv.other_name}&apos;s limited preview.</Text>
+          <Text style={styles.boxText}>A membership lets you read and reply, and unlocks full surrogate profiles. You can still view {conv.other_name}&apos;s limited preview.</Text>
+          <Button label="See membership options" size="sm" onPress={() => router.push('/membership')} />
         </View>
       ) : (
         <ScrollView ref={scroller} style={styles.thread} contentContainerStyle={styles.threadInner} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}>

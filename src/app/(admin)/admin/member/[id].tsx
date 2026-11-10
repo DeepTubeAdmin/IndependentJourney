@@ -82,6 +82,27 @@ export default function MemberDetail() {
           )}
         </View>
         {!isSurrogate ? (
+          <Panel title="Membership and payments">
+            {data.membership ? (
+              <>
+                <KV k="Status" v={`${data.membership.status}${data.membership.current_period_end ? ' · until ' + new Date(data.membership.current_period_end).toLocaleDateString() : ''}`} />
+                <KV k="Source" v={data.membership.source === 'stripe' ? 'Paid through Stripe' : data.membership.source === 'manual' ? 'Granted by an admin' : String(data.membership.source)} />
+                {data.membership.stripe_customer_id ? <KV k="Stripe customer" v={data.membership.stripe_customer_id} /> : null}
+              </>
+            ) : <Text style={styles.note}>No membership yet.</Text>}
+            {(data.payments ?? []).filter((e: any) => e.type === 'checkout.session.completed').map((e: any) => (
+              <KV key={e.id} k={new Date(e.created_at).toLocaleDateString()} v={`Paid $${((e.amount_cents ?? 0) / 100).toLocaleString('en-US')} · ${e.id}`} />
+            ))}
+          </Panel>
+        ) : null}
+        {(data.identity_checks ?? []).length > 0 ? (
+          <Panel title="ID checks (Stripe Identity)">
+            {(data.identity_checks ?? []).map((c: any) => (
+              <KV key={c.id} k={new Date(c.created_at).toLocaleDateString()} v={`${c.status}${c.last_error ? ' · ' + c.last_error : ''}`} />
+            ))}
+          </Panel>
+        ) : null}
+        {!isSurrogate ? (
           <View style={styles.actions}>
             <Button label="Grant 3-month membership" variant="secondary" size="sm" disabled={busy} onPress={() => act('Grant membership', () => admin.grantMembership(p.id, 3, reason))} />
             <Button label="End membership" variant="secondary" size="sm" disabled={busy} onPress={() => act('End membership', () => admin.endMembership(p.id, reason))} />

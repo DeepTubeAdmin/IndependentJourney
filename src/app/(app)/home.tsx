@@ -13,6 +13,7 @@ import { admin } from '@/lib/admin';
 import { createShareLink, getShareLink, revokeShareLink } from '@/lib/browse';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
+import { formatDate, formatUsd, identityLine, myIdentityCheck, myMembership, startVerification, type IdentityCheck, type Membership } from '@/lib/membership';
 import { dismissNotice, draftProfileIds, myNotices, unreadCount, type Notice } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -24,12 +25,18 @@ export default function Home() {
   const [shareMsg, setShareMsg] = useState('');
   const [unread, setUnread] = useState(0);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [membership, setMembership] = useState<Membership | null>(null);
+  const [idCheck, setIdCheck] = useState<IdentityCheck | null>(null);
+  const [verifyMsg, setVerifyMsg] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const drafts = draftProfileIds();
   useEffect(() => {
     admin.amICandidate().then((r) => setIsAdminCandidate(Boolean(r.data)));
     unreadCount().then(setUnread);
     myNotices().then(setNotices);
     if (profile) getShareLink(profile.id).then(setShareToken);
+    myMembership().then(setMembership);
+    myIdentityCheck().then(setIdCheck);
   }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!profile) return null;
   const isSurrogate = profile.role === 'surrogate';
@@ -62,7 +69,11 @@ export default function Home() {
         <Text style={styles.status}>
           {profile.is_complete ? 'Complete and visible to members' : 'Not finished yet: it stays hidden until every required question is answered and 3 photos are added.'}
         </Text>
-        <Text style={styles.status}>{profile.is_verified ? 'Identity: Verified' : 'Identity: Not verified (free optional verification coming soon)'}</Text>
+        <Text style={styles.status}>{identityLine(profile.is_verified, idCheck)}</Text>
+        {verifyMsg ? <FormMessage kind="error" text={verifyMsg} /> : null}
+        {!profile.is_verified && idCheck?.status !== 'processing' ? (
+          <Button label={verifying ? 'Opening secure verification…' : 'Verify my identity (free)'} variant="secondary" disabled={verifying} onPress={async () => { setVerifying(true); const r = await startVerification(); if (r.error) { setVerifyMsg(r.error); setVerifying(false); } }} />
+        ) : null}
         {profile.is_complete && profile.approx_lat == null ? (
           <Text style={styles.status}>New: add your ZIP code (in “About you”) to appear on the map and sort by distance. Only your approximate area is shown.</Text>
         ) : null}
@@ -74,11 +85,14 @@ export default function Home() {
         <Text style={styles.status}>
           {isSurrogate
             ? 'Read full intended-parent profiles any time. Complete your own profile to start conversations.'
-            : 'Browse limited previews for free. A membership unlocks full profiles and messaging (memberships open in a coming update).'}
+            : membership?.active
+              ? `Your membership is active until ${formatDate(membership.current_period_end)}. Browse full surrogate profiles and message anyone.`
+              : `Browse limited previews for free. A membership (${membership ? formatUsd(membership.price_usd) : '$199'} for ${membership?.term_months ?? 3} months) unlocks full profiles and messaging.`}
         </Text>
         <View style={styles.row}>
           <Button label="Browse" onPress={() => router.push('/browse')} />
           <Button label="Saved profiles" variant="secondary" onPress={() => router.push('/saved')} />
+          {!isSurrogate ? <Button label={membership?.active ? 'Membership' : 'Get a membership'} variant={membership?.active ? 'secondary' : 'primary'} onPress={() => router.push('/membership')} /> : null}
         </View>
       </View>
 

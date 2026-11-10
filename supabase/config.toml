@@ -1,0 +1,12 @@
+# Supabase project settings used by the CLI. Stripe calls the webhook without
+# a Supabase login token, so JWT checking is off for it (the Stripe signature
+# protects it instead). If you deploy from the dashboard, switch off
+# "Verify JWT" for stripe-webhook there too.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.create-verification]
+verify_jwt = true

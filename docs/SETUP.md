@@ -91,3 +91,7 @@ organization account later once you form an LLC.
 - Google Play Console: https://play.google.com/console/signup ($25 once).
   New individual accounts must run a closed test with testers before
   publishing, so starting early helps.
+
+## 6. Stripe (memberships and ID checks)
+
+See [STRIPE_SETUP.md](STRIPE_SETUP.md) for the full click-by-click guide: create the Stripe account, turn on Identity, run migration 10, deploy the three Edge Functions, add the secrets, and point a Stripe webhook at `stripe-webhook`.

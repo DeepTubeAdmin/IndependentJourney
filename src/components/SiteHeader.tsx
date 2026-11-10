@@ -46,6 +46,7 @@ export function SiteHeader() {
                 { label: 'Profile', go: '/home' },
                 { label: 'Messages', go: '/messages' },
                 { label: 'Saved profiles', go: '/saved' },
+                ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', go: '/membership' }] : []),
                 { label: 'Settings', go: '/settings' },
               ].map((m) => (
                 <Pressable key={m.label} onPress={() => { setOpen(false); router.push(m.go as never); }} accessibilityRole="button" style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>

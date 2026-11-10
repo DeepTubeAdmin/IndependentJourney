@@ -24,7 +24,8 @@ export default function Inbox() {
       {isIp && anyLocked ? (
         <View style={styles.lockedBox}>
           <Text style={styles.lockedTitle}>You have messages waiting</Text>
-          <Text style={styles.lockedText}>Surrogates have written to you. A membership lets you read and reply, and unlocks full surrogate profiles. Memberships open in a coming update.</Text>
+          <Text style={styles.lockedText}>Surrogates have written to you. A membership lets you read and reply, and unlocks full surrogate profiles.</Text>
+          <Button label="See membership options" size="sm" onPress={() => router.push('/membership')} />
         </View>
       ) : null}
       {rows === null ? <Text style={styles.note}>Loading…</Text> : null}
