@@ -13,6 +13,11 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { formatDate, formatUsd, myMembership, startCheckout, type Membership } from '@/lib/membership';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Membership');
+}
 
 export default function MembershipPage() {
   const { profile } = useSession();

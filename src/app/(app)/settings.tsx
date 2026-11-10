@@ -15,6 +15,11 @@ import {
 import { deleteMyAccount, exportMyData } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Settings');
+}
 
 export default function Settings() {
   const { session, profile, signOut } = useSession();

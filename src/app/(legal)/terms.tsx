@@ -1,5 +1,15 @@
 import { LegalPage } from '@/components/LegalPage';
 import { SITE } from '@/config/settings';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Terms of Service',
+    description:
+      'The terms for using Independent Journey, an introduction platform for intended parents and gestational surrogates. Not an agency, law firm or medical provider.',
+    path: '/terms',
+  });
+}
 
 export default function Terms() {
   return (

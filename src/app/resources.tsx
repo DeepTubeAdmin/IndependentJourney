@@ -9,6 +9,16 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Independent Surrogacy Resources and Safety Guide',
+    description:
+      'General information for intended parents and surrogates planning an independent journey: who you need on your team, how to stay safe, state law basics and trusted organisations.',
+    path: '/resources',
+  });
+}
 
 const SECTIONS: { title: string; items: string[] }[] = [
   {
@@ -55,7 +65,7 @@ export default function Resources() {
       <FormMessage kind="info" text="This page is general information, not legal, medical or financial advice. Please consult your own attorney and clinic." />
       {SECTIONS.map((s) => (
         <View key={s.title} style={styles.card}>
-          <Text style={styles.title}>{s.title}</Text>
+          <Text style={styles.title} accessibilityRole="header" aria-level={2}>{s.title}</Text>
           {s.items.map((t) => (
             <Text key={t} style={styles.item}>• {t}</Text>
           ))}

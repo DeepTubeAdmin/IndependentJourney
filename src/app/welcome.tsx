@@ -7,6 +7,11 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { useSession } from '@/lib/auth';
 import { colors } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Welcome');
+}
 
 export default function Welcome() {
   const { loading, session, profile } = useSession();

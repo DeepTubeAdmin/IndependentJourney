@@ -1,0 +1,19 @@
+# Independent Journey: public pages may be indexed; member and admin areas may not.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /home
+Disallow: /messages
+Disallow: /saved
+Disallow: /settings
+Disallow: /membership
+Disallow: /onboarding
+Disallow: /profile/
+Disallow: /s/
+Disallow: /welcome
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /_sitemap
+
+Sitemap: https://independentjourney.com/sitemap.xml

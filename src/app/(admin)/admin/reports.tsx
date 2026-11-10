@@ -9,6 +9,11 @@ import { Button } from '@/components/Button';
 import { Checkbox, FormMessage, TextField } from '@/components/form';
 import { admin, REPORT_REASONS, useAdminData, type Report } from '@/lib/admin';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin reports');
+}
 
 export default function Reports() {
   const [openOnly, setOpenOnly] = useState(true);

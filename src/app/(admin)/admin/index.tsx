@@ -6,6 +6,11 @@ import { AdminShell, Panel } from '@/components/admin/AdminShell';
 import { FormMessage } from '@/components/form';
 import { admin, useAdminData } from '@/lib/admin';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin');
+}
 
 export default function AdminHome() {
   const { data, error } = useAdminData(() => admin.overview());

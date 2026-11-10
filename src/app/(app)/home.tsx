@@ -16,6 +16,11 @@ import { useSession } from '@/lib/auth';
 import { formatDate, formatUsd, identityLine, myIdentityCheck, myMembership, startVerification, type IdentityCheck, type Membership } from '@/lib/membership';
 import { dismissNotice, draftProfileIds, myNotices, unreadCount, type Notice } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Home');
+}
 
 export default function Home() {
   const { profile, signOut } = useSession();

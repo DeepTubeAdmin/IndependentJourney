@@ -1,5 +1,15 @@
 import { LegalPage } from '@/components/LegalPage';
 import { SITE } from '@/config/settings';
+import { pageMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return pageMeta({
+    title: 'Privacy Policy',
+    description:
+      'How Independent Journey collects, uses, protects and deletes your information, including profile answers, photos, messages and identity verification results.',
+    path: '/privacy',
+  });
+}
 
 export default function Privacy() {
   return (

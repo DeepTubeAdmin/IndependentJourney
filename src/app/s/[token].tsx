@@ -3,17 +3,17 @@
  * are told not to index it. Only verified, complete profiles can be shared.
  */
 import { useLocalSearchParams } from 'expo-router';
-import type { Metadata } from 'expo-router/server';
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { Disclaimer } from '@/components/Disclaimer';
 import { Screen } from '@/components/Screen';
 import { compensationLine, loadShareView, prettyAnswers } from '@/lib/browse';
+import { privateMeta } from '@/lib/seo';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
-export function generateMetadata(): Metadata {
-  return { title: 'Shared profile', robots: 'noindex, nofollow' } as Metadata;
+export function generateMetadata() {
+  return privateMeta('Shared profile');
 }
 
 export default function ShareView() {

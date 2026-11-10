@@ -9,6 +9,11 @@ import { FormMessage } from '@/components/form';
 import { mfa, useAdminData } from '@/lib/admin';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin security');
+}
 
 export default function Security() {
   const { data, reload } = useAdminData(() => mfa.status());

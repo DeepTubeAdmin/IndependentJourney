@@ -12,6 +12,11 @@ import { Button } from '@/components/Button';
 import { Checkbox, FormMessage, TextField } from '@/components/form';
 import { admin, useAdminData, type AdminMessageRow } from '@/lib/admin';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin messages');
+}
 
 export default function AdminMessages() {
   const params = useLocalSearchParams<{ flagged?: string; member?: string }>();

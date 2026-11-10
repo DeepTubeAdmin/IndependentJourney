@@ -10,6 +10,11 @@ import { Button } from '@/components/Button';
 import { FormMessage, TextField } from '@/components/form';
 import { admin, useAdminData } from '@/lib/admin';
 import { colors, fonts, space } from '@/lib/theme';
+import { privateMeta } from '@/lib/seo';
+
+export function generateMetadata() {
+  return privateMeta('Admin settings');
+}
 
 export default function Settings() {
   const { data, reload } = useAdminData(() => admin.listSettings());

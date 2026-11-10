@@ -6,7 +6,6 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import type { Metadata } from "expo-router/server";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
@@ -15,14 +14,16 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard, type ProfileCardProps } from "@/components/ProfileCard";
 import { featuredProfiles, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
+import { pageMeta } from "@/lib/seo";
 import { colors, fonts, radius, space } from "@/lib/theme";
 
-export function generateMetadata(): Metadata {
-  return {
-    title: `${SITE.name}: independent surrogacy matching`,
+export function generateMetadata() {
+  return pageMeta({
+    title: `${SITE.name}: Find a Surrogate or Intended Parents Without an Agency`,
     description:
-      "A calm place for intended parents and gestational surrogates to find each other and plan an independent (non-agency) journey. Free for surrogates.",
-  };
+      "Independent surrogacy matching for intended parents and gestational surrogates. Create a free profile, browse verified members, message directly and plan your journey with your own clinic and attorney. No agency, no match fees.",
+    path: "/",
+  });
 }
 
 const EXAMPLE_PROFILES: ProfileCardProps[] = [
@@ -81,6 +82,35 @@ const TRUST_POINTS = [
   "Phone and email checks on every account",
   "Safety team reviews messages",
   "No match or outcome fees, ever",
+];
+
+// Short answers to the questions people type into search engines. Plain
+// language, no advice: it describes the site and the process only.
+const FAQ: [string, string][] = [
+  [
+    "What is independent surrogacy?",
+    "Independent (or \"indy\") surrogacy is when intended parents and a gestational surrogate find each other and coordinate the journey themselves, with a fertility clinic for the medical side and a reproductive attorney for each side, instead of paying an agency to match and manage them.",
+  ],
+  [
+    "Is Independent Journey a surrogacy agency?",
+    "No. We are an introduction platform. We never match, screen medically, hold money or give legal or medical advice. Once you have met someone here, your clinic and attorneys take it from there.",
+  ],
+  [
+    "How much does it cost?",
+    "Surrogates always join free. Intended parents browse limited previews free, and a simple membership unlocks full profiles and messaging. There are no match fees and no fees tied to a pregnancy or birth.",
+  ],
+  [
+    "How do I know a profile is real?",
+    "Every profile is labelled Verified or Not verified. Verification is a free photo-ID and selfie check by Stripe Identity. We also scan messages for scam patterns, let you block and report anyone, and remind everyone: never send money to someone you meet here.",
+  ],
+  [
+    "Which states does it cover?",
+    "Independent Journey is for people in the United States. Surrogacy law differs by state, so always talk to a reproductive attorney licensed where the surrogate lives and where the baby would be born.",
+  ],
+  [
+    "Can surrogates message intended parents directly?",
+    "Yes. Once a surrogate's profile is complete she can write to any intended parent for free. Intended parents read and reply with an active membership.",
+  ],
 ];
 
 const STEPS = [
@@ -189,6 +219,22 @@ export default function Home() {
               <Text style={styles.stepBody}>{body}</Text>
             </View>
           ))}
+        </View>
+
+        <View style={styles.faq}>
+          <Text style={styles.h2} accessibilityRole="header" aria-level={2}>
+            Common questions about independent surrogacy
+          </Text>
+          {FAQ.map(([q, a]) => (
+            <View key={q} style={styles.faqItem}>
+              <Text style={styles.faqQ} accessibilityRole="header" aria-level={3}>{q}</Text>
+              <Text style={styles.faqA}>{a}</Text>
+            </View>
+          ))}
+          <View style={styles.ctaRow}>
+            <Button label="Read how it works" variant="secondary" onPress={() => router.push("/how-it-works")} />
+            <Button label="Safety and resources" variant="secondary" onPress={() => router.push("/resources")} />
+          </View>
         </View>
 
         <Disclaimer />
@@ -308,4 +354,8 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     color: colors.textMuted,
   },
+  faq: { gap: space.md, paddingBottom: space.xl, maxWidth: 820 },
+  faqItem: { gap: 4 },
+  faqQ: { fontFamily: fonts.bodyBold, fontSize: 17, color: colors.text },
+  faqA: { fontFamily: fonts.body, fontSize: 15, lineHeight: 23, color: colors.textMuted },
 });
