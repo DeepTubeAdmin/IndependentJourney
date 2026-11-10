@@ -17,7 +17,8 @@ export type Option = { value: string; label: string };
 
 export type Field = {
   key: string;
-  table: 'profiles' | 'profile_private' | 'surrogate_details' | 'health_self_reports' | 'ip_details';
+  /** 'ip_parents' keys are parent1_first_name, parent1_age, parent2_first_name, parent2_age (one row per parent). */
+  table: 'profiles' | 'profile_private' | 'surrogate_details' | 'health_self_reports' | 'ip_details' | 'ip_parents';
   label: string;
   type: FieldType;
   required?: boolean;
@@ -153,6 +154,17 @@ export const IP_STEPS: Step[] = [
       { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.' },
       { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true },
       { key: 'phone', table: 'profile_private', label: 'Mobile phone', type: 'text', required: true, help: 'Private. Used to verify your account.' },
+    ],
+  },
+  {
+    id: 'parents',
+    title: 'The parents',
+    intro: 'First names and ages appear on your full profile so surrogates know who they are talking with. Nothing else here is shown.',
+    fields: [
+      { key: 'parent1_first_name', table: 'ip_parents', label: 'Your first name', type: 'text', required: true },
+      { key: 'parent1_age', table: 'ip_parents', label: 'Your age', type: 'number', required: true },
+      { key: 'parent2_first_name', table: 'ip_parents', label: "Partner's first name", type: 'text', help: 'Leave blank if you are a single parent.' },
+      { key: 'parent2_age', table: 'ip_parents', label: "Partner's age", type: 'number' },
     ],
   },
   {

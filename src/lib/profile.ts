@@ -17,6 +17,15 @@ export async function loadAnswers(userId: string, steps: Step[]): Promise<Answer
   const answers: Answers = {};
   await Promise.all(
     tables.map(async (table) => {
+      if (table === 'ip_parents') {
+        // One row per parent, flattened to parent1_* / parent2_* keys.
+        const { data } = await supabase!.from('ip_parents').select('position, first_name, age').eq('profile_id', userId);
+        for (const row of data ?? []) {
+          answers[`parent${row.position}_first_name`] = row.first_name;
+          answers[`parent${row.position}_age`] = row.age;
+        }
+        return;
+      }
       const { data } = await supabase!.from(table).select('*').eq('id', userId).maybeSingle();
       if (data) Object.assign(answers, data as Record<string, unknown>);
     }),
@@ -56,12 +65,35 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
   if (typeof zip === 'string' && zip !== '' && !/^[0-9]{5}$/.test(zip)) return 'Enter a 5-digit ZIP code.';
 
   for (const [table, row] of byTable) {
+    if (table === 'ip_parents') {
+      const err = await saveParents(userId, row);
+      if (err) return err;
+      continue;
+    }
     const { error } = await supabase.from(table).update(row).eq('id', userId);
     if (error) return error.message;
   }
   if (typeof zip === 'string' && zip !== '') {
     const err = await setLocationFromZip(userId, zip);
     if (err) return err;
+  }
+  return null;
+}
+
+/** Parents live in their own table: one row per parent, position 1 and 2. A blank name removes that parent. */
+async function saveParents(userId: string, row: Record<string, unknown>): Promise<string | null> {
+  for (const position of [1, 2] as const) {
+    const name = String(row[`parent${position}_first_name`] ?? '').trim();
+    const age = row[`parent${position}_age`];
+    if (!name) {
+      const { error } = await supabase!.from('ip_parents').delete().eq('profile_id', userId).eq('position', position);
+      if (error) return error.message;
+      continue;
+    }
+    const { error } = await supabase!
+      .from('ip_parents')
+      .upsert({ profile_id: userId, position, first_name: name, age: typeof age === 'number' ? age : null }, { onConflict: 'profile_id,position' });
+    if (error) return error.message;
   }
   return null;
 }
@@ -90,6 +122,15 @@ export function validateStep(step: Step, answers: Answers): Record<string, strin
     }
     if (f.key === 'phone' && typeof v === 'string' && v && v.replace(/\D/g, '').length < 10) errors[f.key] = 'Enter a 10-digit US mobile number.';
     if (f.maxLength && typeof v === 'string' && v.length > f.maxLength) errors[f.key] = `Keep this under ${f.maxLength} characters.`;
+    if (f.key.endsWith('_age') && !empty) {
+      const n = Number(String(v).replace(/[^0-9]/g, ''));
+      if (!(n >= 18 && n <= 99)) errors[f.key] = 'Enter an age between 18 and 99.';
+    }
+  }
+  // A partner's name needs an age too (both show on the profile together).
+  if (typeof answers.parent2_first_name === 'string' && answers.parent2_first_name.trim() && step.fields.some((f) => f.key === 'parent2_age')) {
+    const a = answers.parent2_age;
+    if (a === undefined || a === null || a === '') errors.parent2_age = "Add your partner's age, or leave the name blank.";
   }
   return errors;
 }
