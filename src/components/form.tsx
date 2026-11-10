@@ -37,6 +37,8 @@ export function TextField({
   multiline,
   ...input
 }: LabelProps & TextInputProps) {
+  // Multi-line boxes grow with the text so nothing is hidden behind a scrollbar.
+  const [grownHeight, setGrownHeight] = useState<number | undefined>(undefined);
   return (
     <FieldWrap label={label} help={help} required={required} error={error}>
       <TextInput
@@ -44,7 +46,8 @@ export function TextField({
         multiline={multiline}
         accessibilityLabel={label}
         placeholderTextColor={colors.textSubtle}
-        style={[styles.input, multiline && styles.textarea, error && styles.inputError, input.style]}
+        onContentSizeChange={multiline ? (e) => setGrownHeight(Math.max(110, Math.ceil(e.nativeEvent.contentSize.height) + 26)) : input.onContentSizeChange}
+        style={[styles.input, multiline && styles.textarea, multiline && grownHeight ? { height: grownHeight } : null, error && styles.inputError, input.style]}
       />
     </FieldWrap>
   );

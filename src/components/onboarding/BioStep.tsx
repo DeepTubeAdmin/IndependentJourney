@@ -1,5 +1,5 @@
 /**
- * Short bio, plus the visibility choice and homepage opt-in.
+ * Your story (no length limit), plus the visibility choice and homepage opt-in.
  */
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -45,19 +45,18 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
   }
 
   return (
-    <Screen title="In your own words" intro="Your bio is shown on your full profile. Keep it personal and leave out last names, contact details and anything that would let someone find you off the platform.">
+    <Screen title="In your own words" intro="Your story is shown on your full profile. Keep it personal and leave out last names, contact details and anything that would let someone find you off the platform.">
       {header}
       {error ? <FormMessage kind="error" text={error} /> : null}
       <TextField
-        label="Short bio"
+        label="Tell your story"
+        help="There is no length limit. The more you share, the easier it is for the right match to recognise you."
         required
         value={bio}
         onChangeText={setBio}
         multiline
-        maxLength={1500}
         placeholder={isSurrogate ? 'Why you want to be a surrogate, a bit about your family and life, and what you hope for in a match…' : 'A bit about your family, why you are pursuing surrogacy, and what you hope for in a match…'}
       />
-      <Text style={styles.counter}>{bio.length} / 1500</Text>
 
       <ChoiceField
         label="Who can see your limited preview?"
@@ -89,6 +88,6 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
 }
 
 const styles = StyleSheet.create({
-  counter: { fontFamily: fonts.body, fontSize: 12, color: colors.textSubtle, textAlign: 'right', marginTop: -space.md },
+
   nav: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm },
 });
