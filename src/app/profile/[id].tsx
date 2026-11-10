@@ -13,7 +13,7 @@ import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { browseProfiles, compensationLine, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
-import { canMessage, CAN_MESSAGE_TEXT, clearDraft, loadDraft, saveDraft, sendMessage, type CanMessage } from '@/lib/messages';
+import { blockMember, canMessage, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessage, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [preview, setPreview] = useState<PreviewRow | null>(null);
   const [full, setFull] = useState<Awaited<ReturnType<typeof loadFullProfile>>>(null);
   const [saved, setSaved] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState<ReportReason>('scam_or_money');
@@ -40,7 +41,10 @@ export default function ProfilePage() {
       setPreview(rows[0] ?? null);
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
-      if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
+      if (session) {
+        setSaved((await listSavedIds(session.user.id)).includes(id));
+        setBlocked(await haveBlocked(session.user.id, id));
+      }
       setCan(session ? await canMessage(id) : 'sign_in');
       // A visitor who wrote a message before joining finds it waiting here.
       const kept = loadDraft(id);
@@ -59,6 +63,20 @@ export default function ProfilePage() {
 
   const isIpViewer = me?.role === 'intended_parent';
   const isMine = session?.user.id === id;
+
+  // Blocking stops messages in both directions and is private to you.
+  async function toggleBlock() {
+    if (!session) return;
+    if (blocked) {
+      await unblockMember(session.user.id, id);
+      setBlocked(false);
+    } else {
+      await blockMember(session.user.id, id);
+      setBlocked(true);
+      setComposing(false);
+    }
+    setCan(await canMessage(id));
+  }
 
   // Private bookmark: keep browsing, come back later to message.
   async function toggleSave() {
@@ -159,6 +177,7 @@ export default function ProfilePage() {
           {can !== 'same_role' ? <Button label="Message" disabled={can !== null && can !== 'ok' && can !== 'sign_in'} onPress={startMessage} /> : null}
           <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
           <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
+          {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
         </View>
       ) : null}
       {!isMine && can && can !== 'ok' && can !== 'same_role' ? <Text style={styles.note}>{CAN_MESSAGE_TEXT[can]}</Text> : null}

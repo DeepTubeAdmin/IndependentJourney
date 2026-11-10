@@ -10,6 +10,7 @@ import { colors, fonts, radius, space } from '@/lib/theme';
 export default function AdminHome() {
   const { data, error } = useAdminData(() => admin.overview());
   const { data: mail } = useAdminData(() => admin.emailStats());
+  const { data: deleted } = useAdminData(() => admin.deletedCount30d());
   const n = (k: string) => (data ? String(data[k] ?? 0) : '…');
   return (
     <AdminShell title="Overview" intro="A quick picture of the community and what needs attention.">
@@ -26,6 +27,7 @@ export default function AdminHome() {
         <Stat label="Messages this week" value={n('messages_this_week')} href="/admin/messages" />
         <Stat label="Flagged messages (30 days)" value={n('flagged_messages_open')} href="/admin/messages?flagged=1" warn={Number(data?.flagged_messages_open) > 0} />
         <Stat label="Active memberships" value={n('active_memberships')} />
+        <Stat label="Accounts deleted (30 days)" value={deleted == null ? '…' : String(deleted)} />
         <Stat label="Revenue this month" value={data ? `$${(Number(data.revenue_this_month_cents ?? 0) / 100).toLocaleString('en-US')}` : '…'} />
       </View>
       <Panel title="Payments and ID checks">

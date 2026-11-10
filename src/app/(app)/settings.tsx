@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Checkbox, FormMessage } from '@/components/form';
+import { Checkbox, FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
@@ -12,6 +12,7 @@ import {
   NOTIFICATION_LABELS, type NotificationSettings, type SavedSearch,
   deleteSearch, describeFilters, listSavedSearches, myNotificationSettings, saveNotificationSettings, setSearchAlerts,
 } from '@/lib/notifications';
+import { deleteMyAccount } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -20,6 +21,11 @@ export default function Settings() {
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [prefs, setPrefs] = useState<NotificationSettings | null>(null);
   const [searches, setSearches] = useState<SavedSearch[]>([]);
+  // Account deletion: a two-step confirmation so nobody deletes by accident.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteWord, setDeleteWord] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -28,6 +34,16 @@ export default function Settings() {
   }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!session || !profile) return null;
+
+  async function onDeleteAccount() {
+    if (!session || deleteWord.trim().toUpperCase() !== 'DELETE') return;
+    setDeleting(true);
+    const err = await deleteMyAccount(session.user.id, deleteReason);
+    setDeleting(false);
+    if (err) return setMsg({ kind: 'error', text: err });
+    await signOut();
+    router.replace('/?deleted=1');
+  }
 
   // Each checkbox saves straight away; no separate Save button to forget.
   async function togglePref(key: keyof NotificationSettings, value: boolean) {
@@ -89,7 +105,22 @@ export default function Settings() {
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Delete your account</Text>
-        <Text style={styles.text}>Email privacy@{SITE.domain.toLowerCase()} from your account email and we will remove your profile, photos and answers. Self-service deletion arrives in a coming update.</Text>
+        <Text style={styles.text}>This removes your profile, photos, answers, saved profiles, conversations and any membership, right away and for good. It cannot be undone.</Text>
+        {!confirmingDelete ? (
+          <View style={styles.row}>
+            <Button label="Delete my account…" variant="secondary" size="sm" onPress={() => setConfirmingDelete(true)} />
+          </View>
+        ) : (
+          <>
+            <TextField label="Why are you leaving? (optional)" value={deleteReason} onChangeText={setDeleteReason} placeholder="Found a match, taking a break, something else…" />
+            <TextField label="Type DELETE to confirm" value={deleteWord} onChangeText={setDeleteWord} autoCapitalize="characters" />
+            <View style={styles.row}>
+              <Button label={deleting ? 'Deleting…' : 'Delete my account for good'} onPress={onDeleteAccount} disabled={deleting || deleteWord.trim().toUpperCase() !== 'DELETE'} />
+              <Button label="Keep my account" variant="secondary" onPress={() => { setConfirmingDelete(false); setDeleteWord(''); }} />
+            </View>
+          </>
+        )}
+        <Text style={styles.help}>Prefer to write to us? Email privacy@{SITE.domain.toLowerCase()} from your account email.</Text>
       </View>
       <Button label="Sign out" variant="secondary" onPress={async () => { await signOut(); router.replace('/'); }} />
     </Screen>

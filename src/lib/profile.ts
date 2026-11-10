@@ -187,3 +187,19 @@ export async function deletePhoto(photo: Photo) {
   await supabase.storage.from('profile-photos').remove([photo.storage_path]);
   await supabase.from('photos').delete().eq('id', photo.id);
 }
+
+/**
+ * Deletes the signed-in member's account for good: photo files first (the
+ * browser can remove its own storage folder), then the database function
+ * removes the login and everything attached to it. Returns an error message
+ * or null. The caller signs out afterwards.
+ */
+export async function deleteMyAccount(userId: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'Not connected.';
+  const { data: files } = await supabase.storage.from('profile-photos').list(userId);
+  if (files && files.length > 0) {
+    await supabase.storage.from('profile-photos').remove(files.map((f) => `${userId}/${f.name}`));
+  }
+  const { error } = await supabase.rpc('delete_my_account', { p_reason: reason.trim().slice(0, 500) });
+  return error ? error.message : null;
+}
