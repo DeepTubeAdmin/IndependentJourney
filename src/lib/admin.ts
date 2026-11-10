@@ -113,6 +113,7 @@ export const admin = {
   amICandidate: () => rpc<boolean>('am_i_admin_candidate'),
   overview: () => rpc<Record<string, number>>('admin_overview'),
   emailStats: () => rpc<Record<string, any>>('admin_email_stats'),
+  deletedCount30d: () => rpc<number>('admin_deleted_count_30d'),
   searchMembers: (q: string, limit = 50, offset = 0) => rpc<MemberRow[]>('admin_search_members', { p_query: q.trim(), p_limit: limit, p_offset: offset }),
   memberDetail: (id: string) => rpc<Record<string, any>>('admin_member_detail', { p_target: id }),
   setVerified: (id: string, verified: boolean, reason: string) => rpc<void>('admin_set_verified', { p_target: id, p_verified: verified, p_reason: reason }),

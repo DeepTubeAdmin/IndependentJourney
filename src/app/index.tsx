@@ -4,7 +4,7 @@
  * The profile row shows clearly labelled example cards so the layout can be
  * reviewed. In Phase 5 it is replaced by real, opted-in, verified members.
  */
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { Metadata } from "expo-router/server";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -101,6 +101,8 @@ const STEPS = [
 export default function Home() {
   // Real featured members (verified, opted in). Falls back to example cards.
   const [featured, setFeatured] = useState<PreviewRow[]>([]);
+  // After a member deletes their account they land here with ?deleted=1.
+  const { deleted } = useLocalSearchParams<{ deleted?: string }>();
   useEffect(() => {
     featuredProfiles(6).then(setFeatured).catch(() => setFeatured([]));
   }, []);
@@ -108,6 +110,11 @@ export default function Home() {
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.inner}>
         <SiteHeader />
+        {deleted ? (
+          <View style={styles.notice} accessibilityLiveRegion="polite">
+            <Text style={styles.noticeText}>Your account has been deleted. Thank you for being part of Independent Journey, and we wish you well on your journey.</Text>
+          </View>
+        ) : null}
 
         <View style={styles.hero}>
           <Text
@@ -193,6 +200,8 @@ export default function Home() {
 const MAX_WIDTH = 1180;
 
 const styles = StyleSheet.create({
+  notice: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md, marginTop: space.md },
+  noticeText: { fontFamily: fonts.body, fontSize: 15, color: colors.text, lineHeight: 22 },
   page: {
     flexGrow: 1,
     backgroundColor: colors.background,
