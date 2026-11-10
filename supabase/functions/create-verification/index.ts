@@ -35,7 +35,11 @@ Deno.serve(async (req) => {
     if (profile.is_verified) return json({ error: 'You are already verified.' }, 400);
     if (profile.banned_at) return json({ error: 'This account cannot be verified.' }, 403);
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { httpClient: Stripe.createFetchHttpClient() });
+    const secretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+    if (!secretKey.startsWith('sk_')) {
+      return json({ error: 'Verification is not set up yet: STRIPE_SECRET_KEY is missing or is not a secret key (it must start with sk_).' }, 500);
+    }
+    const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
 
     // Reuse a session the member started in the last hour instead of paying twice.
     const { data: recent } = await db.from('identity_checks').select('id, status, created_at').eq('user_id', user.id)
@@ -55,6 +59,7 @@ Deno.serve(async (req) => {
     return json({ url: session.url });
   } catch (e) {
     console.error('create-verification failed', e);
-    return json({ error: 'Could not start verification. Please try again in a moment.' }, 500);
+    const detail = e instanceof Stripe.errors.StripeError ? ` (${e.message})` : '';
+    return json({ error: `Could not start verification. Please try again in a moment.${detail}` }, 500);
   }
 });
