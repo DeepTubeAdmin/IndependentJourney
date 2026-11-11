@@ -10,7 +10,7 @@ Server-side code lives here (one folder per function). Planned functions:
 | `revenuecat-webhook` | 8 | Updates `memberships` from Apple/Google in-app purchases |
 | `scan-message` | 6 | Flags scam patterns in new messages |
 | `send-emails` | 8a | Scheduled every 5 minutes: queues due reminders and sends the outbox through Resend (built) |
-| `share-view` | 5 | Returns the public fields of a share link |
+| `share-preview` | 5 | Preview cards for share links on Facebook, iMessage etc.; redirects people to /share/<token> (built, docs/SHARE_PREVIEWS.md) |
 
 Secrets (Stripe, RevenueCat, Resend) are set in the Supabase dashboard under
 Edge Functions → Secrets, never in this repository. Needed now:
