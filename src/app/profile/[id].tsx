@@ -130,7 +130,7 @@ export default function ProfilePage() {
       {access === 'preview' ? (
         <>
           <View style={styles.previewWrap}>
-            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} photoUrl={preview.photo_url} />
+            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
             <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>

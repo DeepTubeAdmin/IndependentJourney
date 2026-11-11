@@ -156,6 +156,32 @@ do $$ begin
          'preview photo is the first photo';
 end $$;
 
+-- Migration 17: previews carry ALL photos, and every photo file of a
+-- previewable profile is readable by the viewer (members and visitors).
+reset role;
+insert into storage.objects (bucket_id, name)
+select 'profile-photos', storage_path from public.photos where profile_id = '00000000-0000-0000-0000-000000000011'
+on conflict do nothing;
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ begin
+  assert (select cardinality(photo_paths) from public.browse_profiles('{"id":"00000000-0000-0000-0000-000000000011"}')) = 3,
+         'preview lists all 3 photos';
+  assert (select count(*) from storage.objects where name like '00000000-0000-0000-0000-000000000011/%') = 3,
+         'member with preview access can read all 3 photo files';
+end $$;
+select pg_temp.anon();
+do $$ begin
+  assert (select cardinality(photo_paths) from public.browse_profiles('{"id":"00000000-0000-0000-0000-000000000011"}')) = 3,
+         'visitor preview lists all 3 photos';
+  assert (select count(*) from storage.objects where name like '00000000-0000-0000-0000-000000000011/%') = 3,
+         'visitor can read all 3 photo files of an opted-in profile';
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-000000000012');  -- Brooke, another surrogate
+do $$ begin
+  assert (select count(*) from storage.objects where name like '00000000-0000-0000-0000-000000000011/%') = 0,
+         'same-role member cannot read another surrogate''s photo files';
+end $$;
+
 -- Migration 6: recently active first, inactive (3+ months) last, distance sort, activity touch.
 reset role;
 update public.profiles set last_active_at = now() - interval '100 days', approx_lat = 30.27, approx_lng = -97.74 where id = '00000000-0000-0000-0000-000000000011'; -- Megan: verified but inactive, Austin

@@ -13,6 +13,8 @@ export type PreviewRow = {
   is_verified: boolean;
   headline_tags: string[];
   preview_photo_path: string | null;
+  /** Every photo, in display order (migration 17: previews show all photos). */
+  photo_paths?: string[] | null;
   created_at: string;
   /** Approximate location (ZIP area), if the member gave a ZIP. */
   approx_lat?: number | null;
@@ -20,8 +22,9 @@ export type PreviewRow = {
   recently_active?: boolean;
   /** Miles from the viewer's approximate location, when both are known. */
   distance_miles?: number | null;
-  /** Filled in by withPreviewUrls(). */
+  /** Filled in by withPreviewUrls(): the first photo, and all photos. */
   photo_url?: string;
+  photo_urls?: string[];
 };
 
 export type BrowseFilters = {
@@ -60,14 +63,18 @@ export async function featuredProfiles(limit = 6): Promise<PreviewRow[]> {
   return withPreviewUrls((data ?? []) as PreviewRow[]);
 }
 
-/** Adds short-lived signed URLs for the tiny preview photos. */
+/** Adds short-lived signed URLs for every preview photo. */
 export async function withPreviewUrls(rows: PreviewRow[]): Promise<PreviewRow[]> {
   if (!supabase) return rows;
-  const paths = rows.map((r) => r.preview_photo_path).filter((p): p is string => Boolean(p));
+  const pathsOf = (r: PreviewRow) => (r.photo_paths && r.photo_paths.length ? r.photo_paths : r.preview_photo_path ? [r.preview_photo_path] : []);
+  const paths = Array.from(new Set(rows.flatMap(pathsOf)));
   if (paths.length === 0) return rows;
   const { data } = await supabase.storage.from('profile-photos').createSignedUrls(paths, 60 * 30);
-  const byPath = new Map((data ?? []).map((d) => [d.path, d.signedUrl]));
-  return rows.map((r) => ({ ...r, photo_url: r.preview_photo_path ? byPath.get(r.preview_photo_path) ?? undefined : undefined }));
+  const byPath = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  return rows.map((r) => {
+    const urls = pathsOf(r).map((p) => byPath.get(p)).filter((u): u is string => Boolean(u));
+    return { ...r, photo_url: urls[0], photo_urls: urls };
+  });
 }
 
 export type Access = 'none' | 'preview' | 'full';

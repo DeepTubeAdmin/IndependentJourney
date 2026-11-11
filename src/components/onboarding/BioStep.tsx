@@ -62,7 +62,7 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
         label="Who can see your limited preview?"
         help={
           isSurrogate
-            ? 'A limited preview is your first name, state, your first photo, a few headline preferences and your verification label. Full profiles are only ever shown to intended parents with an active membership.'
+            ? 'A limited preview is your first name, state, your photos, a few headline preferences and your verification label. Full profiles are only ever shown to intended parents with an active membership.'
             : 'A limited preview is your first names, state, photo, a few headline preferences and your verification label. Full profiles are shown to surrogates who have joined.'
         }
         options={[

@@ -1,6 +1,6 @@
 /**
  * Upload 3 to 6 photos. Stored in the private "profile-photos" bucket.
- * Your first photo is the one shown on your limited preview.
+ * All your photos appear on your limited preview; the first one shows first.
  */
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';

@@ -28,7 +28,7 @@ Your own admin account (with 2FA) is the sixth.
 
 - [ ] 1. Homepage loads with the beta welcome pop-up. "Just looking for now" closes it and it does not come back on reload.
 - [ ] 2. Homepage shows real member cards (opted-in and verified only) or clearly labelled example cards.
-- [ ] 3. **Browse** shows at most 5 limited previews, both surrogates and intended parents, only from members who chose "Also in public previews". Each shows first name, state, ONE unblurred photo, a few headline tags and a Verified / Not verified label. No city, no bio, no contact details.
+- [ ] 3. **Browse** shows at most 5 limited previews, both surrogates and intended parents, only from members who chose "Also in public previews". Each shows first name, state, ALL photos unblurred (swipe or use the arrows), a few headline tags and a Verified / Not verified label. No city, no bio, no contact details.
 - [ ] 4. Opening a preview card and pressing **Message** sends you to sign-up, not to a message box.
 - [ ] 5. Resources, How it works, Terms, Privacy and Disclaimer open without logging in.
 - [ ] 6. A share link (`/s/…`) from SUR-DONE (verified) opens without login and shows no last name, city, phone or email. (It has no Message button yet; see SECURITY_REVIEW.md, "Known gaps".)
@@ -66,7 +66,7 @@ Your own admin account (with 2FA) is the sixth.
 
 ### A5. Intended parent, free (IP-FREE)
 
-- [ ] 29. Browse shows **surrogates only**, as limited previews (one photo, first name, state, headline tags, Verified / Not verified). Filters work; the map view shows ZIP-level pins, not street addresses.
+- [ ] 29. Browse shows **surrogates only**, as limited previews (all photos, first name, state, headline tags, Verified / Not verified). Filters work; the map view shows ZIP-level pins, not street addresses.
 - [ ] 30. Opening a surrogate shows only the preview with a membership prompt. No bio, no detailed answers, no extra photos.
 - [ ] 31. Messages shows the conversation from SUR-DONE as **locked**: sender preview only, body hidden, with a clear "Become a member to read" prompt. The "locked message" email arrived.
 - [ ] 32. Save this search → name it → "Save and alert me". It appears in Settings → Saved searches. (Alerts email limited info only.)
