@@ -1,27 +1,55 @@
 /**
  * "Continue with Google" and "Continue with Apple" buttons. Web only for now.
  * The parent decides what must be true before a press is allowed (on the
- * sign-up page: the agreement boxes), via onBeforeStart.
+ * sign-up page: the agreement boxes), via `ready` and onBeforeStart.
+ *
+ * Google: when EXPO_PUBLIC_GOOGLE_CLIENT_ID is set we show Google's own button
+ * (Google Identity Services) and its popup, which names our site rather than
+ * the database host. The popup gives an ID token that Supabase turns into a
+ * session. Without the setting we fall back to the Supabase redirect.
  */
-import { useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { FormMessage } from '@/components/form';
-import { SOCIAL_LABEL, type SocialProvider, socialAvailable, startSocialSignIn } from '@/lib/social';
+import {
+  SOCIAL_LABEL,
+  type SocialProvider,
+  googleClientId,
+  googlePopupAvailable,
+  makeNonce,
+  signInWithGoogleIdToken,
+  socialAvailable,
+  startSocialSignIn,
+} from '@/lib/social';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 type Props = {
   /** Runs before the redirect. Return false (after showing your own error) to stop. */
   onBeforeStart?: (provider: SocialProvider) => Promise<boolean> | boolean;
+  /**
+   * False while the parent still needs something from the member (the agreement
+   * boxes). Then Google's real button is swapped for a look-alike whose press
+   * only runs onBeforeStart, so the errors show. Default true.
+   */
+  ready?: boolean;
   /** Short line above the buttons. */
   caption?: string;
 };
 
-export function SocialButtons({ onBeforeStart, caption = 'Or continue with' }: Props) {
+export function SocialButtons({ onBeforeStart, ready = true, caption = 'Or continue with' }: Props) {
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [error, setError] = useState('');
   if (!socialAvailable) return null;
+
+  // Google popup mode while not ready: just run the parent's checks so the
+  // member sees what is missing.
+  async function gateOnly() {
+    setError('');
+    if (onBeforeStart) await onBeforeStart('google');
+  }
 
   async function go(provider: SocialProvider) {
     setError('');
@@ -40,9 +68,106 @@ export function SocialButtons({ onBeforeStart, caption = 'Or continue with' }: P
       <View style={styles.rule}><View style={styles.line} /><Text style={styles.caption}>{caption}</Text><View style={styles.line} /></View>
       {error ? <FormMessage kind="error" text={error} /> : null}
       <View style={styles.row}>
-        <SocialButton provider="google" busy={busy} onPress={() => go('google')} />
+        {googlePopupAvailable && ready ? (
+          <GoogleIdentityButton
+            onBeforeStart={async () => (onBeforeStart ? onBeforeStart('google') : true)}
+            onError={setError}
+          />
+        ) : (
+          <SocialButton provider="google" busy={busy} onPress={() => (googlePopupAvailable ? gateOnly() : go('google'))} />
+        )}
         <SocialButton provider="apple" busy={busy} onPress={() => go('apple')} />
       </View>
+    </View>
+  );
+}
+
+// Minimal typing for the Google Identity Services script we load at runtime.
+type GoogleAccounts = {
+  accounts: {
+    id: {
+      initialize: (cfg: { client_id: string; callback: (r: { credential: string }) => void; nonce?: string; ux_mode?: 'popup'; use_fedcm_for_prompt?: boolean; itp_support?: boolean }) => void;
+      renderButton: (el: HTMLElement, opts: Record<string, unknown>) => void;
+    };
+  };
+};
+declare global {
+  interface Window { google?: GoogleAccounts }
+}
+
+let gisLoading: Promise<GoogleAccounts> | null = null;
+/** Loads https://accounts.google.com/gsi/client once. */
+function loadGis(): Promise<GoogleAccounts> {
+  if (window.google?.accounts?.id) return Promise.resolve(window.google);
+  if (!gisLoading) {
+    gisLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = () => (window.google ? resolve(window.google) : reject(new Error('Google sign-in did not load.')));
+      s.onerror = () => reject(new Error('Google sign-in could not be loaded. Check your connection or ad blocker.'));
+      document.head.appendChild(s);
+    });
+  }
+  return gisLoading;
+}
+
+/**
+ * Google's own button. Google draws it into a plain element; the element is the
+ * DOM node behind a React Native View on web.
+ */
+function GoogleIdentityButton({ onBeforeStart, onError }: { onBeforeStart: () => Promise<boolean>; onError: (msg: string) => void }) {
+  const holder = useRef<React.ElementRef<typeof View>>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'signing-in' | 'failed'>('loading');
+  const nonceRef = useRef<{ raw: string; hashed: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const nonce = await makeNonce();
+        nonceRef.current = nonce;
+        const google = await loadGis();
+        if (cancelled) return;
+        google.accounts.id.initialize({
+          client_id: googleClientId,
+          nonce: nonce.hashed,
+          ux_mode: 'popup',
+          itp_support: true,
+          callback: async ({ credential }) => {
+            setStatus('signing-in');
+            // Give the parent a last chance to refuse (and to remember the sign-up choice).
+            if (!(await onBeforeStart())) { setStatus('ready'); return; }
+            const err = await signInWithGoogleIdToken(credential, nonce.raw);
+            if (err) { onError(err); setStatus('ready'); return; }
+            router.replace('/welcome');
+          },
+        });
+        const el = holder.current as unknown as HTMLElement | null;
+        if (!el) return;
+        el.innerHTML = '';
+        google.accounts.id.renderButton(el, {
+          type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', logo_alignment: 'left', width: el.clientWidth || 280,
+        });
+        setStatus('ready');
+      } catch (e) {
+        if (cancelled) return;
+        setStatus('failed');
+        onError(e instanceof Error ? e.message : 'Google sign-in could not be loaded.');
+      }
+    })();
+    return () => { cancelled = true; };
+    // onBeforeStart/onError are stable enough per mount; re-initialising on every render would re-draw the button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <View style={styles.gisWrap}>
+      <View ref={holder} style={styles.gisHolder} />
+      {status !== 'ready' ? (
+        <Text style={styles.gisStatus}>{status === 'signing-in' ? 'Signing you in…' : status === 'failed' ? 'Google sign-in unavailable' : 'Loading Google…'}</Text>
+      ) : null}
     </View>
   );
 }
@@ -93,4 +218,7 @@ const styles = StyleSheet.create({
   pressed: { borderColor: colors.primary },
   disabled: { opacity: 0.6 },
   label: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.text },
+  gisWrap: { flexGrow: 1, flexBasis: 200, minHeight: 46, justifyContent: 'center' },
+  gisHolder: { minHeight: 44, alignItems: 'stretch' },
+  gisStatus: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle, textAlign: 'center' },
 });

@@ -47,6 +47,7 @@ time to time; if a button has moved, look for the closest match or ask Claude.
    | `EXPO_PUBLIC_SUPABASE_URL` | The Project URL from Supabase step 5 |
    | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | The publishable/anon key from Supabase step 5 |
    | `EXPO_PUBLIC_APP_ENV` | `production` |
+   | `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth Client ID (see docs/SOCIAL_LOGIN_SETUP.md); optional |
 
 5. Click **Deploy**. After 2 to 4 minutes you get a web address like
    `something-random.netlify.app`. Open it: you should see the Independent

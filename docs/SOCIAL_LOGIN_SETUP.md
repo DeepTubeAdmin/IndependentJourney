@@ -75,6 +75,22 @@ Back in the Supabase Google provider panel from B1:
 - **Client Secret (for OAuth)**: paste the Client secret.
 - Leave "Skip nonce check" off. → **Save**.
 
+### B3b. Tell the website the Client ID (so Google's popup names our site)
+
+Without this step the Google screen says "Sign in to xxxx.supabase.co". With it,
+the site uses Google's own popup, which names `independentjourney.com`.
+
+1. Netlify → your site → **Site configuration** → **Environment variables** →
+   **Add a variable** → **Add a single variable**.
+2. Key: `EXPO_PUBLIC_GOOGLE_CLIENT_ID`  Value: the Client ID from B2 step 6
+   (ends in `.apps.googleusercontent.com`). Scopes: all. → **Create variable**.
+3. **Deploys** → **Trigger deploy** → **Deploy site**. Wait for it to finish.
+
+Optional, to show the words "Independent Journey" instead of the domain: in
+Google Cloud → **Google Auth Platform** → **Branding**, add the logo
+(`public/logo-512.png` from the repo) and click **Submit for verification**.
+Google reviews the name and logo in a few days; sign-in keeps working meanwhile.
+
 ### B4. Allow the site to receive sign-ins
 
 Supabase → **Authentication** → **URL Configuration**:
@@ -157,6 +173,12 @@ hides their email, Resend emails still arrive, but you will see a
 `@privaterelay.appleid.com` address in the admin dashboard.)
 
 ## Part D: Things to know
+
+- **Two Google paths.** With `EXPO_PUBLIC_GOOGLE_CLIENT_ID` set, the site uses
+  Google's popup and hands Google's ID token to Supabase (nonce-checked).
+  Without it, the site falls back to the Supabase redirect, which works but
+  shows the Supabase address on Google's screen. Supabase still needs the Client
+  ID in its Google panel either way (it checks the token was issued for us).
 
 - **Same email, two ways in.** If someone signed up with email and later
   presses Continue with Google using the same Gmail address, Supabase links the
