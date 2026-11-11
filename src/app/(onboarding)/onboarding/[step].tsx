@@ -29,7 +29,9 @@ export default function OnboardingStep() {
   const { step, from } = useLocalSearchParams<{ step: string; from?: string }>();
   const fromReview = from === 'review';
   const { session, profile, refreshProfile } = useSession();
-  const steps = useMemo(() => (profile ? stepsFor(profile.role) : []), [profile]);
+  // Depends on the role only: a profile refresh must not reload (and overwrite) answers being edited.
+  const role = profile?.role;
+  const steps = useMemo(() => (role ? stepsFor(role) : []), [role]);
   const total = steps.length + FINAL_STEPS.length;
 
   const index = Number(step);

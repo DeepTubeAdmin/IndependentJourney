@@ -47,19 +47,23 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileChecked, setProfileChecked] = useState(false);
+  // Which user the profile lookup last finished for. "Checked" means it matches
+  // the current session, so screens can tell "no profile" from "still loading".
+  // It must stay true during a refresh (refreshProfile, token refresh): flipping
+  // it off unmounts every member screen for a moment, which broke navigation.
+  const [checkedFor, setCheckedFor] = useState<string | null | undefined>(undefined);
 
   const loadProfile = useCallback(async (userId: string | undefined) => {
     if (!supabase || !userId) {
       setProfile(null);
-      setProfileChecked(true);
+      setCheckedFor(null);
       return;
     }
-    setProfileChecked(false);
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     setProfile((data as Profile | null) ?? null);
-    setProfileChecked(true);
+    setCheckedFor(userId);
   }, []);
+  const profileChecked = checkedFor !== undefined && checkedFor === (session?.user.id ?? null);
 
   useEffect(() => {
     if (!supabase) {
