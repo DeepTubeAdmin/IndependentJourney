@@ -59,9 +59,21 @@ export default function ProfilePage() {
 
   if (loading || access === null) return <Screen title="Loading…"><Text style={styles.note}>One moment.</Text></Screen>;
   if (!preview || access === 'none') {
+    // Members only ever see the other side of the journey, so the most common
+    // reason a signed-in member lands here is a profile of their own role
+    // (for example an intended parent tapping another intended parent's card).
+    const sameRoleNote =
+      me?.role === 'intended_parent'
+        ? 'Intended parents can only view surrogate profiles, so if this is another intended parent it will not open. '
+        : me?.role === 'surrogate'
+          ? 'Surrogates can only view intended-parent profiles, so if this is another surrogate it will not open. '
+          : '';
     return (
-      <Screen title="Profile not available" intro="This profile is private, not finished yet, or no longer on the platform.">
-        <Button label="Browse profiles" onPress={() => router.replace('/browse')} />
+      <Screen
+        title="Profile not available"
+        intro={`${sameRoleNote}Otherwise this profile is private, not finished yet, or no longer on the platform.`}
+      >
+        <Button label={me?.role === 'intended_parent' ? 'Browse surrogates' : me?.role === 'surrogate' ? 'Browse intended parents' : 'Browse profiles'} onPress={() => router.replace('/browse')} />
       </Screen>
     );
   }
