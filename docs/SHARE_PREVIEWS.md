@@ -27,10 +27,17 @@ emails.
 
 ## 2. Netlify: nothing to click
 
-The website build now writes a small forwarding rule so that
-`independentjourney.com/s/anything` is answered by the function. It uses the
-Supabase address already in Netlify's environment variables. The rule is
-created on the next deploy, which happens when this change is merged.
+The website build writes Netlify's routing rules (`dist/_redirects`) itself,
+from the exported pages. They do two things:
+
+- `independentjourney.com/s/anything` is answered by the function above. It
+  uses the Supabase address already in Netlify's environment variables.
+- Every page with a changing part in its address (`/share/<token>`,
+  `/profile/<id>`, `/messages/<id>`, `/onboarding/<step>`, admin pages) is
+  mapped to the file Expo exported for it. Without this, opening such a link
+  directly, or refreshing the page, showed Netlify's own "Page not found".
+
+The rules are created on every deploy, so nothing needs changing by hand.
 
 ## 3. Check it
 
