@@ -5,6 +5,7 @@ import { StyleSheet, Text } from 'react-native';
 import { Button } from '@/components/Button';
 import { FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
+import { SocialButtons } from '@/components/SocialButtons';
 import { friendlyAuthError } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
@@ -41,6 +42,7 @@ export default function LogIn() {
       <TextField label="Email" required value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" required value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />
       <Button label={busy ? 'Logging in…' : 'Log in'} onPress={submit} disabled={busy} />
+      <SocialButtons />
       <Text style={styles.footer}>
         <Link href="/forgot-password" style={styles.link}>
           Forgot your password?

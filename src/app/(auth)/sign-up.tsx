@@ -5,8 +5,9 @@
  * Policy and disclaimer, the message-review notice, and the "I am an
  * individual, not an agency" attestation. The role comes from the Join screen.
  *
- * Apple and Google sign-in are planned for the mobile phase (Apple requires
- * Sign in with Apple whenever Google sign-in is offered).
+ * Google and Apple sign-in: the agreement boxes must be ticked first; the
+ * role and agreement are remembered so /welcome can finish the account after
+ * the redirect (see src/lib/social.ts).
  */
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -15,8 +16,10 @@ import { StyleSheet, Text } from 'react-native';
 import { Button } from '@/components/Button';
 import { Checkbox, FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
+import { SocialButtons } from '@/components/SocialButtons';
 import { LEGAL_VERSION } from '@/config/settings';
 import { friendlyAuthError, type Role } from '@/lib/auth';
+import { rememberPendingSignup } from '@/lib/social';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/lib/theme';
 import { pageMeta } from '@/lib/seo';
@@ -44,13 +47,32 @@ export default function SignUp() {
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState('');
 
-  async function submit() {
+  /** The three agreement boxes, shared by email and social sign-up. */
+  function agreementErrors() {
     const e: Record<string, string> = {};
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) e.email = 'Enter a valid email address.';
-    if (password.length < 8) e.password = 'Use at least 8 characters.';
     if (!ageOk) e.age = `Please confirm you are ${minAge} or older.`;
     if (!termsOk) e.terms = 'Please agree to continue.';
     if (!individualOk) e.individual = 'Please confirm to continue.';
+    return e;
+  }
+
+  // Google / Apple: agreement first, then remember the choice for /welcome.
+  async function beforeSocial() {
+    const e = agreementErrors();
+    setErrors(e);
+    if (Object.keys(e).length) {
+      setServerError('Please tick the three boxes above first, then continue with Google or Apple.');
+      return false;
+    }
+    setServerError('');
+    await rememberPendingSignup({ role, legal_version: LEGAL_VERSION, agreed: true });
+    return true;
+  }
+
+  async function submit() {
+    const e: Record<string, string> = agreementErrors();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) e.email = 'Enter a valid email address.';
+    if (password.length < 8) e.password = 'Use at least 8 characters.';
     setErrors(e);
     if (Object.keys(e).length) return;
     if (!supabase) {
@@ -125,6 +147,7 @@ export default function SignUp() {
         label="I am an individual joining for my own journey. I am not an agency, broker, recruiter or business."
       />
       <Button label={busy ? 'Creating your account…' : 'Create account'} onPress={submit} disabled={busy} />
+      <SocialButtons onBeforeStart={beforeSocial} caption="Or, after ticking the boxes above, continue with" />
       <Text style={styles.footer}>
         Already have an account?{' '}
         <Link href="/log-in" style={styles.link}>

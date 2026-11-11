@@ -34,6 +34,8 @@ type SessionState = {
   loading: boolean;
   session: Session | null;
   profile: Profile | null;
+  /** True once the profile lookup for the current session has finished (so "no profile" is meaningful). */
+  profileChecked: boolean;
   /** Re-reads the profile from the database (call after saving). */
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -45,14 +47,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileChecked, setProfileChecked] = useState(false);
 
   const loadProfile = useCallback(async (userId: string | undefined) => {
     if (!supabase || !userId) {
       setProfile(null);
+      setProfileChecked(true);
       return;
     }
+    setProfileChecked(false);
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     setProfile((data as Profile | null) ?? null);
+    setProfileChecked(true);
   }, []);
 
   useEffect(() => {
@@ -79,12 +85,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       loading,
       session,
       profile,
+      profileChecked,
       refreshProfile: () => loadProfile(session?.user.id),
       signOut: async () => {
         await supabase?.auth.signOut();
       },
     }),
-    [loading, session, profile, loadProfile],
+    [loading, session, profile, profileChecked, loadProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
