@@ -46,7 +46,18 @@ export function TextField({
         multiline={multiline}
         accessibilityLabel={label}
         placeholderTextColor={colors.textSubtle}
-        onContentSizeChange={multiline ? (e) => setGrownHeight(Math.max(110, Math.ceil(e.nativeEvent.contentSize.height) + 26)) : input.onContentSizeChange}
+        onContentSizeChange={
+          multiline
+            ? (e) => {
+                // Grow to fit the text. On the web the reported content height
+                // is the box's own height once a height is set, so only ever
+                // grow (never re-apply a size we already have): adding padding
+                // on every call looped until React gave up (error #185).
+                const content = Math.ceil(e.nativeEvent.contentSize.height);
+                setGrownHeight((h) => (h && content <= h ? h : Math.max(110, content + 4)));
+              }
+            : input.onContentSizeChange
+        }
         style={[styles.input, multiline && styles.textarea, multiline && grownHeight ? { height: grownHeight } : null, error && styles.inputError, input.style]}
       />
     </FieldWrap>
