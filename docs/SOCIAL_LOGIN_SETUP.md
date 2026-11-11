@@ -47,7 +47,11 @@ Supabase dashboard → **Authentication** → **Sign In / Providers** → click
    - App domain / home page: `https://independentjourney.com`
    - Privacy policy: `https://independentjourney.com/privacy`
    - Terms of service: `https://independentjourney.com/terms`
-   - Authorized domains: add `independentjourney.com` **and** `supabase.co`
+   - Authorized domains: add `independentjourney.com` and your project's
+     Supabase host, e.g. `abcdefghijk.supabase.co` (the part of the callback
+     URL before `/auth/v1/callback`). Google rejects a bare `supabase.co`.
+     If it still complains, skip it: Google adds the domain automatically
+     when you save the redirect URI in step 5.
    - Developer contact email: your email → **Save**.
 4. **Audience** (or "Publishing status"): choose **External**, then click
    **Publish app**. Google may say it needs verification for the logo; it still
@@ -56,7 +60,7 @@ Supabase dashboard → **Authentication** → **Sign In / Providers** → click
    **OAuth client ID**.
    - Application type: **Web application**
    - Name: `Independent Journey website`
-   - Authorized JavaScript origins: `https://independentjourney.com`
+   - Authorized JavaScript origins: `https://independentjourney.com` only
    - Authorized redirect URIs: paste the Supabase callback URL from B1
    - **Create**.
 6. A box shows **Client ID** and **Client secret**. Copy each with its copy
