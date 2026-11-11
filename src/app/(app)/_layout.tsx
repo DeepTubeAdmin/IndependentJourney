@@ -8,8 +8,8 @@ import { useSession } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
 export default function AppLayout() {
-  const { loading, session, profile } = useSession();
-  if (loading || (session && !profile)) {
+  const { loading, session, profile, profileChecked } = useSession();
+  if (loading || (session && !profileChecked)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator color={colors.primary} />
@@ -17,5 +17,6 @@ export default function AppLayout() {
     );
   }
   if (!session) return <Redirect href="/log-in" />;
+  if (!profile) return <Redirect href="/finish-sign-up" />;
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />;
 }
