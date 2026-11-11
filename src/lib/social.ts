@@ -7,8 +7,14 @@
  * To keep that step short, the sign-up page remembers the role and the
  * agreement the member already gave before leaving for Google or Apple.
  *
- * Phone apps (Phase 8b) will use the native sheets and signInWithIdToken
- * instead of a browser redirect; this file is web-only for now.
+ * Google uses Google's own sign-in popup (Google Identity Services) when
+ * EXPO_PUBLIC_GOOGLE_CLIENT_ID is set, so the popup says "independentjourney.com"
+ * / "Independent Journey" instead of our database host. Google returns an ID
+ * token, which we hand to Supabase with signInWithIdToken (nonce-checked).
+ * Without that setting we fall back to the Supabase redirect.
+ *
+ * Phone apps (Phase 8b) will use the native sheets with the same
+ * signInWithIdToken call; this file is web-only for now.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
@@ -25,6 +31,30 @@ const KEY = 'ij_pending_signup';
 
 /** Social buttons only work in a browser until the phone apps add native sign-in. */
 export const socialAvailable = Platform.OS === 'web';
+
+/** Google OAuth "Web application" client ID (public, safe to ship). */
+export const googleClientId = (process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '').trim();
+export const googlePopupAvailable = socialAvailable && googleClientId.length > 0;
+
+/**
+ * A nonce ties Google's ID token to this one sign-in attempt. Google gets the
+ * SHA-256 hash; Supabase gets the raw value and checks they match.
+ */
+export async function makeNonce(): Promise<{ raw: string; hashed: string }> {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const raw = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const hashed = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  return { raw, hashed };
+}
+
+/** Exchanges a Google ID token for a Supabase session. Returns an error message or null. */
+export async function signInWithGoogleIdToken(idToken: string, nonce: string): Promise<string | null> {
+  if (!supabase) return 'The app is not connected to a database yet.';
+  const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce });
+  return error ? error.message : null;
+}
 
 export async function rememberPendingSignup(p: Omit<PendingSignup, 'at'>) {
   try { await AsyncStorage.setItem(KEY, JSON.stringify({ ...p, at: Date.now() })); } catch { /* storage blocked: the finish screen asks again */ }

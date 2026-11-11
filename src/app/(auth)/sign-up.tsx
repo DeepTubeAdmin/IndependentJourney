@@ -147,7 +147,7 @@ export default function SignUp() {
         label="I am an individual joining for my own journey. I am not an agency, broker, recruiter or business."
       />
       <Button label={busy ? 'Creating your account…' : 'Create account'} onPress={submit} disabled={busy} />
-      <SocialButtons onBeforeStart={beforeSocial} caption="Or, after ticking the boxes above, continue with" />
+      <SocialButtons onBeforeStart={beforeSocial} ready={ageOk && termsOk && individualOk} caption="Or, after ticking the boxes above, continue with" />
       <Text style={styles.footer}>
         Already have an account?{' '}
         <Link href="/log-in" style={styles.link}>
