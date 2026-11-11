@@ -193,6 +193,7 @@ export default function Home() {
                   verified={p.is_verified}
                   headline={p.headline_tags.join(" · ")}
                   photoUrl={p.photo_url}
+                  photoUrls={p.photo_urls}
                   onPress={() => router.push(`/profile/${p.id}`)}
                 />
               ))

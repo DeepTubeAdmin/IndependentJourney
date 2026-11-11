@@ -158,6 +158,7 @@ export default function Browse() {
               verified={p.is_verified}
               headline={p.headline_tags.join(' · ') || 'Profile complete'}
               photoUrl={p.photo_url}
+              photoUrls={p.photo_urls}
               meta={[formatDistance(p.distance_miles), p.recently_active === false ? 'Not active recently' : null].filter(Boolean).join(' · ') || undefined}
               onPress={() => router.push(`/profile/${p.id}`)}
             />
