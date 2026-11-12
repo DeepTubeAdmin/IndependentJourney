@@ -94,11 +94,13 @@ alter table public.profiles
   add column if not exists profile_type text not null default 'independent'
     check (profile_type in ('independent', 'with_agency', 'agency')),
   add column if not exists agency_name text not null default '' check (char_length(agency_name) <= 80),
-  add column if not exists agency_messages boolean not null default true;   -- may agencies message this member?
+  add column if not exists journey_types text not null default 'both'
+    check (journey_types in ('independent_only', 'agency_only', 'both'));   -- which kinds of journey the member is open to
 create index if not exists profiles_managed_by_idx on public.profiles (managed_by);
 
 comment on column public.profiles.profile_type is 'independent = on their own; with_agency = independent member who also works with an agency (agency_name); agency = posted and managed by an agency account (managed_by).';
-comment on column public.profiles.agency_messages is 'When false, agency-posted profiles cannot start a conversation with this member.';
+comment on column public.profiles.journey_types is 'independent_only: agency profiles are hidden from this member''s browse and agencies cannot start a conversation with them. agency_only / both: no restriction.';
+alter table public.profiles drop column if exists agency_messages;   -- earlier draft of this migration
 
 -- Medical clearance, answered by the agency instead of the private health step.
 alter table public.surrogate_details
@@ -381,7 +383,7 @@ language plpgsql security definer set search_path = '' as $$
 begin
   new.is_complete := new.name <> '' and new.website <> '' and new.contact_name <> '' and new.hq_state <> ''
     and cardinality(new.states_served) > 0 and cardinality(new.services) > 0 and new.ip_fee_range <> ''
-    and new.description <> '' and new.attested_consent;
+    and new.surrogate_comp_range <> '' and new.description <> '' and new.attested_consent;
   new.updated_at := now();
   return new;
 end $$;
@@ -570,10 +572,12 @@ declare
   v_radius double precision := (p_filters ->> 'radius_miles')::double precision;
   v_by_distance boolean := coalesce(p_filters ->> 'sort', 'active') = 'distance';
   v_type text := p_filters ->> 'profile_type';   -- 'independent' | 'agency' | null (any)
+  v_journey text;                                -- the viewer's own answer to "open to which journeys"
 begin
   if not v_anon and (v_lat is null or v_lng is null) then
     select me.approx_lat, me.approx_lng into v_lat, v_lng from public.profiles me where me.id = auth.uid();
   end if;
+  select me.journey_types into v_journey from public.profiles me where me.id = auth.uid();
   if v_lat is null or v_lng is null then v_by_distance := false; v_radius := null; end if;
 
   return query
@@ -588,6 +592,7 @@ begin
    where public.profile_is_live(p)
      and (v_anon or p.role <> v_role)                                     -- members see the other side only
      and (v_type is null or (v_type = 'agency' and p.profile_type = 'agency') or (v_type = 'independent' and p.profile_type <> 'agency'))
+     and (v_journey is distinct from 'independent_only' or p.profile_type <> 'agency')   -- independent-only members never see agency profiles
      and (p_filters ->> 'id' is null or p.id::text = p_filters ->> 'id')
      and (p_filters ->> 'role' is null or p.role::text = p_filters ->> 'role')
      and (p_filters ->> 'state' is null or p.state = p_filters ->> 'state')
@@ -625,6 +630,8 @@ as $$
          p.profile_type, public.profile_agency_name(p), public.profile_agency_logo(p)
     from public.profiles p
    where public.profile_is_live(p)
+     and (p.profile_type <> 'agency'
+          or (select me.journey_types from public.profiles me where me.id = auth.uid()) is distinct from 'independent_only')
    order by public.is_recently_active(p) desc, p.is_verified desc, p.last_active_at desc
    limit greatest(1, least(p_limit, 12));
 $$;
@@ -689,7 +696,7 @@ begin
     if not me.is_complete then return 'profile_incomplete'; end if;
     if not public.agency_access(me.managed_by) then return 'agency_access_required'; end if;
     -- A member who chose "independent messages only" cannot be approached by an agency.
-    if them.managed_by is null and not them.agency_messages
+    if them.managed_by is null and them.journey_types = 'independent_only'
        and not exists (select 1 from public.conversations c where (c.surrogate_id = me.id and c.ip_id = them.id) or (c.ip_id = me.id and c.surrogate_id = them.id)) then
       return 'agency_messages_off';
     end if;
@@ -1029,3 +1036,16 @@ begin
     'agency_profiles', (select count(*) from public.profiles where managed_by is not null)
   );
 end $$;
+
+-- -----------------------------------------------------------------------------
+-- 12. Agencies can save profiles and set email preferences
+-- -----------------------------------------------------------------------------
+-- These tables were keyed to profiles; an agency login has no profile row, so
+-- key them to the login instead. Policies already use auth.uid().
+alter table public.saved_profiles drop constraint if exists saved_profiles_user_id_fkey;
+alter table public.saved_profiles add constraint saved_profiles_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;
+
+alter table public.notification_settings drop constraint if exists notification_settings_user_id_fkey;
+alter table public.notification_settings add constraint notification_settings_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;

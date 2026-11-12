@@ -12,7 +12,7 @@ import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard } from "@/components/ProfileCard";
-import { featuredProfiles, profileTypeLabel, type PreviewRow } from "@/lib/browse";
+import { featuredProfiles, profileTypeLabel, verifiedLabel, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { pageMeta } from "@/lib/seo";
 import { colors, fonts, radius, space } from "@/lib/theme";
@@ -155,7 +155,7 @@ export default function Home() {
                   name={p.display_name}
                   state={p.state}
                   role={p.role}
-                  verified={p.is_verified}
+                  verified={verifiedLabel(p)}
                   headline={p.headline_tags.join(" · ")}
                   typeLabel={profileTypeLabel(p)}
                   photoUrl={p.photo_url}

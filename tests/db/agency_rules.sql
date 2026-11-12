@@ -38,7 +38,7 @@ begin
 end $$;
 select pg_temp.complete_ip('00000000-0000-0000-0000-0000000000d1', 'Daniel');
 select pg_temp.complete_ip('00000000-0000-0000-0000-0000000000d2', 'Quiet Quinn');
-update public.profiles set agency_messages = false where id = '00000000-0000-0000-0000-0000000000d2';
+update public.profiles set journey_types = 'independent_only' where id = '00000000-0000-0000-0000-0000000000d2';
 update public.profiles set display_name='Indy Ivy', last_initial='R', state='TX', bio='Hello', profile_type='with_agency', agency_name='Some Agency' where id='00000000-0000-0000-0000-0000000000d3';
 
 -- 1. Sign-up created a pending agency, no profile, and an admin email.
@@ -63,7 +63,7 @@ do $$ begin
 end $$;
 
 -- Fill in the agency details (owner update; status stays as it is).
-update public.agencies set hq_state='CA', states_served='{CA,TX}', services='{matching,screening}', ip_fee_range='30_40k',
+update public.agencies set hq_state='CA', states_served='{CA,TX}', services='{matching,screening}', ip_fee_range='30_40k', surrogate_comp_range='40_55k',
   description='We have placed many families.', attested_consent=true where id = auth.uid();
 do $$ begin
   assert (select is_complete from public.agencies where id = auth.uid()), 'details complete';
@@ -156,6 +156,15 @@ do $$ declare cid uuid := (select id from t_client); res jsonb; begin
   assert (select count(*) from public.my_conversations() where mine_id = cid and other_id = '00000000-0000-0000-0000-0000000000d1') = 1, 'agency inbox lists the conversation under the client';
   assert (select count(*) from public.my_conversations()) = 1, 'agency inbox has exactly one conversation';
 end $$;
+
+-- 7b. An agency can save profiles and set email preferences like any member.
+insert into public.saved_profiles (user_id, profile_id) values (auth.uid(), '00000000-0000-0000-0000-0000000000d1');
+select public.set_notification_settings('{"new_messages": false}'::jsonb);
+do $$ begin
+  assert (select count(*) from public.saved_profiles where user_id = auth.uid()) = 1, 'agency saved a profile';
+  assert (public.my_notification_settings() ->> 'new_messages')::boolean = false, 'agency turned message emails off';
+end $$;
+select public.set_notification_settings('{"new_messages": true}'::jsonb);
 reset role;
 do $$ begin
   assert exists (select 1 from public.email_outbox where template = 'new_message' and user_id = '00000000-0000-0000-0000-0000000000d1' and payload ->> 'sender_agency' = 'Bright Beginnings'), 'recipient email names the agency';
@@ -164,6 +173,9 @@ end $$;
 -- Quinn (independent only) writes to Megan first; then the agency may reply.
 select pg_temp.login('00000000-0000-0000-0000-0000000000d2');
 do $$ declare cid uuid := (select id from t_client); res jsonb; begin
+  assert (select count(*) from public.browse_profiles('{}') where id = cid) = 0, 'independent-only member does not see agency profiles in browse';
+  assert (select count(*) from public.browse_profiles('{"profile_type":"agency"}')) = 0, 'not even with the agency filter';
+  assert (select count(*) from public.featured_profiles(12) where id = cid) = 0, 'nor on the homepage';
   assert public.can_message(cid) = 'ok', 'a member may always write to an agency profile';
   res := public.send_message(cid, 'Hi Megan, tell me more');
   assert res ->> 'status' = 'delivered', 'delivered to the agency-managed profile';

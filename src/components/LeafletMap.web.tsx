@@ -29,7 +29,7 @@ export default function LeafletMap({ rows, center, onOpen }: BrowseMapProps) {
                   <div style={{ fontFamily: 'Figtree, sans-serif', minWidth: 160 }}>
                     <strong>{p.display_name}</strong> · {p.state}
                     <br />
-                    {p.role === 'surrogate' ? 'Surrogate' : 'Intended parent'} · {p.is_verified ? 'Verified' : 'Not verified'}
+                    {p.role === 'surrogate' ? 'Surrogate' : 'Intended parent'} · {p.profile_type === 'agency' ? `Agency: ${p.agency_name || 'agency'}` : p.is_verified ? 'Verified' : 'Not verified'}
                     <br />
                     <button type="button" onClick={() => onOpen(p.id)} style={{ marginTop: 8, cursor: 'pointer', border: 0, borderRadius: 999, padding: '6px 12px', background: c, color: '#fff', fontWeight: 600 }}>
                       View profile

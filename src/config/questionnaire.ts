@@ -90,7 +90,7 @@ export const US_STATES: Option[] = [
 const AGENCY_QUESTIONS: Field[] = [
   { key: 'profile_type', table: 'profiles', label: 'Are you working with a surrogacy agency?', type: 'single', required: true, options: [{ value: 'independent', label: 'No, I am independent' }, { value: 'with_agency', label: 'Yes, I work with an agency' }], help: 'Shown on your profile as "Independent" or "With an agency".' },
   { key: 'agency_name', table: 'profiles', label: 'Agency name (optional)', type: 'text', maxLength: 80, help: 'Only if you work with one.' },
-  { key: 'agency_messages', table: 'profiles', label: 'Who may message you?', type: 'single', required: true, boolean: true, options: [{ value: 'true', label: 'Anyone, including agencies' }, { value: 'false', label: 'Independent members only' }], help: 'Agencies can post profiles for the clients they represent. Choose whether those profiles may write to you first. You can always write to them.' },
+  { key: 'journey_types', table: 'profiles', label: 'I am open to the following types of journeys', type: 'single', required: true, options: [{ value: 'independent_only', label: 'Independent only' }, { value: 'agency_only', label: 'Agency only' }, { value: 'both', label: 'Both' }], help: 'Agencies can post profiles for the clients they represent. If you choose Independent only, agency profiles are hidden from your browsing and agencies cannot write to you first.' },
 ];
 
 /** Medical clearance, answered by an agency in place of the private health step. */
@@ -245,7 +245,7 @@ export const IP_STEPS: Step[] = [
 ];
 
 /** Keys an agency does not answer for a client: the agency is the contact, and labels are automatic. */
-const NOT_FOR_MANAGED = new Set(['phone', 'profile_type', 'agency_name', 'agency_messages']);
+const NOT_FOR_MANAGED = new Set(['phone', 'profile_type', 'agency_name', 'journey_types']);
 
 /**
  * The steps for a role. `managed` = an agency-posted profile: no phone, no
@@ -318,7 +318,7 @@ export const AGENCY_STEPS: Step[] = [
     fields: [
       { key: 'ip_fee_range', table: 'agencies', label: 'Typical agency fee for intended parents', type: 'single', required: true, options: RANGE_FEE, help: 'Your fee only, not the whole journey.' },
       { key: 'journey_cost_range', table: 'agencies', label: 'Typical all-in journey cost', type: 'single', options: RANGE_COST, help: 'Agency fee, surrogate compensation, legal, insurance and clinic, as a rough total.' },
-      { key: 'surrogate_comp_range', table: 'agencies', label: 'Typical surrogate base compensation', type: 'single', options: RANGE_COMP },
+      { key: 'surrogate_comp_range', table: 'agencies', label: 'Typical surrogate base compensation', type: 'single', required: true, options: RANGE_COMP },
       { key: 'international', table: 'agencies', label: 'Do you work with intended parents living outside the US?', type: 'single', options: YES_NO },
       { key: 'lgbtq', table: 'agencies', label: 'Do you work with LGBTQ+ intended parents?', type: 'single', options: YES_NO },
       { key: 'works_with_site_matches', table: 'agencies', label: 'Will you support a surrogate and intended parents who met on this site but are not your clients?', type: 'single', options: [...YES_NO, { value: 'discuss', label: 'Case by case' }], help: 'Many independent matches look for an agency to manage the journey.' },

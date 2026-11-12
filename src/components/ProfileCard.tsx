@@ -16,7 +16,8 @@ export type ProfileCardProps = {
   name: string;
   state: string;
   role: 'surrogate' | 'intended_parent' | 'intended_parents';
-  verified: boolean;
+  /** null hides the label (agency-posted profiles, where the agency cannot run the ID check). */
+  verified: boolean | null;
   headline: string;
   /** Signed URL of the first photo (used when photoUrls is not given). */
   photoUrl?: string;
@@ -42,7 +43,7 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}, ${verified ? 'verified' : 'not verified'}`}
+      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}${verified == null ? '' : verified ? ', verified' : ', not verified'}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
     >
       <View style={[styles.photo, tint]}>
@@ -56,11 +57,13 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
             <View style={styles.silhouetteBody} />
           </>
         )}
-        <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
-          <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
-            {verified ? 'Verified' : 'Not verified'}
-          </Text>
-        </View>
+        {verified != null ? (
+          <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
+            <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
+              {verified ? 'Verified' : 'Not verified'}
+            </Text>
+          </View>
+        ) : null}
         <View style={[styles.badge, styles.badgeRole]}>
           <Text style={[styles.badgeText, { color: colors.textMuted }]}>
             {ROLE_LABEL[role]}

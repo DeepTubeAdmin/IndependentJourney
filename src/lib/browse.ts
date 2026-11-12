@@ -32,6 +32,11 @@ export type PreviewRow = {
 };
 
 /** The short label shown on cards and profiles: who stands behind this profile. */
+/** Verified label value for a card: hidden (null) on agency-posted profiles. */
+export function verifiedLabel(p: { is_verified: boolean; profile_type?: string | null }): boolean | null {
+  return p.profile_type === 'agency' ? null : p.is_verified;
+}
+
 export function profileTypeLabel(r: { profile_type?: string | null; agency_name?: string | null }): string {
   if (r.profile_type === 'agency') return r.agency_name ? `Agency: ${r.agency_name}` : 'Agency';
   if (r.profile_type === 'with_agency') return r.agency_name ? `Independent, with ${r.agency_name}` : 'Independent, with an agency';
@@ -197,6 +202,8 @@ export function compensationLine(sd: Record<string, unknown> | null | undefined)
 /** Nicer labels than the raw column names where title-casing is not enough. */
 const LABEL_OVERRIDES: Record<string, string> = {
   us_resident: 'US resident',
+  journey_types: 'Open to',
+  profile_type: 'Working with an agency',
   background_check: 'Can pass a background check',
   ob_cleared: 'OB clearance',
   clinic_cleared: 'Clinic clearance',

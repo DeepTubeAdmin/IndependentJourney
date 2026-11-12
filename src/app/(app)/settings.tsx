@@ -116,15 +116,17 @@ export default function Settings() {
           <Button label={exporting ? 'Preparing…' : 'Download a copy of my data'} variant="secondary" size="sm" onPress={onExport} disabled={exporting} />
         </View>
       </View>
+      </>) : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Email me about</Text>
-        <Text style={styles.text}>Account and security emails (password resets, ID-check results) are always sent.</Text>
+        <Text style={styles.text}>{profile ? 'Account and security emails (password resets, ID-check results) are always sent.' : 'Account emails (password resets, approval decisions) are always sent.'}</Text>
         {prefs
-          ? NOTIFICATION_LABELS.map((n) => (
+          ? NOTIFICATION_LABELS.filter((n) => profile || n.key === 'new_messages').map((n) => (
               <Checkbox key={n.key} label={<Text><Text style={styles.v}>{n.label}</Text><Text style={styles.help}>{`  ${n.help}`}</Text></Text>} checked={prefs[n.key]} onChange={(v) => togglePref(n.key, v)} />
             ))
           : <Text style={styles.text}>Loading…</Text>}
       </View>
+      {profile ? (
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Saved searches</Text>
         {searches.length === 0 ? (
@@ -142,6 +144,8 @@ export default function Settings() {
           ))
         )}
       </View>
+      ) : null}
+      {profile ? (<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Delete your account</Text>
         <Text style={styles.text}>This removes your profile, photos, answers, saved profiles, conversations and any membership, right away and for good. It cannot be undone.</Text>

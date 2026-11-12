@@ -12,7 +12,7 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, verifiedLabel, type Access, type PreviewRow } from '@/lib/browse';
 import { myAgency } from '@/lib/agency';
 import { blockMember, canMessage, canMessageAs, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessageAs, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
@@ -52,10 +52,8 @@ export default function ProfilePage() {
       setPreview(rows[0] ?? null);
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
-      if (session && !isAgencyViewer) {
-        setSaved((await listSavedIds(session.user.id)).includes(id));
-        setBlocked(await haveBlocked(session.user.id, id));
-      }
+      if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
+      if (session && !isAgencyViewer) setBlocked(await haveBlocked(session.user.id, id));
       if (isAgencyViewer && rows[0]) {
         // Which of my client profiles could write to this member?
         const mine = await myAgency();
@@ -167,7 +165,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={`${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
+    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={preview.profile_type === 'agency' ? profileTypeLabel(preview) : `${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
       {preview.profile_type === 'agency' ? (
         <FormMessage kind="info" text={`This profile was posted by ${preview.agency_name ?? 'an agency'} for a client they represent. Messages go to the agency, which replies on the client’s behalf. The agency has told us it has the client’s written consent to be listed.`} />
@@ -177,7 +175,7 @@ export default function ProfilePage() {
       {access === 'preview' ? (
         <>
           <View style={styles.previewWrap}>
-            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
+            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={verifiedLabel(preview)} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
             <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>
@@ -247,7 +245,7 @@ export default function ProfilePage() {
       {!isMine ? (
         <View style={styles.actions}>
           {can !== 'same_role' ? <Button label="Message" disabled={can !== null && can !== 'ok' && can !== 'sign_in'} onPress={startMessage} /> : null}
-          {!isAgencyViewer ? <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} /> : null}
+          <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
           <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
           {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
         </View>

@@ -19,8 +19,10 @@ Added 2026-11-12 (migration 23, `supabase/migrations/20261130000000_agencies.sql
 - On step 1 of the member questionnaire everyone now answers:
   - **Are you working with an agency?** (Independent / Independent, also with an agency: name shown as
     "Independent · with <agency>").
-  - **Messages from agencies?** Allow, or **independent messages only**. With it off, an agency cannot
-    open a conversation; the member can still write to agency profiles and the agency can then reply.
+  - **I am open to the following types of journeys:** Independent only / Agency only / Both.
+    **Independent only** hides agency profiles from that member's browse and homepage, and an agency
+    cannot open a conversation with them (the member can still write to an agency profile first, and
+    the agency can then reply). Agency only and Both place no restriction.
 - Browse has **Independent only** and **Agency profiles only** checkboxes.
 
 ## Your part: approving agencies (admin dashboard)
@@ -66,7 +68,6 @@ Supabase dashboard and click Deploy.
 ## Known limits (ask when you want them)
 
 - One login per agency; no staff sub-accounts.
-- Agencies cannot save profiles or set email notification preferences.
 - Agency-posted intended-parent profiles get full access through the agency; no membership is needed.
 - No Stripe subscription for agencies yet (see Settings above).
 - Legal text in Terms has a short "Agency accounts" clause for the attorney to review.

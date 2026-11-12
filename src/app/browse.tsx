@@ -15,7 +15,7 @@ import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
-import { browseProfiles, profileTypeLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, profileTypeLabel, verifiedLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -50,7 +50,8 @@ export default function Browse() {
   const [saving, setSaving] = useState(false);
   const [searchName, setSearchName] = useState('');
   const [saveMsg, setSaveMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
-  const canSave = Object.keys(alertableFilters(filters)).length > 0;
+  // Saved-search alerts are built around a member's own role, so agencies do not get them.
+  const canSave = !isAgency && Object.keys(alertableFilters(filters)).length > 0;
 
   async function onSaveSearch() {
     if (!session) return;
@@ -101,8 +102,14 @@ export default function Browse() {
           ) : null}
           <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
-          <Checkbox label="Independent only" checked={filters.profile_type === 'independent'} onChange={(v) => set('profile_type', v ? 'independent' : undefined)} />
-          <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
+          {profile?.journey_types === 'independent_only' ? (
+            <Text style={styles.small}>Agency profiles are hidden (your journey choice, editable on your profile).</Text>
+          ) : (
+            <>
+              <Checkbox label="Independent only" checked={filters.profile_type === 'independent'} onChange={(v) => set('profile_type', v ? 'independent' : undefined)} />
+              <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
+            </>
+          )}
           {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
@@ -169,7 +176,7 @@ export default function Browse() {
               name={p.display_name}
               state={p.state}
               role={p.role}
-              verified={p.is_verified}
+              verified={verifiedLabel(p)}
               headline={p.headline_tags.join(' · ') || 'Profile complete'}
               typeLabel={profileTypeLabel(p)}
               photoUrl={p.photo_url}
@@ -205,6 +212,7 @@ const styles = StyleSheet.create({
   filters: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md, gap: space.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   note: { fontFamily: fonts.body, fontSize: 15, color: colors.textSubtle, textAlign: 'center' },
+  small: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle },
   wall: { backgroundColor: colors.surfaceSoft, borderRadius: radius.lg, padding: space.lg, gap: space.sm, alignItems: 'center' },
   wallTitle: { fontFamily: fonts.heading, fontSize: 22, color: colors.text },
   wallText: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, textAlign: 'center', lineHeight: 22, maxWidth: 560 },

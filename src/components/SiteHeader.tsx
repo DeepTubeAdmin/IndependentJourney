@@ -27,6 +27,7 @@ export function SiteHeader() {
     ? [
         { label: 'Agency dashboard', go: '/agency' },
         { label: 'Messages', go: '/messages' },
+        { label: 'Saved profiles', go: '/saved' },
         { label: 'Settings', go: '/settings' },
       ]
     : [

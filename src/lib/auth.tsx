@@ -41,7 +41,7 @@ export type Profile = {
   /** Independent member, independent member who also works with an agency, or agency-posted. */
   profile_type: 'independent' | 'with_agency' | 'agency';
   agency_name: string;
-  agency_messages: boolean;
+  journey_types: 'independent_only' | 'agency_only' | 'both';
   managed_by: string | null;
   /** Approximate location from ZIP (null until the member adds one). */
   approx_lat?: number | null;
