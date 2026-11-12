@@ -16,7 +16,8 @@ export type ProfileCardProps = {
   name: string;
   state: string;
   role: 'surrogate' | 'intended_parent' | 'intended_parents';
-  verified: boolean;
+  /** null hides the label (agency-posted profiles, where the agency cannot run the ID check). */
+  verified: boolean | null;
   headline: string;
   /** Signed URL of the first photo (used when photoUrls is not given). */
   photoUrl?: string;
@@ -24,6 +25,8 @@ export type ProfileCardProps = {
   photoUrls?: string[];
   /** Small extra line, e.g. distance from the viewer. */
   meta?: string;
+  /** "Independent", "Agency: Name", ... shown under the name. */
+  typeLabel?: string;
   onPress?: () => void;
 };
 
@@ -33,14 +36,14 @@ const ROLE_LABEL = {
   intended_parents: 'Intended parents',
 } as const;
 
-export function ProfileCard({ name, state, role, verified, headline, photoUrl, photoUrls, meta, onPress }: ProfileCardProps) {
+export function ProfileCard({ name, state, role, verified, headline, photoUrl, photoUrls, meta, typeLabel, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
   const urls = photoUrls && photoUrls.length ? photoUrls : photoUrl ? [photoUrl] : [];
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}, ${verified ? 'verified' : 'not verified'}`}
+      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}${verified == null ? '' : verified ? ', verified' : ', not verified'}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
     >
       <View style={[styles.photo, tint]}>
@@ -54,11 +57,13 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
             <View style={styles.silhouetteBody} />
           </>
         )}
-        <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
-          <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
-            {verified ? 'Verified' : 'Not verified'}
-          </Text>
-        </View>
+        {verified != null ? (
+          <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
+            <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
+              {verified ? 'Verified' : 'Not verified'}
+            </Text>
+          </View>
+        ) : null}
         <View style={[styles.badge, styles.badgeRole]}>
           <Text style={[styles.badgeText, { color: colors.textMuted }]}>
             {ROLE_LABEL[role]}
@@ -69,6 +74,7 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
         <Text style={styles.name}>
           {name} · {state}
         </Text>
+        {typeLabel ? <Text style={styles.typeLabel}>{typeLabel}</Text> : null}
         <Text style={styles.headline}>{headline}</Text>
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
@@ -196,6 +202,7 @@ const styles = StyleSheet.create({
   badgeText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.primaryText },
   body: { padding: space.md, gap: 4 },
   name: { fontFamily: fonts.heading, fontSize: 19, color: colors.text },
+  typeLabel: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.secondary, letterSpacing: 0.2, marginBottom: 2 },
   headline: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.textMuted },
   meta: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, marginTop: 4 },
 });

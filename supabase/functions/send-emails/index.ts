@@ -86,14 +86,17 @@ function render(row: Row): { subject: string; body: string; text: string } {
     }
     case 'new_message': {
       const who = esc(p.sender_name ?? 'A member');
+      // Agency-posted senders are named with their agency; a managed recipient's agency is told which client it is for.
+      const via = p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : '';
+      const forWhom = p.for_name ? `<p>This message is for your client <strong>${esc(p.for_name)}</strong>.</p>` : '';
       return msg(`${who} sent you a message`,
-        `<p>Hi ${first},</p><p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #B8CFE0;color:#444">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}<p style="color:#777;font-size:13px">We send at most one email per conversation per hour.</p>`,
+        `<p>Hi ${first},</p>${forWhom}<p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''}${via} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #B8CFE0;color:#444">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}<p style="color:#777;font-size:13px">We send at most one email per conversation per hour.</p>`,
         `${who} sent you a message on ${SITE_NAME}. Read it at ${url}/messages/${p.conversation_id}`);
     }
     case 'locked_message': {
       const who = esc(p.sender_name ?? 'A surrogate');
       return msg(`${who} sent you a message`,
-        `<p>Hi ${first},</p><p><strong>${who}</strong>${p.sender_state ? ` from ${esc(p.sender_state)}` : ''} has written to you. A membership lets you read it and reply.</p>${btn(`${url}/membership`, 'See membership options')}`,
+        `<p>Hi ${first},</p><p><strong>${who}</strong>${p.sender_state ? ` from ${esc(p.sender_state)}` : ''}${p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : ''} has written to you. A membership lets you read it and reply.</p>${btn(`${url}/membership`, 'See membership options')}`,
         `${who} sent you a message on ${SITE_NAME}. A membership lets you read and reply: ${url}/membership`);
     }
     case 'membership_receipt':
@@ -129,6 +132,31 @@ function render(row: Row): { subject: string; body: string; text: string } {
         `<p>Hi ${first},</p><p>New or updated profiles match your saved search <strong>${esc(p.search_name ?? '')}</strong>:</p><ul style="padding-left:18px">${list}</ul>${n > items.length ? `<p>…and ${n - items.length} more.</p>` : ''}${btn(`${url}/browse`, 'Browse now')}<p style="color:#777;font-size:13px">Turn alerts off for this search under Settings.</p>`,
         `${n} new profiles match your saved search "${p.search_name ?? ''}" on ${SITE_NAME}. Browse at ${url}/browse`);
     }
+    // ----- Agency accounts (migration 23) -----
+    case 'agency_welcome':
+      return msg(`Welcome to ${SITE_NAME}`,
+        `<p>Hi ${first},</p><p>Thanks for applying for an agency account for <strong>${esc(p.agency_name ?? 'your agency')}</strong>. Next, finish your agency details (states, services, typical fee ranges). We review every agency by hand and email you when you are approved, usually within a few days. After that you can post profiles for the clients you represent.</p>${btn(`${url}/agency`, 'Finish agency details')}<p>Agency accounts are free during our beta. Independent Journey is an introduction platform: we do not match, screen or manage journeys.</p>`,
+        `Thanks for applying for an agency account. Finish your details at ${url}/agency and we will review it by hand.`);
+    case 'agency_pending':
+      return msg(`New agency to review: ${esc(p.agency_name ?? '')}`,
+        `<p>A new agency has signed up and is waiting for your approval.</p><p><strong>${esc(p.agency_name ?? '')}</strong><br>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Review in admin')}<p style="color:#777;font-size:13px">You will get a second email once they have finished their agency details.</p>`,
+        `New agency waiting for approval: ${p.agency_name ?? ''} (${p.website ?? ''}). Review at ${url}/admin/agencies?id=${p.agency_id}`);
+    case 'agency_ready':
+      return msg(`Agency ready to approve: ${esc(p.agency_name ?? '')}`,
+        `<p><strong>${esc(p.agency_name ?? '')}</strong> has finished its agency details and is ready for your review.</p><p>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Approve or reject')}`,
+        `${p.agency_name ?? ''} finished its agency details. Approve or reject at ${url}/admin/agencies?id=${p.agency_id}`);
+    case 'agency_approved':
+      return msg('Your agency is approved',
+        `<p>Hi ${first},</p><p><strong>${esc(p.agency_name ?? 'Your agency')}</strong> is approved. You can now post profiles for the surrogates and intended parents you represent. Each profile uses the same questionnaire as independent members, is labelled with your agency name, and messages to it come to you.</p>${btn(`${url}/agency`, 'Open agency dashboard')}<p>Please only list clients who have agreed in writing to be shown here, and keep their profiles current.</p>`,
+        `Your agency is approved. Post client profiles at ${url}/agency`);
+    case 'agency_rejected':
+      return msg('About your agency application',
+        `<p>Hi ${first},</p><p>We were not able to approve <strong>${esc(p.agency_name ?? 'your agency')}</strong> at this time.${p.note ? ` Our note: <em>${esc(p.note)}</em>` : ''}</p><p>If you think this is a mistake, reply to this email and we will take another look.</p>`,
+        `We were not able to approve your agency application.${p.note ? ` Note: ${p.note}` : ''} Reply to this email if you think this is a mistake.`);
+    case 'agency_suspended':
+      return msg('Your agency account is suspended',
+        `<p>Hi ${first},</p><p><strong>${esc(p.agency_name ?? 'Your agency')}</strong> has been suspended and its client profiles are hidden.${p.note ? ` Our note: <em>${esc(p.note)}</em>` : ''}</p><p>Reply to this email if you would like to discuss it.</p>`,
+        `Your agency account is suspended and its profiles are hidden.${p.note ? ` Note: ${p.note}` : ''}`);
     default:
       return msg(`Update from ${SITE_NAME}`, `<p>Hi ${first},</p><p>There is an update waiting for you.</p>${btn(`${url}/home`, 'Open Independent Journey')}`, `There is an update for you at ${url}/home`);
   }

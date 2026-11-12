@@ -12,16 +12,16 @@ import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard } from "@/components/ProfileCard";
-import { featuredProfiles, type PreviewRow } from "@/lib/browse";
+import { featuredProfiles, profileTypeLabel, verifiedLabel, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { pageMeta } from "@/lib/seo";
 import { colors, fonts, radius, space } from "@/lib/theme";
 
 export function generateMetadata() {
   return pageMeta({
-    title: `${SITE.name}: Find a Surrogate or Intended Parents Without an Agency`,
+    title: `${SITE.name}: Find a Surrogate or Intended Parents, Independent or With an Agency`,
     description:
-      "Independent surrogacy matching for intended parents and gestational surrogates. Create a free profile, browse verified members, message directly and plan your journey with your own clinic and attorney. No agency, no match fees.",
+      "One place for intended parents and gestational surrogates to find each other: independent members and agency-represented clients, clearly labelled. Create a free profile, browse verified members and message directly. No match fees.",
     path: "/",
   });
 }
@@ -31,6 +31,7 @@ const TRUST_POINTS = [
   "Phone and email checks on every account",
   "Safety team reviews messages",
   "No match or outcome fees, ever",
+  "Independent and agency profiles clearly labelled",
 ];
 
 // Short answers to the questions people type into search engines. Plain
@@ -43,6 +44,14 @@ const FAQ: [string, string][] = [
   [
     "Is Independent Journey a surrogacy agency?",
     "No. We are an introduction platform. We never match, screen medically, hold money or give legal or medical advice. Once you have met someone here, your clinic and attorneys take it from there.",
+  ],
+  [
+    "What does the Independent or Agency label mean?",
+    "Every profile says who is behind it. Independent means the member posted it themselves. Agency means a surrogacy agency posted it for a client they represent, with the agency's name shown; messages to that profile go to the agency. Some independent members also note that they are working with an agency.",
+  ],
+  [
+    "Can agencies use Independent Journey?",
+    "Yes. Agencies apply for an account, we approve each one by hand, and they can then post profiles for the surrogates and intended parents they represent, using the same questionnaire as everyone else. Members choose whether agencies may message them.",
   ],
   [
     "How much does it cost?",
@@ -107,13 +116,13 @@ export default function Home() {
             accessibilityRole="header"
             aria-level={1}
           >
-            Your journey, your match,{" "}
-            <Text style={styles.headlineAccent}>your terms.</Text>
+            Every match{" "}
+            <Text style={styles.headlineAccent}>starts here.</Text>
           </Text>
           <Text style={styles.lead}>
-            A calm place for intended parents and gestational surrogates to find
-            each other and plan an independent journey together. No agency, no
-            match fees. Surrogates always join free.
+            One place for intended parents and gestational surrogates to find
+            each other, independent or with an agency, with every profile
+            clearly labelled. No match fees. Surrogates always join free.
           </Text>
           <View style={styles.ctaRow}>
             <Button label="I'm a surrogate" onPress={() => router.push('/sign-up?role=surrogate')} />
@@ -146,8 +155,9 @@ export default function Home() {
                   name={p.display_name}
                   state={p.state}
                   role={p.role}
-                  verified={p.is_verified}
+                  verified={verifiedLabel(p)}
                   headline={p.headline_tags.join(" · ")}
+                  typeLabel={profileTypeLabel(p)}
                   photoUrl={p.photo_url}
                   photoUrls={p.photo_urls}
                   onPress={() => router.push(`/profile/${p.id}`)}

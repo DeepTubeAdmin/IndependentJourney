@@ -26,7 +26,16 @@ export type SocialProvider = 'google' | 'apple';
 
 export const SOCIAL_LABEL: Record<SocialProvider, string> = { google: 'Continue with Google', apple: 'Continue with Apple' };
 
-export type PendingSignup = { role: Role; legal_version: string; agreed: boolean; at: number };
+export type PendingSignup = {
+  role: Role | 'agency';
+  legal_version: string;
+  agreed: boolean;
+  at: number;
+  /** Agency sign-up only. */
+  agency_name?: string;
+  agency_website?: string;
+  contact_name?: string;
+};
 const KEY = 'ij_pending_signup';
 
 /** Social buttons only work in a browser until the phone apps add native sign-in. */
@@ -87,6 +96,15 @@ export async function startSocialSignIn(provider: SocialProvider): Promise<strin
 }
 
 /** Creates the profile for a social sign-up. Returns an error message or null. */
+/** After a Google or Apple sign-up as an agency: creates the pending agency row. */
+export async function completeAgencySignup(name: string, website: string, contactName: string, legalVersion: string): Promise<string | null> {
+  if (!supabase) return 'The app is not connected to a database yet.';
+  const { error } = await supabase.rpc('complete_agency_signup', { p_name: name, p_website: website, p_contact_name: contactName, p_legal_version: legalVersion });
+  if (error) return error.message;
+  await clearPendingSignup();
+  return null;
+}
+
 export async function completeSignup(role: Role, legalVersion: string): Promise<string | null> {
   if (!supabase) return 'The app is not connected to a database yet.';
   const { error } = await supabase.rpc('complete_signup', { p_role: role, p_legal_version: legalVersion });

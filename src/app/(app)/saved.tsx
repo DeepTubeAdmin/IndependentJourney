@@ -6,7 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, listSavedIds, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, listSavedIds, verifiedLabel, type PreviewRow } from '@/lib/browse';
 import { colors, fonts, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
 
@@ -33,7 +33,7 @@ export default function SavedPage() {
       {rows && rows.length === 0 ? <Text style={styles.note}>Nothing saved yet. While browsing, tap “Save profile” to keep someone here.</Text> : null}
       <View style={styles.grid}>
         {(rows ?? []).map((p) => (
-          <ProfileCard key={p.id} name={p.display_name} state={p.state} role={p.role} verified={p.is_verified} headline={p.headline_tags.join(' · ') || 'Profile complete'} photoUrl={p.photo_url} onPress={() => router.push(`/profile/${p.id}`)} />
+          <ProfileCard key={p.id} name={p.display_name} state={p.state} role={p.role} verified={verifiedLabel(p)} headline={p.headline_tags.join(' · ') || 'Profile complete'} photoUrl={p.photo_url} onPress={() => router.push(`/profile/${p.id}`)} />
         ))}
       </View>
     </Screen>

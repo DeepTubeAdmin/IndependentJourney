@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase';
 
 export type CanMessage =
   | 'ok' | 'sign_in' | 'same_role' | 'not_available' | 'account_restricted'
-  | 'blocked' | 'profile_incomplete' | 'membership_required';
+  | 'blocked' | 'profile_incomplete' | 'membership_required'
+  | 'agency_messages_off' | 'agency_access_required';
 
 /** Plain-English explanation for each reason the Message button is unavailable. */
 export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
@@ -17,6 +18,8 @@ export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   blocked: 'Messaging is not available between you and this member.',
   profile_incomplete: 'Finish your profile to start conversations. Intended parents want to know who they are talking to.',
   membership_required: 'A membership unlocks messaging and full surrogate profiles.',
+  agency_messages_off: 'This member has asked to hear from independent members only. They can still write to your client first.',
+  agency_access_required: 'Your agency account needs to be approved (and, when pricing is on, paid up) before its profiles can message.',
 };
 
 export const NEVER_SEND_MONEY = 'Never send money to anyone you meet here. Surrogacy payments go through an attorney-managed escrow after a signed contract.';
@@ -42,12 +45,19 @@ export type ConversationRow = {
   unread: number;
   locked: boolean;
   blocked: boolean;
+  /** Which of my profiles this conversation belongs to (an agency has several). */
+  mine_id: string;
+  mine_name: string;
+  other_profile_type: 'independent' | 'with_agency' | 'agency';
+  other_agency_name: string | null;
 };
 
 export type Message = {
   id: number;
   conversation_id: string;
   sender_id: string;
+  /** The login that wrote it (an agency staffer when sender_id is an agency-posted profile). */
+  sent_by?: string | null;
   body: string;
   scam_flags: string[];
   created_at: string;
@@ -67,6 +77,25 @@ const SEND_ERRORS: Record<string, string> = {
   empty_message: 'Write something first.',
   message_too_long: 'Messages can be up to 4000 characters.',
 };
+
+/** Can profile `fromId` (mine, or a client profile my agency manages) message `targetId`? */
+export async function canMessageAs(fromId: string, targetId: string): Promise<CanMessage> {
+  if (!supabase) return 'not_available';
+  const { data } = await supabase.rpc('can_message_as', { p_from: fromId, p_target: targetId });
+  return (data as CanMessage) ?? 'not_available';
+}
+
+/** Send as a specific profile (agencies write on behalf of a client). */
+export async function sendMessageAs(fromId: string, toId: string, body: string): Promise<{ conversationId?: string; status?: 'delivered' | 'locked'; flags?: string[]; error?: string }> {
+  if (!supabase) return { error: 'The app is not connected to a database yet.' };
+  const { data, error } = await supabase.rpc('send_message_as', { p_from: fromId, p_to: toId, p_body: body });
+  if (error) {
+    const code = error.message.trim();
+    return { error: SEND_ERRORS[code] ?? CAN_MESSAGE_TEXT[code as Exclude<CanMessage, 'ok'>] ?? error.message };
+  }
+  const d = data as { conversation_id: string; status: 'delivered' | 'locked'; flags: string[] };
+  return { conversationId: d.conversation_id, status: d.status, flags: d.flags ?? [] };
+}
 
 export async function sendMessage(toId: string, body: string): Promise<{ conversationId?: string; status?: 'delivered' | 'locked'; flags?: string[]; error?: string }> {
   if (!supabase) return { error: 'Not connected.' };

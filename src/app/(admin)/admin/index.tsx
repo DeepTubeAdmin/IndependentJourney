@@ -27,6 +27,9 @@ export default function AdminHome() {
         <Stat label="Complete profiles" value={n('complete')} />
         <Stat label="Verified" value={n('verified')} />
         <Stat label="New this week" value={n('new_this_week')} />
+        <Stat label="Agencies waiting for approval" value={n('agencies_pending')} href="/admin/agencies" warn={Number(data?.agencies_pending) > 0} />
+        <Stat label="Approved agencies" value={n('agencies_approved')} href="/admin/agencies" />
+        <Stat label="Agency-posted profiles" value={n('agency_profiles')} />
         <Stat label="Open reports" value={n('open_reports')} href="/admin/reports" warn={Number(data?.open_reports) > 0} />
         <Stat label="Open flags" value={n('open_flags')} href="/admin/flags" warn={Number(data?.open_flags) > 0} />
         <Stat label="Messages this week" value={n('messages_this_week')} href="/admin/messages" />

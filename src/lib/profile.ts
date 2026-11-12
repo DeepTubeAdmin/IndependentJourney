@@ -55,12 +55,15 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
     .map((f) => (f.headlineTag ? f.headlineTag(answers[f.key]) : null))
     .filter((t): t is string => Boolean(t))
     .slice(0, 3);
-  const profileRow = byTable.get('profiles') ?? {};
-  profileRow.headline_tags = tags;
-  // The public "last initial" (e.g. "Megan R.") comes from the private last name.
-  const lastName = byTable.get('profile_private')?.last_name;
-  if (typeof lastName === 'string' && lastName.trim()) profileRow.last_initial = lastName.trim().slice(0, 1).toUpperCase();
-  byTable.set('profiles', profileRow);
+  // Agency details save to the agencies table only; member steps also refresh the profile row.
+  if (!byTable.has('agencies')) {
+    const profileRow = byTable.get('profiles') ?? {};
+    profileRow.headline_tags = tags;
+    // The public "last initial" (e.g. "Megan R.") comes from the private last name.
+    const lastName = byTable.get('profile_private')?.last_name;
+    if (typeof lastName === 'string' && lastName.trim()) profileRow.last_initial = lastName.trim().slice(0, 1).toUpperCase();
+    byTable.set('profiles', profileRow);
+  }
 
   // ZIP code: must be 5 digits and known, and becomes the approximate map point.
   const zip = byTable.get('profile_private')?.zip;
@@ -123,6 +126,9 @@ export function validateStep(step: Step, answers: Answers): Record<string, strin
       if (age < 21) errors[f.key] = 'Surrogates must be 21 or older.';
     }
     if (f.key === 'phone' && typeof v === 'string' && v && v.replace(/\D/g, '').length < 10) errors[f.key] = 'Enter a 10-digit US mobile number.';
+    if (f.key === 'website' && typeof v === 'string' && v && !/^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(v.trim())) errors[f.key] = 'Enter your website address, like www.youragency.com.';
+    if (f.key === 'attested_consent' && v !== true) errors[f.key] = 'We can only list agencies that confirm this.';
+    if (f.key === 'year_founded' && !empty && !(Number(v) >= 1950 && Number(v) <= new Date().getFullYear())) errors[f.key] = 'Enter a four-digit year.';
     if (f.maxLength && typeof v === 'string' && v.length > f.maxLength) errors[f.key] = `Keep this under ${f.maxLength} characters.`;
     if (f.key.endsWith('_age') && !empty) {
       const n = Number(String(v).replace(/[^0-9]/g, ''));

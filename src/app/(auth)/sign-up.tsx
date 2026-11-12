@@ -28,15 +28,20 @@ export function generateMetadata() {
   return pageMeta({
     title: 'Create Your Free Profile',
     description:
-      'Sign up as a gestational surrogate or intended parent and start your independent surrogacy journey. Free for surrogates, no agency fees, no match fees.',
+      'Sign up as a gestational surrogate, intended parent or agency. Free for surrogates, no match fees, and every profile is labelled independent or agency.',
     path: '/sign-up',
   });
 }
 
 export default function SignUp() {
   const params = useLocalSearchParams<{ role?: string }>();
+  const isAgency = params.role === 'agency';
   const role: Role = params.role === 'surrogate' ? 'surrogate' : 'intended_parent';
   const minAge = role === 'surrogate' ? 21 : 18;
+  // Agency sign-up asks for the business basics up front; details come after.
+  const [agencyName, setAgencyName] = useState('');
+  const [agencyWebsite, setAgencyWebsite] = useState('');
+  const [contactName, setContactName] = useState('');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,6 +55,14 @@ export default function SignUp() {
   /** The three agreement boxes, shared by email and social sign-up. */
   function agreementErrors() {
     const e: Record<string, string> = {};
+    if (isAgency) {
+      if (!agencyName.trim()) e.agencyName = 'Enter your agency name.';
+      if (!/^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(agencyWebsite.trim())) e.agencyWebsite = 'Enter your website, like www.youragency.com.';
+      if (!contactName.trim()) e.contactName = 'Enter your name.';
+      if (!termsOk) e.terms = 'Please agree to continue.';
+      if (!individualOk) e.individual = 'Please confirm to continue.';
+      return e;
+    }
     if (!ageOk) e.age = `Please confirm you are ${minAge} or older.`;
     if (!termsOk) e.terms = 'Please agree to continue.';
     if (!individualOk) e.individual = 'Please confirm to continue.';
@@ -65,7 +78,11 @@ export default function SignUp() {
       return false;
     }
     setServerError('');
-    await rememberPendingSignup({ role, legal_version: LEGAL_VERSION, agreed: true });
+    await rememberPendingSignup(
+      isAgency
+        ? { role: 'agency', legal_version: LEGAL_VERSION, agreed: true, agency_name: agencyName.trim(), agency_website: agencyWebsite.trim(), contact_name: contactName.trim() }
+        : { role, legal_version: LEGAL_VERSION, agreed: true },
+    );
     return true;
   }
 
@@ -85,7 +102,9 @@ export default function SignUp() {
       email: email.trim().toLowerCase(),
       password,
       options: {
-        data: { role, attested_individual: true, attested_age: true, legal_version: LEGAL_VERSION },
+        data: isAgency
+          ? { role: 'agency', agency_name: agencyName.trim(), agency_website: agencyWebsite.trim(), contact_name: contactName.trim(), legal_version: LEGAL_VERSION }
+          : { role, attested_individual: true, attested_age: true, legal_version: LEGAL_VERSION },
         emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/welcome` : undefined,
       },
     });
@@ -100,10 +119,17 @@ export default function SignUp() {
 
   return (
     <Screen
-      title={role === 'surrogate' ? 'Create your free surrogate account' : 'Create your intended parent account'}
-      intro="Your email and password are private. Next you'll build your profile."
+      title={isAgency ? 'Create your agency account' : role === 'surrogate' ? 'Create your free surrogate account' : 'Create your intended parent account'}
+      intro={isAgency ? 'Free during our beta. We approve each agency by hand, usually within a day or two, and email you when you can start posting client profiles.' : "Your email and password are private. Next you'll build your profile."}
     >
       {serverError ? <FormMessage kind="error" text={serverError} /> : null}
+      {isAgency ? (
+        <>
+          <TextField label="Agency name" required value={agencyName} onChangeText={setAgencyName} error={errors.agencyName} maxLength={80} />
+          <TextField label="Agency website" required value={agencyWebsite} onChangeText={setAgencyWebsite} error={errors.agencyWebsite} placeholder="https://www.youragency.com" autoCapitalize="none" keyboardType="url" maxLength={200} />
+          <TextField label="Your name" required help="The person we talk to about this account." value={contactName} onChangeText={setContactName} error={errors.contactName} maxLength={80} />
+        </>
+      ) : null}
       <TextField
         label="Email"
         required
@@ -126,7 +152,7 @@ export default function SignUp() {
         autoComplete="new-password"
         textContentType="newPassword"
       />
-      <Checkbox checked={ageOk} onChange={setAgeOk} error={errors.age} label={`I am ${minAge} years of age or older.`} />
+      {!isAgency ? <Checkbox checked={ageOk} onChange={setAgeOk} error={errors.age} label={`I am ${minAge} years of age or older.`} /> : null}
       <Checkbox
         checked={termsOk}
         onChange={setTermsOk}
@@ -144,10 +170,12 @@ export default function SignUp() {
         checked={individualOk}
         onChange={setIndividualOk}
         error={errors.individual}
-        label="I am an individual joining for my own journey. I am not an agency, broker, recruiter or business."
+        label={isAgency
+          ? 'I am authorized to act for this agency. We will only post profiles for clients who have given us written consent to be listed, and every profile we post will be labelled as an agency profile.'
+          : 'I am an individual joining for my own journey. I am not an agency, broker, recruiter or business.'}
       />
       <Button label={busy ? 'Creating your account…' : 'Create account'} onPress={submit} disabled={busy} />
-      <SocialButtons onBeforeStart={beforeSocial} ready={ageOk && termsOk && individualOk} caption="Or, after ticking the boxes above, continue with" />
+      <SocialButtons onBeforeStart={beforeSocial} ready={(isAgency || ageOk) && termsOk && individualOk} caption="Or, after ticking the boxes above, continue with" />
       <Text style={styles.footer}>
         Already have an account?{' '}
         <Link href="/log-in" style={styles.link}>

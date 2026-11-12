@@ -15,8 +15,9 @@ export function generateMetadata() {
 }
 
 export default function Inbox() {
-  const { profile } = useSession();
+  const { profile, agency } = useSession();
   const [rows, setRows] = useState<ConversationRow[] | null>(null);
+  const isAgency = Boolean(agency) && !profile;
   useEffect(() => {
     myConversations().then(setRows);
   }, []);
@@ -24,7 +25,7 @@ export default function Inbox() {
   const anyLocked = rows?.some((r) => r.locked);
 
   return (
-    <Screen width={760} title="Messages" intro="Introductions happen here. Once you both feel comfortable, take the conversation wherever suits you.">
+    <Screen width={760} title="Messages" intro={isAgency ? 'Every conversation for every client profile you manage, newest first. Replies are sent in the client’s name, labelled with your agency.' : 'Introductions happen here. Once you both feel comfortable, take the conversation wherever suits you.'}>
       <Text style={styles.banner}>{NEVER_SEND_MONEY}</Text>
       {isIp && anyLocked ? (
         <View style={styles.lockedBox}>
@@ -36,7 +37,7 @@ export default function Inbox() {
       {rows === null ? <Text style={styles.note}>Loading…</Text> : null}
       {rows && rows.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.note}>No conversations yet. Browse profiles and send a message to someone whose journey fits yours.</Text>
+          <Text style={styles.note}>{isAgency ? 'No conversations yet. Once a client profile is live, browse members and write to them on your client’s behalf.' : 'No conversations yet. Browse profiles and send a message to someone whose journey fits yours.'}</Text>
           <Button label="Browse profiles" onPress={() => router.push('/browse')} />
         </View>
       ) : null}
@@ -45,7 +46,9 @@ export default function Inbox() {
           <View style={styles.rowMain}>
             <Text style={styles.name}>
               {r.other_name} · {r.other_state} <Text style={r.other_verified ? styles.verified : styles.unverified}>{r.other_verified ? 'Verified' : 'Not verified'}</Text>
+              {r.other_profile_type === 'agency' ? <Text style={styles.unverified}> · Agency{r.other_agency_name ? `: ${r.other_agency_name}` : ''}</Text> : null}
             </Text>
+            {isAgency ? <Text style={styles.forLine}>For {r.mine_name}</Text> : null}
             <Text style={styles.preview} numberOfLines={1}>
               {r.locked ? `${r.unread > 0 ? `${r.unread} new message${r.unread === 1 ? '' : 's'}` : 'Messages'} · locked until you have a membership` : r.last_preview ?? ''}
             </Text>
@@ -74,6 +77,7 @@ const styles = StyleSheet.create({
   verified: { color: colors.verified, fontSize: 12 },
   unverified: { color: colors.textSubtle, fontSize: 12 },
   preview: { fontFamily: fonts.body, fontSize: 14, color: colors.textMuted },
+  forLine: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.secondary },
   time: { fontFamily: fonts.body, fontSize: 12, color: colors.textSubtle },
   badge: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.primaryText, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   note: { fontFamily: fonts.body, fontSize: 15, color: colors.textSubtle },

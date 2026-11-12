@@ -22,10 +22,26 @@ export type PreviewRow = {
   recently_active?: boolean;
   /** Miles from the viewer's approximate location, when both are known. */
   distance_miles?: number | null;
+  /** Independent, independent-with-an-agency, or posted by an agency account. */
+  profile_type?: 'independent' | 'with_agency' | 'agency';
+  agency_name?: string | null;
+  agency_logo_path?: string | null;
   /** Filled in by withPreviewUrls(): the first photo, and all photos. */
   photo_url?: string;
   photo_urls?: string[];
 };
+
+/** The short label shown on cards and profiles: who stands behind this profile. */
+/** Verified label value for a card: hidden (null) on agency-posted profiles. */
+export function verifiedLabel(p: { is_verified: boolean; profile_type?: string | null }): boolean | null {
+  return p.profile_type === 'agency' ? null : p.is_verified;
+}
+
+export function profileTypeLabel(r: { profile_type?: string | null; agency_name?: string | null }): string {
+  if (r.profile_type === 'agency') return r.agency_name ? `Agency: ${r.agency_name}` : 'Agency';
+  if (r.profile_type === 'with_agency') return r.agency_name ? `Independent, with ${r.agency_name}` : 'Independent, with an agency';
+  return 'Independent';
+}
 
 export type BrowseFilters = {
   role?: 'surrogate' | 'intended_parent';
@@ -39,6 +55,8 @@ export type BrowseFilters = {
   family_structure?: string;
   embryos_status?: string;
   id?: string;
+  /** 'independent' (own profiles, with or without an agency) or 'agency' (posted by an agency). */
+  profile_type?: 'independent' | 'agency';
   /** 'active' (default): recently active first. 'distance': closest first (active still first). */
   sort?: 'active' | 'distance';
   near_lat?: number;
@@ -75,6 +93,16 @@ export async function withPreviewUrls(rows: PreviewRow[]): Promise<PreviewRow[]>
     const urls = pathsOf(r).map((p) => byPath.get(p)).filter((u): u is string => Boolean(u));
     return { ...r, photo_url: urls[0], photo_urls: urls };
   });
+}
+
+/** Public details of the agency behind an agency-posted profile (no contact details). */
+export async function loadAgencyCard(profileId: string): Promise<Record<string, unknown> | null> {
+  if (!supabase) return null;
+  const { data: p } = await supabase.from('profiles').select('managed_by').eq('id', profileId).maybeSingle();
+  const agencyId = (p as { managed_by?: string | null } | null)?.managed_by;
+  if (!agencyId) return null;
+  const { data } = await supabase.rpc('agency_card', { p_agency: agencyId });
+  return (data as Record<string, unknown> | null) ?? null;
 }
 
 export type Access = 'none' | 'preview' | 'full';
@@ -174,7 +202,12 @@ export function compensationLine(sd: Record<string, unknown> | null | undefined)
 /** Nicer labels than the raw column names where title-casing is not enough. */
 const LABEL_OVERRIDES: Record<string, string> = {
   us_resident: 'US resident',
+  journey_types: 'Open to',
+  profile_type: 'Working with an agency',
   background_check: 'Can pass a background check',
+  ob_cleared: 'OB clearance',
+  clinic_cleared: 'Clinic clearance',
+  clearance_clinic: 'Clinic',
   journeys_completed: 'Journeys completed',
   cycle_preference: 'Preferred cycle',
   open_to_ip_types: 'Open to working with',

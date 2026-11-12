@@ -11,20 +11,22 @@ import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { deletePhoto, loadPhotos, uploadPhoto, type Photo } from '@/lib/profile';
+import type { StepProps } from '@/components/onboarding/stepProps';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 const MIN = 3;
 const MAX = 6;
 
-export function PhotosStep({ header, onBack, onNext }: { header: React.ReactNode; onBack: () => void; onNext: () => void }) {
-  const { session, refreshProfile } = useSession();
+export function PhotosStep({ profileId, managed, refresh, header, onBack, onNext }: StepProps & { onNext: () => void }) {
+  const { session } = useSession();
+  const refreshProfile = refresh;
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const reload = useCallback(async () => {
-    if (session) setPhotos(await loadPhotos(session.user.id));
-  }, [session]);
+    if (session) setPhotos(await loadPhotos(profileId));
+  }, [session, profileId]);
 
   useEffect(() => {
     reload();
@@ -45,7 +47,7 @@ export function PhotosStep({ header, onBack, onNext }: { header: React.ReactNode
     setError('');
     let position = photos.length ? Math.max(...photos.map((p) => p.position)) + 1 : 0;
     for (const asset of result.assets) {
-      const err = await uploadPhoto(session.user.id, asset.uri, position++);
+      const err = await uploadPhoto(profileId, asset.uri, position++);
       if (err) {
         setError(err);
         break;
@@ -68,8 +70,10 @@ export function PhotosStep({ header, onBack, onNext }: { header: React.ReactNode
 
   return (
     <Screen
-      title="Your photos"
-      intro={`Add at least ${MIN} photos (up to ${MAX}). Clear, recent photos of you${'—'}and your partner or family if you like. No children's faces, please.`}
+      title={managed ? 'Photos' : 'Your photos'}
+      intro={managed
+        ? `Add at least ${MIN} photos (up to ${MAX}) that your client has agreed to share. No children's faces, please.`
+        : `Add at least ${MIN} photos (up to ${MAX}). Clear, recent photos of you${'—'}and your partner or family if you like. No children's faces, please.`}
     >
       {header}
       {error ? <FormMessage kind="error" text={error} /> : null}

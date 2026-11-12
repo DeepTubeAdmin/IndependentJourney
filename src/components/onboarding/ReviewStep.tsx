@@ -11,23 +11,25 @@ import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { FINAL_STEPS, stepsFor } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
+import type { StepProps } from '@/components/onboarding/stepProps';
 import { loadAnswers, loadPhotos, type Answers } from '@/lib/profile';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
-export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack: () => void }) {
-  const { session, profile, refreshProfile } = useSession();
+export function ReviewStep({ profile, profileId, managed, refresh, href, header, onBack }: StepProps) {
+  const { session } = useSession();
   const [answers, setAnswers] = useState<Answers | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
 
   useEffect(() => {
-    if (!session || !profile) return;
-    refreshProfile();
-    loadAnswers(session.user.id, stepsFor(profile.role)).then(setAnswers);
-    loadPhotos(session.user.id).then((p) => setPhotoCount(p.length));
-  }, [session, profile?.role]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!session) return;
+    refresh();
+    loadAnswers(profileId, stepsFor(profile.role, managed)).then(setAnswers);
+    loadPhotos(profileId).then((p) => setPhotoCount(p.length));
+  }, [session, profileId, profile.role, managed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!profile || !session) return null;
-  const steps = stepsFor(profile.role);
+  if (!session) return null;
+  const steps = stepsFor(profile.role, managed);
+  const who = managed ? profile.display_name || 'This profile' : 'Your profile';
 
   // Which required questions are still blank?
   const missing: { step: number; label: string }[] = [];
@@ -45,9 +47,9 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
   const bioMissing = !profile.bio;
 
   return (
-    <Screen title={profile.is_complete ? 'Your profile is live' : 'Almost there'} intro={profile.is_complete ? 'Members on the other side of the journey can now find you.' : 'A profile becomes visible once every required question is answered and 3 photos are uploaded.'}>
+    <Screen title={profile.is_complete ? `${who} is live` : 'Almost there'} intro={profile.is_complete ? (managed ? 'Members on the other side of the journey can now find this profile, labelled with your agency name.' : 'Members on the other side of the journey can now find you.') : 'A profile becomes visible once every required question is answered and 3 photos are uploaded.'}>
       {header}
-      {profile.is_complete ? (
+      {profile.is_complete && !managed ? (
         <FormMessage kind="info" text="You're all set. Verifying your identity (free, optional) ranks your profile higher and shows a Verified label. You can do that from your profile page." />
       ) : null}
 
@@ -55,19 +57,19 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
       <Text style={styles.sectionTitle}>Edit a section</Text>
       <View style={styles.list}>
         {steps.map((s, i) => (
-          <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(`/onboarding/${i}?from=review`)} />
+          <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(href(`/onboarding/${i}`, 'from=review'))} />
         ))}
-        <Row text="Photos" action="Edit" onPress={() => router.push('/onboarding/photos')} />
-        <Row text="Your story" action="Edit" onPress={() => router.push('/onboarding/bio')} />
+        <Row text="Photos" action="Edit" onPress={() => router.push(href('/onboarding/photos'))} />
+        <Row text={managed ? 'Their story' : 'Your story'} action="Edit" onPress={() => router.push(href('/onboarding/bio'))} />
       </View>
 
       {!profile.is_complete ? (
         <View style={styles.list}>
           <Text style={styles.sectionTitle}>Still needed</Text>
-          {photosMissing > 0 ? <Row text={`Add ${photosMissing} more photo${photosMissing === 1 ? '' : 's'}`} onPress={() => router.push('/onboarding/photos')} /> : null}
-          {bioMissing ? <Row text="Write your bio" onPress={() => router.push('/onboarding/bio')} /> : null}
+          {photosMissing > 0 ? <Row text={`Add ${photosMissing} more photo${photosMissing === 1 ? '' : 's'}`} onPress={() => router.push(href('/onboarding/photos'))} /> : null}
+          {bioMissing ? <Row text={managed ? 'Write their story' : 'Write your bio'} onPress={() => router.push(href('/onboarding/bio'))} /> : null}
           {missing.map((m) => (
-            <Row key={m.label} text={m.label} onPress={() => router.push(`/onboarding/${m.step}?from=review`)} />
+            <Row key={m.label} text={m.label} onPress={() => router.push(href(`/onboarding/${m.step}`, 'from=review'))} />
           ))}
           {answers && missing.length === 0 && photosMissing === 0 && !bioMissing ? (
             <Text style={styles.note}>Everything looks filled in. Go back and press Save on any section to refresh; if this message stays, email us.</Text>
@@ -76,7 +78,7 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
       ) : null}
       <View style={styles.nav}>
         <Button label="Back" variant="secondary" onPress={onBack} />
-        <Button label={profile.is_complete ? 'Go to my account' : 'Save and finish later'} onPress={() => router.replace('/home')} />
+        <Button label={managed ? 'Back to agency dashboard' : profile.is_complete ? 'Go to my account' : 'Save and finish later'} onPress={() => router.replace(managed ? '/agency' : '/home')} />
       </View>
       <Text style={styles.note}>Last step on the way: {FINAL_STEPS.length} of {FINAL_STEPS.length}.</Text>
     </Screen>

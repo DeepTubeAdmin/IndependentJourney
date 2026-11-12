@@ -2,7 +2,7 @@
  * Member home: profile status, quick links, sign out.
  * Browsing and messaging arrive in later phases.
  */
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -23,7 +23,7 @@ export function generateMetadata() {
 }
 
 export default function Home() {
-  const { profile, signOut } = useSession();
+  const { profile, agency, signOut } = useSession();
   // Only people on the admin list see the Admin button.
   const [isAdminCandidate, setIsAdminCandidate] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -43,6 +43,7 @@ export default function Home() {
     myMembership().then(setMembership);
     myIdentityCheck().then(setIdCheck);
   }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!profile && agency) return <Redirect href="/agency" />;
   if (!profile) return null;
   const isSurrogate = profile.role === 'surrogate';
   const name = profile.display_name || (isSurrogate ? 'there' : 'intended parents');

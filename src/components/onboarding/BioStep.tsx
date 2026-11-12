@@ -9,11 +9,13 @@ import { Button } from '@/components/Button';
 import { FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import type { StepProps } from '@/components/onboarding/stepProps';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, space } from '@/lib/theme';
 
-export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; onBack: () => void; onNext: () => void }) {
-  const { session, profile, refreshProfile } = useSession();
+export function BioStep({ profile, profileId, managed, refresh, header, onBack, onNext }: StepProps & { onNext: () => void }) {
+  const { session } = useSession();
+  const refreshProfile = refresh;
   const [bio, setBio] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -34,7 +36,7 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
     const { error: err } = await supabase
       .from('profiles')
       .update({ bio: bio.trim() })
-      .eq('id', session!.user.id);
+      .eq('id', profileId);
     setBusy(false);
     if (err) return setError(err.message);
     await refreshProfile();
@@ -42,7 +44,12 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
   }
 
   return (
-    <Screen title="In your own words" intro="Your story is shown on your full profile. Keep it personal and leave out last names, contact details and anything that would let someone find you off the platform.">
+    <Screen
+      title={managed ? 'Their story' : 'In your own words'}
+      intro={managed
+        ? 'Written with your client, in their voice if you can. Shown on the full profile. Leave out last names, contact details and anything that would let someone find them off the platform.'
+        : 'Your story is shown on your full profile. Keep it personal and leave out last names, contact details and anything that would let someone find you off the platform.'}
+    >
       {header}
       {error ? <FormMessage kind="error" text={error} /> : null}
       <TextField
@@ -56,7 +63,9 @@ export function BioStep({ header, onBack, onNext }: { header: React.ReactNode; o
       />
 
       <Text style={styles.note}>
-        {isSurrogate
+        {managed
+          ? 'This profile is shown publicly as a limited preview (first name, state, photos, headline tags) with your agency’s name on it. The story and full answers are shown to members on the other side of the journey.'
+          : isSurrogate
           ? 'Your limited preview (first name, state, photos, a few headline preferences and your verification label) is shown publicly so intended parents can find you. Your story and full answers are only shown to intended parents with an active membership.'
           : 'Your limited preview (first names, state, photos, a few headline preferences and your verification label) is shown publicly so surrogates can find you. Your story and full answers are only shown to surrogates who have joined.'}
       </Text>

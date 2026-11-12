@@ -109,9 +109,25 @@ function friendlyAdminError(message: string): string {
   return message;
 }
 
+export type AgencyRow = {
+  id: string;
+  name: string;
+  website: string;
+  contact_name: string;
+  email: string;
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  is_complete: boolean;
+  hq_state: string;
+  created_at: string;
+  profile_count: number;
+};
+
 export const admin = {
   amICandidate: () => rpc<boolean>('am_i_admin_candidate'),
   overview: () => rpc<Record<string, number>>('admin_overview'),
+  listAgencies: (status: string | null) => rpc<AgencyRow[]>('admin_list_agencies', { p_status: status }),
+  agencyDetail: (id: string) => rpc<Record<string, any>>('admin_agency_detail', { p_agency: id }),
+  setAgencyStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'suspended', note: string) => rpc<void>('admin_set_agency_status', { p_agency: id, p_status: status, p_note: note }),
   emailStats: () => rpc<Record<string, any>>('admin_email_stats'),
   deletedCount30d: () => rpc<number>('admin_deleted_count_30d'),
   searchMembers: (q: string, limit = 50, offset = 0) => rpc<MemberRow[]>('admin_search_members', { p_query: q.trim(), p_limit: limit, p_offset: offset }),
