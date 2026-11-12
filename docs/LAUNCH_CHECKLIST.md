@@ -16,7 +16,7 @@ lets you use `yourname+ip1@gmail.com`, `yourname+sur1@gmail.com` and so on):
 | IP-PAID | Intended parent | Finish the questionnaire with 3 photos. Has an active membership (free launch membership, or Admin → Members → Grant). |
 | IP-LAPSED | Intended parent | Like IP-PAID, then Admin → Members → End membership. |
 | SUR-NEW | Surrogate | Sign up only. Do NOT finish the questionnaire. |
-| SUR-DONE | Surrogate | Finish the questionnaire with 3 photos. Visibility "Also in public previews". Later: Admin → Verified. |
+| SUR-DONE | Surrogate | Finish the questionnaire with 3 photos. Later: Admin → Verified. |
 
 Your own admin account (with 2FA) is the sixth.
 
@@ -28,7 +28,7 @@ Your own admin account (with 2FA) is the sixth.
 
 - [ ] 1. Homepage loads with the beta welcome pop-up. "Just looking for now" closes it and it does not come back on reload.
 - [ ] 2. Homepage shows real member cards (opted-in and verified only) or clearly labelled example cards.
-- [ ] 3. **Browse** shows at most 5 limited previews, both surrogates and intended parents, only from members who chose "Also in public previews". Each shows first name, state, ALL photos unblurred (swipe or use the arrows), a few headline tags and a Verified / Not verified label. No city, no bio, no contact details.
+- [ ] 3. **Browse** shows limited previews of every complete profile, both surrogates and intended parents. Each shows first name, state, ALL photos unblurred (swipe or use the arrows), a few headline tags and a Verified / Not verified label. No city, no bio, no contact details.
 - [ ] 4. Opening a preview card and pressing **Message** sends you to sign-up, not to a message box.
 - [ ] 5. Resources, How it works, Terms, Privacy and Disclaimer open without logging in.
 - [ ] 6. A share link (`/s/…`) from SUR-DONE (verified) opens without login and shows no last name, city, phone or email. (It has no Message button yet; see SECURITY_REVIEW.md, "Known gaps".)

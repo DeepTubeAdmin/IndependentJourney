@@ -58,7 +58,7 @@ export function ReviewStep({ header, onBack }: { header: React.ReactNode; onBack
           <Row key={s.title} text={s.title} action="Edit" onPress={() => router.push(`/onboarding/${i}?from=review`)} />
         ))}
         <Row text="Photos" action="Edit" onPress={() => router.push('/onboarding/photos')} />
-        <Row text="Bio, visibility and homepage feature" action="Edit" onPress={() => router.push('/onboarding/bio')} />
+        <Row text="Your story" action="Edit" onPress={() => router.push('/onboarding/bio')} />
       </View>
 
       {!profile.is_complete ? (

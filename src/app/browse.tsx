@@ -1,6 +1,6 @@
 /**
  * Browse: a vertical feed of limited previews.
- *  - Visitors see up to 5 opted-in profiles from both sides, then a join prompt.
+ *  - Visitors see limited previews of every live profile from both sides, then a join prompt.
  *  - Surrogates see intended parents; intended parents see surrogates.
  * Filters never include protected characteristics.
  */
@@ -63,7 +63,7 @@ export default function Browse() {
     // The map wants everyone at once; the list pages.
     const data = await browseProfiles(filters, view === 'map' ? 200 : PAGE, offset);
     setRows((r) => (offset === 0 ? data : [...r, ...data]));
-    setMore(!anon && view === 'list' && data.length === PAGE);
+    setMore(view === 'list' && data.length === PAGE);
     setBusy(false);
   }
 
@@ -79,7 +79,7 @@ export default function Browse() {
       title={anon ? 'A glimpse of who is here' : lookingFor === 'surrogate' ? 'Surrogates' : 'Intended parents'}
       intro={
         anon
-          ? 'A few members who chose to be visible to visitors. Join free to browse everyone and see more than previews.'
+          ? 'Limited previews of our members. Join free to open full profiles and get in touch.'
           : lookingFor === 'surrogate'
             ? 'Limited previews are free. A membership unlocks full profiles and messaging.'
             : 'You can read every intended parent’s full profile. Complete your own profile to start conversations.'
@@ -167,12 +167,12 @@ export default function Browse() {
       )}
 
       {busy ? <Text style={styles.note}>Loading…</Text> : null}
-      {!busy && rows.length === 0 ? <Text style={styles.note}>{anon ? 'No one has opted in to public previews yet. Join free to be the first.' : 'No profiles match yet. Try fewer filters, or check back soon.'}</Text> : null}
+      {!busy && rows.length === 0 ? <Text style={styles.note}>{anon ? 'No profiles yet. Join free to be the first.' : 'No profiles match yet. Try fewer filters, or check back soon.'}</Text> : null}
 
       {anon ? (
         <View style={styles.wall}>
           <Text style={styles.wallTitle}>See everyone</Text>
-          <Text style={styles.wallText}>Visitors see up to five previews. Members browse every profile. Surrogates always join free; intended parents browse previews free and unlock full profiles with a membership.</Text>
+          <Text style={styles.wallText}>These are limited previews. Surrogates always join free and see full intended-parent profiles; intended parents join free and unlock full profiles and messaging with a membership.</Text>
           <View style={styles.wallRow}>
             <Button label="Join free" onPress={() => router.push('/join')} />
             <Button label="Log in" variant="secondary" onPress={() => router.push('/log-in')} />
