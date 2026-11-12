@@ -173,8 +173,8 @@ do $$ begin
 end $$;
 select pg_temp.login('00000000-0000-0000-0000-000000000012');  -- Brooke, another surrogate
 do $$ begin
-  assert (select count(*) from storage.objects where name like '00000000-0000-0000-0000-000000000011/%') = 0,
-         'same-role member cannot read another surrogate''s photo files';
+  assert (select count(*) from storage.objects where name like '00000000-0000-0000-0000-000000000011/%') = 3,
+         'same-role member sees preview photos too (previews are public since migration 19)';
 end $$;
 
 -- Migration 6: recently active first, inactive (3+ months) last, distance sort, activity touch.
