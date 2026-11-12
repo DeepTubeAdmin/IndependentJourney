@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
     if (profile.banned_at) return json({ error: 'This account cannot be verified.' }, 403);
 
     const secretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-    if (!secretKey.startsWith('sk_')) {
-      return json({ error: 'Verification is not set up yet: STRIPE_SECRET_KEY is missing or is not a secret key (it must start with sk_).' }, 500);
+    if (!/^(sk|rk)_/.test(secretKey)) {
+      return json({ error: 'Verification is not set up yet: STRIPE_SECRET_KEY is missing or is not a Stripe secret key (it must start with sk_ or rk_).' }, 500);
     }
     const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
 
