@@ -115,6 +115,6 @@ export function friendlyAuthError(message: string | undefined): string {
   if (m.includes('email not confirmed')) return 'Please confirm your email first. Check your inbox for our message.';
   if (m.includes('already registered')) return 'There is already an account with that email. Try logging in instead.';
   if (m.includes('password should be')) return 'Your password needs at least 8 characters.';
-  if (m.includes('rate limit')) return 'Too many attempts. Please wait a minute and try again.';
+  if (m.includes('rate limit') || m.includes('security purposes')) return 'Too many attempts. Please wait a minute and try again.';
   return message;
 }
