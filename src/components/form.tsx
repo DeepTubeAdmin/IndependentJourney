@@ -2,7 +2,7 @@
  * Form building blocks shared by sign-up, login and onboarding.
  * Every control has a visible label and works with a keyboard and screen reader.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { NativeSelect } from '@/components/NativeSelect';
@@ -199,23 +199,43 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 /**
  * Month / day / year drop-downs that store a YYYY-MM-DD string.
- * years='past' offers birthdays (21 to 60 years ago); 'future' offers this
+ * years='past' offers birthdays (18 to 67 years ago); 'future' offers this
  * year through three years ahead.
+ *
+ * The three parts are remembered here while the member is still choosing,
+ * and the saved value only changes once all three are picked. (Before, a
+ * half-picked date was reported as empty, which cleared the drop-down the
+ * member had just set, so the selectors looked broken.)
  */
+const splitDate = (value: string) => {
+  const [y = '', m = '', d = ''] = /^\d{4}-\d{2}-\d{2}$/.test(value ?? '') ? value.split('-') : [];
+  return { y, m, d };
+};
+
 export function DateField({ label, help, required, error, value, onChange, years = 'past' }: LabelProps & { value: string; onChange: (v: string) => void; years?: 'past' | 'future' }) {
-  const [y, m, d] = (value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '--').split('-');
+  const [parts, setParts] = useState(() => splitDate(value));
+  // Follow the saved value when it changes from outside (e.g. answers loaded
+  // after the form appeared), but not while a partial choice is in progress.
+  useEffect(() => {
+    const incoming = splitDate(value);
+    if (incoming.y && `${incoming.y}-${incoming.m}-${incoming.d}` !== `${parts.y}-${parts.m}-${parts.d}`) setParts(incoming);
+  }, [value]);
+  const { y, m, d } = parts;
   const thisYear = new Date().getFullYear();
   const yearList = years === 'past'
     ? Array.from({ length: 50 }, (_, i) => String(thisYear - 18 - i))
     : Array.from({ length: 4 }, (_, i) => String(thisYear + i));
-  const set = (ny: string, nm: string, nd: string) => onChange(ny && nm && nd ? `${ny}-${nm}-${nd}` : '');
+  const set = (ny: string, nm: string, nd: string) => {
+    setParts({ y: ny, m: nm, d: nd });
+    onChange(ny && nm && nd ? `${ny}-${nm}-${nd}` : '');
+  };
   const pad = (n: number) => String(n).padStart(2, '0');
   return (
     <FieldWrap label={label} help={help} required={required} error={error}>
       <View style={styles.dateRow}>
-        <NativeSelect accessibilityLabel={`${label}: month`} placeholder="Month" value={m ?? ''} onChange={(v) => set(y ?? '', v, d ?? '')} options={MONTHS.map((name, i) => ({ value: pad(i + 1), label: name }))} width={150} />
-        <NativeSelect accessibilityLabel={`${label}: day`} placeholder="Day" value={d ?? ''} onChange={(v) => set(y ?? '', m ?? '', v)} options={Array.from({ length: 31 }, (_, i) => ({ value: pad(i + 1), label: String(i + 1) }))} width={90} />
-        <NativeSelect accessibilityLabel={`${label}: year`} placeholder="Year" value={y ?? ''} onChange={(v) => set(v, m ?? '', d ?? '')} options={yearList.map((yy) => ({ value: yy, label: yy }))} width={110} />
+        <NativeSelect accessibilityLabel={`${label}: month`} placeholder="Month" value={m} onChange={(v) => set(y, v, d)} options={MONTHS.map((name, i) => ({ value: pad(i + 1), label: name }))} width={150} />
+        <NativeSelect accessibilityLabel={`${label}: day`} placeholder="Day" value={d} onChange={(v) => set(y, m, v)} options={Array.from({ length: 31 }, (_, i) => ({ value: pad(i + 1), label: String(i + 1) }))} width={90} />
+        <NativeSelect accessibilityLabel={`${label}: year`} placeholder="Year" value={y} onChange={(v) => set(v, m, d)} options={yearList.map((yy) => ({ value: yy, label: yy }))} width={110} />
       </View>
     </FieldWrap>
   );
