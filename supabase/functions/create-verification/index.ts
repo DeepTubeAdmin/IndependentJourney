@@ -44,9 +44,15 @@ Deno.serve(async (req) => {
     // Reuse a session the member started in the last hour instead of paying twice.
     const { data: recent } = await db.from('identity_checks').select('id, status, created_at').eq('user_id', user.id)
       .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    // If Stripe does not know it (for example it was made under a different
+    // Stripe account or in test mode), just start a fresh one.
     if (recent && recent.status === 'created' && Date.now() - new Date(recent.created_at).getTime() < 60 * 60 * 1000) {
-      const existing = await stripe.identity.verificationSessions.retrieve(recent.id);
-      if (existing.status === 'requires_input' && existing.url) return json({ url: existing.url });
+      try {
+        const existing = await stripe.identity.verificationSessions.retrieve(recent.id);
+        if (existing.status === 'requires_input' && existing.url) return json({ url: existing.url });
+      } catch (e) {
+        console.warn('Previous verification session not reusable, starting a new one', e instanceof Error ? e.message : e);
+      }
     }
 
     const session = await stripe.identity.verificationSessions.create({
