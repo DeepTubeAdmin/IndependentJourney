@@ -25,20 +25,32 @@ export default function LogIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // True when the account exists but its email was never confirmed, so we can
+  // offer to send the confirmation link again.
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   async function submit() {
     if (!supabase) return setError('The app is not connected to a database yet.');
     setBusy(true);
     setError('');
+    setUnconfirmed(false);
     const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setBusy(false);
-    if (err) return setError(friendlyAuthError(err.message));
+    if (err) {
+      setUnconfirmed((err.message ?? '').toLowerCase().includes('email not confirmed'));
+      return setError(friendlyAuthError(err.message));
+    }
     router.replace('/welcome');
+  }
+
+  function resendConfirmation() {
+    router.push({ pathname: '/verify-email', params: { email: email.trim().toLowerCase() } });
   }
 
   return (
     <Screen title="Welcome back" intro="Log in to your Independent Journey account.">
       {error ? <FormMessage kind="error" text={error} /> : null}
+      {unconfirmed ? <Button label="Resend the confirmation email" variant="secondary" onPress={resendConfirmation} /> : null}
       <TextField label="Email" required value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <TextField label="Password" required value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" onSubmitEditing={submit} />
       <Button label={busy ? 'Logging in…' : 'Log in'} onPress={submit} disabled={busy} />
@@ -46,6 +58,10 @@ export default function LogIn() {
       <Text style={styles.footer}>
         <Link href="/forgot-password" style={styles.link}>
           Forgot your password?
+        </Link>
+        {'  ·  '}
+        <Link href="/verify-email" style={styles.link}>
+          Didn’t get the confirmation email?
         </Link>
       </Text>
       <Text style={styles.footer}>
