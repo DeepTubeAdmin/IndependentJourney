@@ -12,7 +12,6 @@ import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard, type ProfileCardProps } from "@/components/ProfileCard";
-import { useSession } from "@/lib/auth";
 import { featuredProfiles, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { pageMeta } from "@/lib/seo";
@@ -130,17 +129,15 @@ const STEPS = [
 ];
 
 export default function Home() {
-  // Real featured members (verified, opted in). Falls back to example cards.
-  const [allFeatured, setFeatured] = useState<PreviewRow[]>([]);
+  // Real members from both sides (Seth's rule: the homepage shows surrogates
+  // and intended parents to everyone; Browse narrows to the other side).
+  // Falls back to example cards while there are none.
+  const [featured, setFeatured] = useState<PreviewRow[]>([]);
   // After a member deletes their account they land here with ?deleted=1.
   const { deleted } = useLocalSearchParams<{ deleted?: string }>();
   useEffect(() => {
     featuredProfiles(6).then(setFeatured).catch(() => setFeatured([]));
   }, []);
-  // A signed-in member only sees the other side: intended parents cannot open
-  // other intended parents' profiles (and surrogates cannot open surrogates').
-  const { profile: me } = useSession();
-  const featured = me ? allFeatured.filter((p) => p.role !== me.role) : allFeatured;
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.inner}>
