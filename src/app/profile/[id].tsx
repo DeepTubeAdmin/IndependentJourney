@@ -12,8 +12,9 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, compensationLine, listSavedIds, loadFullProfile, myAccessTo, prettyAnswers, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
-import { blockMember, canMessage, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessage, unblockMember, type CanMessage } from '@/lib/messages';
+import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, type Access, type PreviewRow } from '@/lib/browse';
+import { myAgency } from '@/lib/agency';
+import { blockMember, canMessage, canMessageAs, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessageAs, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
@@ -24,7 +25,12 @@ export function generateMetadata() {
 
 export default function ProfilePage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session, profile: me, loading } = useSession();
+  const { session, profile: me, agency, loading } = useSession();
+  const isAgencyViewer = Boolean(agency) && !me;
+  // An agency writes on behalf of one of its client profiles (opposite role to this one).
+  const [clients, setClients] = useState<{ id: string; display_name: string; role: string; is_complete: boolean }[]>([]);
+  const [asId, setAsId] = useState<string | null>(null);
+  const [agencyCard, setAgencyCard] = useState<Record<string, any> | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
   const [preview, setPreview] = useState<PreviewRow | null>(null);
   const [full, setFull] = useState<Awaited<ReturnType<typeof loadFullProfile>>>(null);
@@ -46,11 +52,27 @@ export default function ProfilePage() {
       setPreview(rows[0] ?? null);
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
-      if (session) {
+      if (session && !isAgencyViewer) {
         setSaved((await listSavedIds(session.user.id)).includes(id));
         setBlocked(await haveBlocked(session.user.id, id));
       }
-      setCan(session ? await canMessage(id) : 'sign_in');
+      if (isAgencyViewer && rows[0]) {
+        // Which of my client profiles could write to this member?
+        const mine = await myAgency();
+        const eligible = (mine?.profiles ?? []).filter((c) => c.role !== rows[0]!.role && c.is_complete);
+        setClients(eligible);
+        if (eligible[0]) {
+          setAsId(eligible[0].id);
+          setBlocked(await haveBlocked(eligible[0].id, id));
+          setCan(await canMessageAs(eligible[0].id, id));
+        } else {
+          setCan('not_available');
+        }
+      } else {
+        setCan(session ? await canMessage(id) : 'sign_in');
+      }
+      // Who stands behind an agency-posted profile.
+      if (rows[0]?.profile_type === 'agency') setAgencyCard(await loadAgencyCard(id));
       // A visitor who wrote a message before joining finds it waiting here.
       const kept = loadDraft(id);
       if (kept) { setDraft(kept); setComposing(true); }
@@ -79,20 +101,28 @@ export default function ProfilePage() {
   }
 
   const isIpViewer = me?.role === 'intended_parent';
-  const isMine = session?.user.id === id;
+  const isOwnClient = isAgencyViewer && (full as any)?.profile?.managed_by === agency?.id;
+  const isMine = session?.user.id === id || isOwnClient;
+  const fromId = isAgencyViewer ? asId : session?.user.id ?? null;
+
+  async function chooseClient(cid: string) {
+    setAsId(cid);
+    setBlocked(await haveBlocked(cid, id));
+    setCan(await canMessageAs(cid, id));
+  }
 
   // Blocking stops messages in both directions and is private to you.
   async function toggleBlock() {
-    if (!session) return;
+    if (!session || !fromId) return;
     if (blocked) {
-      await unblockMember(session.user.id, id);
+      await unblockMember(fromId, id);
       setBlocked(false);
     } else {
-      await blockMember(session.user.id, id);
+      await blockMember(fromId, id);
       setBlocked(true);
       setComposing(false);
     }
-    setCan(await canMessage(id));
+    setCan(isAgencyViewer ? await canMessageAs(fromId, id) : await canMessage(id));
   }
 
   // Private bookmark: keep browsing, come back later to message.
@@ -119,8 +149,9 @@ export default function ProfilePage() {
   async function sendFirst() {
     if (!draft.trim()) return;
     if (!session) { saveDraft(id, draft); return router.push('/join'); }
+    if (!fromId) return;
     setSending(true);
-    const r = await sendMessage(id, draft.trim());
+    const r = await sendMessageAs(fromId, id, draft.trim());
     setSending(false);
     if (r.error) return setMsg({ kind: 'error', text: r.error });
     clearDraft(id);
@@ -136,13 +167,17 @@ export default function ProfilePage() {
   }
 
   return (
-    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={preview.is_verified ? 'Identity verified' : 'Identity not verified'}>
+    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={`${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
+      {preview.profile_type === 'agency' ? (
+        <FormMessage kind="info" text={`This profile was posted by ${preview.agency_name ?? 'an agency'} for a client they represent. Messages go to the agency, which replies on the client’s behalf. The agency has told us it has the client’s written consent to be listed.`} />
+      ) : null}
+      {isOwnClient ? <FormMessage kind="info" text="This is one of your client profiles, as members see it." /> : null}
 
       {access === 'preview' ? (
         <>
           <View style={styles.previewWrap}>
-            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
+            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={preview.is_verified} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
             <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>
@@ -184,15 +219,35 @@ export default function ProfilePage() {
             ))}
           </Section>
           <Text style={styles.note}>Health details are never part of a profile. Members discuss those directly, and clinics make all medical determinations.</Text>
+          {agencyCard ? (
+            <Section title={`About the agency: ${agencyCard.name}`}>
+              {agencyCard.website ? <Row label="Website" value={String(agencyCard.website)} /> : null}
+              {agencyCard.hq_state ? <Row label="Home office" value={String(agencyCard.hq_state)} /> : null}
+              {Array.isArray(agencyCard.states_served) && agencyCard.states_served.length ? <Row label="States" value={agencyCard.states_served.includes('ALL') ? 'All surrogacy-friendly states' : agencyCard.states_served.join(', ')} /> : null}
+              {agencyCard.year_founded ? <Row label="Founded" value={String(agencyCard.year_founded)} /> : null}
+              {prettyAnswers(agencyCard, ['id', 'name', 'website', 'logo_path', 'hq_state', 'states_served', 'year_founded', 'description']).map((r) => (
+                <Row key={r.label} label={r.label} value={r.value} />
+              ))}
+              {agencyCard.description ? <Text style={styles.bio}>{String(agencyCard.description)}</Text> : null}
+              <Text style={styles.note}>Fee ranges are what the agency reports about itself. Independent Journey does not verify them and takes no part in any agreement.</Text>
+            </Section>
+          ) : null}
         </>
       ) : (
         <Text style={styles.note}>Loading full profile…</Text>
       )}
 
+      {isAgencyViewer && !isOwnClient ? (
+        clients.length > 0 ? (
+          <ChoiceField label="Write as" options={clients.map((c) => ({ value: c.id, label: c.display_name || 'Unnamed profile' }))} value={asId} onChange={(v) => chooseClient(String(v))} help="Messages are sent in this client’s name and labelled with your agency." />
+        ) : (
+          <Text style={styles.note}>To write to this member, first add and complete a {preview.role === 'surrogate' ? 'intended-parent' : 'surrogate'} client profile on your agency dashboard.</Text>
+        )
+      ) : null}
       {!isMine ? (
         <View style={styles.actions}>
           {can !== 'same_role' ? <Button label="Message" disabled={can !== null && can !== 'ok' && can !== 'sign_in'} onPress={startMessage} /> : null}
-          <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
+          {!isAgencyViewer ? <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} /> : null}
           <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
           {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
         </View>

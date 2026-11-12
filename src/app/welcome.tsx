@@ -8,7 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { useSession } from '@/lib/auth';
 import { privateMeta } from '@/lib/seo';
-import { completeSignup, readPendingSignup } from '@/lib/social';
+import { completeAgencySignup, completeSignup, readPendingSignup } from '@/lib/social';
 import { colors } from '@/lib/theme';
 
 export function generateMetadata() {
@@ -16,15 +16,24 @@ export function generateMetadata() {
 }
 
 export default function Welcome() {
-  const { loading, session, profile, profileChecked, refreshProfile } = useSession();
+  const { loading, session, profile, agency, profileChecked, refreshProfile } = useSession();
   // Signed in but no profile: a Google/Apple sign-up. If they already picked a
   // role and agreed on the sign-up page, finish quietly; otherwise ask.
   const [finishing, setFinishing] = useState(false);
   useEffect(() => {
     if (loading || !session || !profileChecked || profile || finishing) return;
+    // An agency login has no profile: its home is the agency dashboard.
+    if (agency) { router.replace('/agency'); return; }
     setFinishing(true);
     readPendingSignup().then(async (p) => {
-      if (p?.agreed && p.role) {
+      if (p?.agreed && p.role === 'agency') {
+        const err = await completeAgencySignup(p.agency_name ?? '', p.agency_website ?? '', p.contact_name ?? '', p.legal_version);
+        if (!err) {
+          await refreshProfile();
+          router.replace('/agency');
+          return;
+        }
+      } else if (p?.agreed && p.role && p.role !== 'agency') {
         const err = await completeSignup(p.role, p.legal_version);
         if (!err) {
           await refreshProfile();
@@ -34,7 +43,7 @@ export default function Welcome() {
       }
       router.replace('/finish-sign-up');
     });
-  }, [loading, session, profileChecked, profile, finishing, refreshProfile]);
+  }, [loading, session, agency, profileChecked, profile, finishing, refreshProfile]);
 
   if (loading || (session && !profile)) {
     return (

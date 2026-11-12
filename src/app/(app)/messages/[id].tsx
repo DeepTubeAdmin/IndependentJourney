@@ -13,7 +13,7 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import {
   blockMember, conversationMessages, haveBlocked, markRead, myConversations,
-  NEVER_SEND_MONEY, SCAM_WARNING, sendMessage, unblockMember, UNVERIFIED_WARNING,
+  NEVER_SEND_MONEY, SCAM_WARNING, sendMessageAs, unblockMember, UNVERIFIED_WARNING,
   type ConversationRow, type Message,
 } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
@@ -26,7 +26,7 @@ export function generateMetadata() {
 
 export default function Conversation() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session, profile } = useSession();
+  const { session, profile, agency } = useSession();
   const [conv, setConv] = useState<ConversationRow | null | undefined>(undefined);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
@@ -58,10 +58,10 @@ export default function Conversation() {
 
   useEffect(() => {
     if (!conv || !session) return;
-    haveBlocked(session.user.id, conv.other_id).then(setBlocked);
-  }, [conv?.other_id, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    haveBlocked(conv.mine_id, conv.other_id).then(setBlocked);
+  }, [conv?.other_id, conv?.mine_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!session || !profile || conv === undefined) return <Screen title="Loading…"><Text style={styles.note}>One moment.</Text></Screen>;
+  if (!session || (!profile && !agency) || conv === undefined) return <Screen title="Loading…"><Text style={styles.note}>One moment.</Text></Screen>;
   if (conv === null) {
     return (
       <Screen title="Conversation not found">
@@ -74,7 +74,7 @@ export default function Conversation() {
     if (!text.trim() || !conv) return;
     setBusy(true);
     setMsg(null);
-    const r = await sendMessage(conv.other_id, text.trim());
+    const r = await sendMessageAs(conv.mine_id, conv.other_id, text.trim());
     setBusy(false);
     if (r.error) return setMsg({ kind: 'error', text: r.error });
     setText('');
@@ -85,8 +85,8 @@ export default function Conversation() {
 
   async function toggleBlock() {
     if (!conv) return;
-    if (blocked) await unblockMember(session!.user.id, conv.other_id);
-    else await blockMember(session!.user.id, conv.other_id);
+    if (blocked) await unblockMember(conv.mine_id, conv.other_id);
+    else await blockMember(conv.mine_id, conv.other_id);
     setBlocked(!blocked);
     setMsg({ kind: 'info', text: blocked ? 'Unblocked.' : `${conv.other_name} is blocked. Neither of you can message the other.` });
   }
@@ -99,7 +99,12 @@ export default function Conversation() {
   }
 
   return (
-    <Screen width={760} title={`${conv.other_name} · ${conv.other_state}`} intro={`${conv.other_role === 'surrogate' ? 'Surrogate' : 'Intended parent'} · ${conv.other_verified ? 'Identity verified' : 'Identity not verified'}`}>
+    <Screen width={760} title={`${conv.other_name} · ${conv.other_state}`} intro={[
+      conv.other_role === 'surrogate' ? 'Surrogate' : 'Intended parent',
+      conv.other_verified ? 'Identity verified' : 'Identity not verified',
+      conv.other_profile_type === 'agency' ? `Agency profile${conv.other_agency_name ? ` (${conv.other_agency_name})` : ''}: you are talking with the agency` : null,
+      agency && !profile ? `Writing as ${conv.mine_name}` : null,
+    ].filter(Boolean).join(' · ')}>
       <View style={styles.topRow}>
         <Button label="All messages" variant="secondary" size="sm" onPress={() => router.replace('/messages')} />
         <Button label="View profile" variant="secondary" size="sm" onPress={() => router.push(`/profile/${conv.other_id}`)} />
@@ -130,7 +135,7 @@ export default function Conversation() {
       ) : (
         <ScrollView ref={scroller} style={styles.thread} contentContainerStyle={styles.threadInner} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}>
           {messages.map((m) => {
-            const mine = m.sender_id === session.user.id;
+            const mine = m.sender_id === conv.mine_id;
             return (
               <View key={m.id} style={[styles.bubbleWrap, mine ? styles.mineWrap : styles.theirsWrap]}>
                 <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>

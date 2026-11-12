@@ -18,7 +18,7 @@ export type Option = { value: string; label: string };
 export type Field = {
   key: string;
   /** 'ip_parents' keys are parent1_first_name, parent1_age, parent2_first_name, parent2_age (one row per parent). */
-  table: 'profiles' | 'profile_private' | 'surrogate_details' | 'health_self_reports' | 'ip_details' | 'ip_parents';
+  table: 'profiles' | 'profile_private' | 'surrogate_details' | 'health_self_reports' | 'ip_details' | 'ip_parents' | 'agencies';
   label: string;
   type: FieldType;
   required?: boolean;
@@ -83,6 +83,33 @@ export const US_STATES: Option[] = [
   ['WY', 'Wyoming'],
 ].map(([value, label]) => ({ value, label }));
 
+/**
+ * Asked of every independent member (both roles) on the first step. Agency-
+ * posted profiles skip these: they are labelled "Agency" automatically.
+ */
+const AGENCY_QUESTIONS: Field[] = [
+  { key: 'profile_type', table: 'profiles', label: 'Are you working with a surrogacy agency?', type: 'single', required: true, options: [{ value: 'independent', label: 'No, I am independent' }, { value: 'with_agency', label: 'Yes, I work with an agency' }], help: 'Shown on your profile as "Independent" or "With an agency".' },
+  { key: 'agency_name', table: 'profiles', label: 'Agency name (optional)', type: 'text', maxLength: 80, help: 'Only if you work with one.' },
+  { key: 'agency_messages', table: 'profiles', label: 'Who may message you?', type: 'single', required: true, boolean: true, options: [{ value: 'true', label: 'Anyone, including agencies' }, { value: 'false', label: 'Independent members only' }], help: 'Agencies can post profiles for the clients they represent. Choose whether those profiles may write to you first. You can always write to them.' },
+];
+
+/** Medical clearance, answered by an agency in place of the private health step. */
+const CLEARANCE: Option[] = [
+  { value: 'yes', label: 'Yes, cleared' },
+  { value: 'in_progress', label: 'In progress' },
+  { value: 'no', label: 'Not yet' },
+];
+const CLEARANCE_STEP: Step = {
+  id: 'clearance',
+  title: 'Medical clearance',
+  intro: 'Agencies do not enter health details here. Instead, tell intended parents where this surrogate is in her medical screening.',
+  fields: [
+    { key: 'ob_cleared', table: 'surrogate_details', label: 'Cleared for surrogacy by her OB?', type: 'single', required: true, options: CLEARANCE },
+    { key: 'clinic_cleared', table: 'surrogate_details', label: 'Cleared by a fertility clinic?', type: 'single', required: true, options: CLEARANCE, headlineTag: (v) => (v === 'yes' ? 'Clinic cleared' : null) },
+    { key: 'clearance_clinic', table: 'surrogate_details', label: 'Clinic name (optional)', type: 'text', maxLength: 120 },
+  ],
+};
+
 export const SURROGATE_STEPS: Step[] = [
   {
     id: 'basics',
@@ -97,6 +124,7 @@ export const SURROGATE_STEPS: Step[] = [
       { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.' },
       { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true },
       { key: 'phone', table: 'profile_private', label: 'Mobile phone', type: 'text', required: true, help: 'Private. Used to verify your account.' },
+      ...AGENCY_QUESTIONS,
       { key: 'willing_to_travel', table: 'surrogate_details', label: 'Willing to travel for appointments or delivery?', type: 'single', required: true, options: YES_NO_DISCUSS },
       { key: 'us_resident', table: 'surrogate_details', label: 'US resident or citizen?', type: 'yesno', boolean: true, required: true },
     ],
@@ -166,6 +194,7 @@ export const IP_STEPS: Step[] = [
       { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.' },
       { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true },
       { key: 'phone', table: 'profile_private', label: 'Mobile phone', type: 'text', required: true, help: 'Private. Used to verify your account.' },
+      ...AGENCY_QUESTIONS,
     ],
   },
   {
@@ -215,9 +244,95 @@ export const IP_STEPS: Step[] = [
   },
 ];
 
-export function stepsFor(role: Role): Step[] {
-  return role === 'surrogate' ? SURROGATE_STEPS : IP_STEPS;
+/** Keys an agency does not answer for a client: the agency is the contact, and labels are automatic. */
+const NOT_FOR_MANAGED = new Set(['phone', 'profile_type', 'agency_name', 'agency_messages']);
+
+/**
+ * The steps for a role. `managed` = an agency-posted profile: no phone, no
+ * agency questions, and the private health step is replaced by medical clearance.
+ */
+export function stepsFor(role: Role, managed = false): Step[] {
+  const base = role === 'surrogate' ? SURROGATE_STEPS : IP_STEPS;
+  if (!managed) return base;
+  return base
+    .map((s) => (s.id === 'health' ? CLEARANCE_STEP : { ...s, fields: s.fields.filter((f) => !NOT_FOR_MANAGED.has(f.key)) }))
+    .filter((s) => s.fields.length > 0);
 }
+
+// -----------------------------------------------------------------------------
+// Agency account details. Saved to the agencies table (one row per agency).
+// Shown to members on every profile the agency posts, except contact details.
+// -----------------------------------------------------------------------------
+const YES_NO: Option[] = [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }];
+const RANGE_FEE: Option[] = [
+  { value: 'under_20k', label: 'Under $20,000' }, { value: '20_30k', label: '$20,000 to $30,000' }, { value: '30_40k', label: '$30,000 to $40,000' },
+  { value: '40_50k', label: '$40,000 to $50,000' }, { value: 'over_50k', label: 'Over $50,000' }, { value: 'discuss', label: 'Prefer to discuss' },
+];
+const RANGE_COST: Option[] = [
+  { value: 'under_100k', label: 'Under $100,000' }, { value: '100_150k', label: '$100,000 to $150,000' }, { value: '150_200k', label: '$150,000 to $200,000' },
+  { value: 'over_200k', label: 'Over $200,000' }, { value: 'discuss', label: 'Prefer to discuss' },
+];
+const RANGE_COMP: Option[] = [
+  { value: 'under_40k', label: 'Under $40,000' }, { value: '40_55k', label: '$40,000 to $55,000' }, { value: '55_70k', label: '$55,000 to $70,000' },
+  { value: 'over_70k', label: 'Over $70,000' }, { value: 'discuss', label: 'Prefer to discuss' },
+];
+export const AGENCY_STEPS: Step[] = [
+  {
+    id: 'agency_basics',
+    title: 'About your agency',
+    intro: 'Your name, website, logo and location are shown on every profile you post. Contact details stay private.',
+    fields: [
+      { key: 'name', table: 'agencies', label: 'Agency name', type: 'text', required: true, maxLength: 80 },
+      { key: 'website', table: 'agencies', label: 'Website', type: 'text', required: true, maxLength: 200, placeholder: 'https://', help: 'Required. Members can visit it from your clients’ profiles.' },
+      { key: 'contact_name', table: 'agencies', label: 'Your name (main contact)', type: 'text', required: true, maxLength: 80, help: 'Private. Messages to your clients reach you.' },
+      { key: 'contact_phone', table: 'agencies', label: 'Phone (optional)', type: 'text', maxLength: 30, help: 'Private. Only used if we need to reach you.' },
+      { key: 'year_founded', table: 'agencies', label: 'Year founded', type: 'number', placeholder: '2015' },
+      { key: 'hq_state', table: 'agencies', label: 'Home office state', type: 'state', required: true },
+      { key: 'states_served', table: 'agencies', label: 'States you work in', type: 'multi', required: true, options: [{ value: 'ALL', label: 'All surrogacy-friendly states' }, ...US_STATES], help: 'Choose all that apply.' },
+    ],
+  },
+  {
+    id: 'agency_services',
+    title: 'Services and experience',
+    intro: 'Plain answers help members compare. Ranges are fine.',
+    fields: [
+      { key: 'services', table: 'agencies', label: 'What you provide', type: 'multi', required: true, options: [
+        { value: 'matching', label: 'Matching' }, { value: 'screening', label: 'Surrogate screening' }, { value: 'case_management', label: 'Journey coordination / case management' },
+        { value: 'escrow', label: 'Escrow management' }, { value: 'legal', label: 'In-house or partner legal' }, { value: 'insurance', label: 'Insurance review and placement' },
+        { value: 'counseling', label: 'Mental health support' }, { value: 'egg_donation', label: 'Egg donation program' }, { value: 'international', label: 'Support for international parents' },
+      ], help: 'Choose all that apply.' },
+      { key: 'journeys_range', table: 'agencies', label: 'Journeys completed', type: 'single', options: [{ value: 'under_10', label: 'Under 10' }, { value: '10_50', label: '10 to 50' }, { value: '50_200', label: '50 to 200' }, { value: 'over_200', label: 'Over 200' }] },
+      { key: 'match_wait', table: 'agencies', label: 'Typical wait for a match', type: 'single', options: [{ value: 'under_3', label: 'Under 3 months' }, { value: '3_6', label: '3 to 6 months' }, { value: '6_12', label: '6 to 12 months' }, { value: 'over_12', label: 'Over 12 months' }] },
+      { key: 'surrogate_screening', table: 'agencies', label: 'Surrogate screening you perform', type: 'multi', options: [
+        { value: 'background', label: 'Criminal background check' }, { value: 'psych', label: 'Psychological evaluation' }, { value: 'medical_records', label: 'Medical records review' },
+        { value: 'insurance_review', label: 'Insurance review' }, { value: 'financial', label: 'Financial review' }, { value: 'home_visit', label: 'Home visit' },
+      ], help: 'Choose all that apply.' },
+      { key: 'escrow', table: 'agencies', label: 'How client funds are held', type: 'single', options: [{ value: 'third_party', label: 'Licensed third-party escrow or attorney trust account' }, { value: 'agency', label: 'Agency-managed escrow' }, { value: 'discuss', label: 'Varies / prefer to discuss' }] },
+      { key: 'memberships', table: 'agencies', label: 'Memberships', type: 'multi', options: [{ value: 'seeds', label: 'SEEDS' }, { value: 'asrm', label: 'ASRM' }, { value: 'resolve', label: 'RESOLVE' }, { value: 'mhb', label: 'Men Having Babies' }], help: 'Optional. Choose all that apply.' },
+    ],
+  },
+  {
+    id: 'agency_fees',
+    title: 'Fees and who you work with',
+    intro: 'Members see these ranges on your clients’ profiles. Nothing here is a contract.',
+    fields: [
+      { key: 'ip_fee_range', table: 'agencies', label: 'Typical agency fee for intended parents', type: 'single', required: true, options: RANGE_FEE, help: 'Your fee only, not the whole journey.' },
+      { key: 'journey_cost_range', table: 'agencies', label: 'Typical all-in journey cost', type: 'single', options: RANGE_COST, help: 'Agency fee, surrogate compensation, legal, insurance and clinic, as a rough total.' },
+      { key: 'surrogate_comp_range', table: 'agencies', label: 'Typical surrogate base compensation', type: 'single', options: RANGE_COMP },
+      { key: 'international', table: 'agencies', label: 'Do you work with intended parents living outside the US?', type: 'single', options: YES_NO },
+      { key: 'lgbtq', table: 'agencies', label: 'Do you work with LGBTQ+ intended parents?', type: 'single', options: YES_NO },
+      { key: 'works_with_site_matches', table: 'agencies', label: 'Will you support a surrogate and intended parents who met on this site but are not your clients?', type: 'single', options: [...YES_NO, { value: 'discuss', label: 'Case by case' }], help: 'Many independent matches look for an agency to manage the journey.' },
+    ],
+  },
+  {
+    id: 'agency_story',
+    title: 'Your agency in your words',
+    fields: [
+      { key: 'description', table: 'agencies', label: 'About your agency', type: 'textarea', required: true, maxLength: 1500, placeholder: 'Who you are, how you support surrogates and intended parents, and what makes you different.' },
+      { key: 'attested_consent', table: 'agencies', label: 'I am authorized to act for this agency, and I will only post profiles for clients who have given us written consent to be listed here.', type: 'yesno', boolean: true, required: true },
+    ],
+  },
+];
 
 /** Non-questionnaire steps that every role goes through after the questions. */
 export const FINAL_STEPS = ['photos', 'bio', 'review'] as const;

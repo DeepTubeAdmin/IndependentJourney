@@ -3,20 +3,24 @@
  * src/config/questionnaire.ts; after them come photos, bio and review.
  *
  * URL: /onboarding/0, /onboarding/1, ... then /onboarding/photos, /onboarding/bio, /onboarding/review
+ * An agency editing a client profile adds ?for=<profile id>; the same screens
+ * then read and save that profile instead of the signed-in member's.
  */
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { ChoiceField, DateField, FormMessage, MoneyField, MultiChoiceField, SelectField, TextField, YesNoField } from '@/components/form';
+import { FormMessage } from '@/components/form';
+import { FieldControl } from '@/components/onboarding/FieldControl';
 import { BioStep } from '@/components/onboarding/BioStep';
 import { PhotosStep } from '@/components/onboarding/PhotosStep';
 import { ReviewStep } from '@/components/onboarding/ReviewStep';
 import { Screen } from '@/components/Screen';
-import { FINAL_STEPS, stepsFor, US_STATES, type Field } from '@/config/questionnaire';
-import { useSession } from '@/lib/auth';
+import { FINAL_STEPS, stepsFor } from '@/config/questionnaire';
+import { useSession, type Profile } from '@/lib/auth';
 import { loadAnswers, saveStep, validateStep, type Answers } from '@/lib/profile';
+import { supabase } from '@/lib/supabase';
 import { colors, fonts, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
 
@@ -26,12 +30,29 @@ export function generateMetadata() {
 
 export default function OnboardingStep() {
   // `from=review` means the member clicked Edit on the review page: save, then go straight back there.
-  const { step, from } = useLocalSearchParams<{ step: string; from?: string }>();
+  const { step, from, for: forId } = useLocalSearchParams<{ step: string; from?: string; for?: string }>();
   const fromReview = from === 'review';
-  const { session, profile, refreshProfile } = useSession();
+  const { session, profile: myProfile, refreshProfile } = useSession();
+  // ?for= : an agency working on one of its client profiles.
+  const [managedProfile, setManagedProfile] = useState<Profile | null>(null);
+  const loadManaged = useCallback(async () => {
+    if (!forId || !supabase) return;
+    const { data } = await supabase.from('profiles').select('*').eq('id', forId).maybeSingle();
+    setManagedProfile((data as Profile | null) ?? null);
+  }, [forId]);
+  useEffect(() => { loadManaged(); }, [loadManaged]);
+  const managed = Boolean(forId);
+  const profile = managed ? managedProfile : myProfile;
+  const profileId = forId ?? session?.user.id;
+  const refresh = managed ? loadManaged : refreshProfile;
+  /** Keeps ?for= on every link so the agency stays on the client profile. */
+  const href = (path: string, extra?: string) => {
+    const q = [extra, forId ? `for=${forId}` : ''].filter(Boolean).join('&');
+    return q ? `${path}?${q}` : path;
+  };
   // Depends on the role only: a profile refresh must not reload (and overwrite) answers being edited.
   const role = profile?.role;
-  const steps = useMemo(() => (role ? stepsFor(role) : []), [role]);
+  const steps = useMemo(() => (role ? stepsFor(role, managed) : []), [role, managed]);
   const total = steps.length + FINAL_STEPS.length;
 
   const index = Number(step);
@@ -46,22 +67,23 @@ export default function OnboardingStep() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!session || steps.length === 0) return;
-    loadAnswers(session.user.id, steps).then((a) => {
+    if (!profileId || steps.length === 0) return;
+    loadAnswers(profileId, steps).then((a) => {
       setAnswers(a);
       setLoaded(true);
     });
-  }, [session, steps]);
+  }, [profileId, steps]);
 
-  if (!profile || !session) return null;
+  if (!profile || !session || !profileId) return null;
 
   const goTo = (pos: number) => {
-    if (pos < 0) return router.replace('/');
-    if (pos < steps.length) return router.push(`/onboarding/${pos}`);
+    if (pos < 0) return router.replace(managed ? '/agency' : '/');
+    if (pos < steps.length) return router.push(href(`/onboarding/${pos}`));
     const final = FINAL_STEPS[pos - steps.length];
-    if (!final) return router.replace('/welcome');
-    router.push(`/onboarding/${final}`);
+    if (!final) return router.replace(managed ? '/agency' : '/welcome');
+    router.push(href(`/onboarding/${final}`));
   };
+  const stepProps = { profile, profileId, managed, refresh, href };
 
   const progress = (
     <Text style={styles.progress}>
@@ -70,12 +92,12 @@ export default function OnboardingStep() {
   );
 
   if (!isQuestion) {
-    if (step === 'photos') return <PhotosStep header={progress} onBack={() => goTo(position - 1)} onNext={() => goTo(position + 1)} />;
-    if (step === 'bio') return <BioStep header={progress} onBack={() => goTo(position - 1)} onNext={() => goTo(position + 1)} />;
-    if (step === 'review') return <ReviewStep header={progress} onBack={() => goTo(position - 1)} />;
+    if (step === 'photos') return <PhotosStep {...stepProps} header={progress} onBack={() => goTo(position - 1)} onNext={() => goTo(position + 1)} />;
+    if (step === 'bio') return <BioStep {...stepProps} header={progress} onBack={() => goTo(position - 1)} onNext={() => goTo(position + 1)} />;
+    if (step === 'review') return <ReviewStep {...stepProps} header={progress} onBack={() => goTo(position - 1)} />;
     return (
       <Screen title="Page not found">
-        <Button label="Start over" onPress={() => router.replace('/onboarding/0')} />
+        <Button label="Start over" onPress={() => router.replace(href('/onboarding/0'))} />
       </Screen>
     );
   }
@@ -88,18 +110,18 @@ export default function OnboardingStep() {
     if (Object.keys(e).length) return;
     setBusy(true);
     setServerError('');
-    const err = await saveStep(session!.user.id, current, steps, answers);
+    const err = await saveStep(profileId!, current, steps, answers);
     setBusy(false);
     if (err) return setServerError(err);
-    await refreshProfile();
-    if (fromReview) return router.replace('/onboarding/review');
+    await refresh();
+    if (fromReview) return router.replace(href('/onboarding/review'));
     goTo(position + 1);
   }
 
   const set = (key: string, value: unknown) => setAnswers((a) => ({ ...a, [key]: value }));
 
   return (
-    <Screen title={current.title} intro={current.intro}>
+    <Screen title={managed ? `${profile.display_name || 'New client'}: ${current.title}` : current.title} intro={current.intro}>
       {progress}
       {current.notice ? <FormMessage kind="info" text={current.notice} /> : null}
       {serverError ? <FormMessage kind="error" text={serverError} /> : null}
@@ -114,38 +136,6 @@ export default function OnboardingStep() {
       <Text style={styles.saveNote}>{fromReview ? 'Saving takes you back to the review page.' : `Your answers save when you continue. ${position + 1 < total ? 'The review page at the end shows whether your profile is live.' : ''}`}</Text>
     </Screen>
   );
-}
-
-function FieldControl({ field, value, onChange, error }: { field: Field; value: unknown; onChange: (v: unknown) => void; error?: string }) {
-  const common = { label: field.label, help: field.help, required: field.required, error };
-  switch (field.type) {
-    case 'date':
-      return <DateField {...common} value={typeof value === 'string' ? value : ''} onChange={onChange} years={field.years ?? 'past'} />;
-    case 'money':
-      return <MoneyField {...common} value={value == null ? '' : String(value)} onChange={onChange} />;
-    case 'text':
-    case 'textarea':
-    case 'number':
-      return (
-        <TextField
-          {...common}
-          value={value == null ? '' : String(value)}
-          onChangeText={onChange}
-          multiline={field.type === 'textarea'}
-          placeholder={field.placeholder}
-          keyboardType={field.type === 'number' ? 'number-pad' : 'default'}
-          maxLength={field.maxLength}
-        />
-      );
-    case 'state':
-      return <SelectField {...common} options={US_STATES} value={(value as string) ?? null} onChange={onChange} />;
-    case 'single':
-      return <ChoiceField {...common} options={field.options ?? []} value={value == null ? null : String(value)} onChange={onChange} />;
-    case 'multi':
-      return <MultiChoiceField {...common} options={field.options ?? []} value={(value as string[]) ?? []} onChange={onChange} />;
-    case 'yesno':
-      return <YesNoField {...common} value={typeof value === 'boolean' ? value : null} onChange={onChange} />;
-  }
 }
 
 const styles = StyleSheet.create({

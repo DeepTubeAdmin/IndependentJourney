@@ -8,7 +8,7 @@ import { useSession } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
 export default function AppLayout() {
-  const { loading, session, profile, profileChecked } = useSession();
+  const { loading, session, profile, agency, profileChecked } = useSession();
   if (loading || (session && !profileChecked)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
@@ -17,6 +17,7 @@ export default function AppLayout() {
     );
   }
   if (!session) return <Redirect href="/log-in" />;
-  if (!profile) return <Redirect href="/finish-sign-up" />;
+  // Agencies have no profile of their own but use the same messages, settings and (for clients) onboarding screens.
+  if (!profile && !agency) return <Redirect href="/finish-sign-up" />;
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />;
 }

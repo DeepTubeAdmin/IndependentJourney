@@ -10,6 +10,7 @@ import { colors, fonts, radius, space } from '@/lib/theme';
 const LINKS = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/members', label: 'Members' },
+  { href: '/admin/agencies', label: 'Agencies' },
   { href: '/admin/messages', label: 'Messages' },
   { href: '/admin/reports', label: 'Reports' },
   { href: '/admin/flags', label: 'Flags' },

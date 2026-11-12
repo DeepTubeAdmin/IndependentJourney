@@ -22,7 +22,7 @@ export function generateMetadata() {
 }
 
 export default function Settings() {
-  const { session, profile, signOut } = useSession();
+  const { session, profile, agency, signOut } = useSession();
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [prefs, setPrefs] = useState<NotificationSettings | null>(null);
   const [searches, setSearches] = useState<SavedSearch[]>([]);
@@ -39,7 +39,7 @@ export default function Settings() {
     listSavedSearches().then(setSearches);
   }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!session || !profile) return null;
+  if (!session || (!profile && !agency)) return null;
 
   async function onDeleteAccount() {
     if (!session || deleteWord.trim().toUpperCase() !== 'DELETE') return;
@@ -79,13 +79,35 @@ export default function Settings() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
         <Row k="Email" v={session.user.email ?? ''} />
-        <Row k="Account type" v={profile.role === 'surrogate' ? 'Surrogate (free)' : 'Intended parent'} />
-        <Row k="Identity" v={profile.is_verified ? 'Verified' : 'Not verified'} />
+        <Row k="Account type" v={!profile ? `Agency${agency ? `: ${agency.name}` : ''}` : profile.role === 'surrogate' ? 'Surrogate (free)' : 'Intended parent'} />
+        {profile ? <Row k="Identity" v={profile.is_verified ? 'Verified' : 'Not verified'} /> : null}
         <View style={styles.row}>
           <Button label="Change password" variant="secondary" size="sm" onPress={sendReset} />
-          <Button label="Edit my profile" variant="secondary" size="sm" onPress={() => router.push('/onboarding/review')} />
+          {profile
+            ? <Button label="Edit my profile" variant="secondary" size="sm" onPress={() => router.push('/onboarding/review')} />
+            : <Button label="Agency dashboard" variant="secondary" size="sm" onPress={() => router.push('/agency')} />}
         </View>
       </View>
+      {!profile ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Delete your agency account</Text>
+          <Text style={styles.text}>This removes your agency, every client profile you posted, their photos and conversations, right away and for good. It cannot be undone.</Text>
+          {!confirmingDelete ? (
+            <View style={styles.row}>
+              <Button label="Delete my account…" variant="secondary" size="sm" onPress={() => setConfirmingDelete(true)} />
+            </View>
+          ) : (
+            <>
+              <TextField label="Type DELETE to confirm" value={deleteWord} onChangeText={setDeleteWord} autoCapitalize="characters" />
+              <View style={styles.row}>
+                <Button label={deleting ? 'Deleting…' : 'Delete my account for good'} onPress={onDeleteAccount} disabled={deleting || deleteWord.trim().toUpperCase() !== 'DELETE'} />
+                <Button label="Cancel" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+              </View>
+            </>
+          )}
+        </View>
+      ) : null}
+      {profile ? (<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>
         <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile. Blocked members are managed from inside a conversation.</Text>
@@ -139,6 +161,7 @@ export default function Settings() {
         )}
         <Text style={styles.help}>Prefer to write to us? Email privacy@{SITE.domain.toLowerCase()} from your account email.</Text>
       </View>
+      </>) : null}
       <Button label="Sign out" variant="secondary" onPress={async () => { await signOut(); router.replace('/'); }} />
     </Screen>
   );

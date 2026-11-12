@@ -15,7 +15,7 @@ import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
-import { browseProfiles, type BrowseFilters, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, profileTypeLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -25,7 +25,7 @@ export function generateMetadata() {
   return pageMeta({
     title: 'Browse Surrogates and Intended Parents',
     description:
-      'Browse profiles of gestational surrogates and intended parents planning an independent, agency-free surrogacy journey. Filter by state, timeline and preferences. Free to look.',
+      'Browse profiles of gestational surrogates and intended parents, independent members and agency clients clearly labelled. Filter by state, timeline and preferences. Free to look.',
     path: '/browse',
   });
 }
@@ -33,9 +33,12 @@ export function generateMetadata() {
 const PAGE = 24;
 
 export default function Browse() {
-  const { session, profile, loading } = useSession();
+  const { session, profile, agency, loading } = useSession();
   const anon = !loading && !session;
-  const lookingFor = profile?.role === 'surrogate' ? 'intended_parent' : profile?.role === 'intended_parent' ? 'surrogate' : null;
+  const isAgency = Boolean(agency) && !profile;
+  // Agencies (like visitors) see both sides and pick one with the role filter.
+  const [agencySide, setAgencySide] = useState<'surrogate' | 'intended_parent'>('surrogate');
+  const lookingFor = profile?.role === 'surrogate' ? 'intended_parent' : profile?.role === 'intended_parent' ? 'surrogate' : isAgency ? agencySide : null;
 
   const [filters, setFilters] = useState<BrowseFilters>({});
   const [rows, setRows] = useState<PreviewRow[]>([]);
@@ -61,7 +64,8 @@ export default function Browse() {
   async function load(offset = 0) {
     setBusy(true);
     // The map wants everyone at once; the list pages.
-    const data = await browseProfiles(filters, view === 'map' ? 200 : PAGE, offset);
+    // An agency sees both sides; the toggle narrows to one.
+    const data = await browseProfiles(isAgency ? { ...filters, role: agencySide } : filters, view === 'map' ? 200 : PAGE, offset);
     setRows((r) => (offset === 0 ? data : [...r, ...data]));
     setMore(view === 'list' && data.length === PAGE);
     setBusy(false);
@@ -69,7 +73,7 @@ export default function Browse() {
 
   useEffect(() => {
     if (!loading) load(0);
-  }, [loading, filters, view, session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, filters, view, session?.user.id, isAgency, agencySide]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: keyof BrowseFilters, v: unknown) => setFilters((f) => ({ ...f, [k]: v }));
 
@@ -80,6 +84,8 @@ export default function Browse() {
       intro={
         anon
           ? 'Limited previews of our members. Join free to open full profiles and get in touch.'
+          : isAgency
+            ? 'Browse both sides. Open a profile to write to them on behalf of one of your client profiles.'
           : lookingFor === 'surrogate'
             ? 'Limited previews are free. A membership unlocks full profiles and messaging.'
             : 'You can read every intended parent’s full profile. Complete your own profile to start conversations.'
@@ -87,8 +93,16 @@ export default function Browse() {
     >
       {!anon ? (
         <View style={styles.filterBar}>
+          {isAgency ? (
+            <>
+              <Button label="Surrogates" variant={agencySide === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => setAgencySide('surrogate')} />
+              <Button label="Intended parents" variant={agencySide === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => setAgencySide('intended_parent')} />
+            </>
+          ) : null}
           <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
+          <Checkbox label="Independent only" checked={filters.profile_type === 'independent'} onChange={(v) => set('profile_type', v ? 'independent' : undefined)} />
+          <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
           {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
@@ -157,6 +171,7 @@ export default function Browse() {
               role={p.role}
               verified={p.is_verified}
               headline={p.headline_tags.join(' · ') || 'Profile complete'}
+              typeLabel={profileTypeLabel(p)}
               photoUrl={p.photo_url}
               photoUrls={p.photo_urls}
               meta={[formatDistance(p.distance_miles), p.recently_active === false ? 'Not active recently' : null].filter(Boolean).join(' · ') || undefined}

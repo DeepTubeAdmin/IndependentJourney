@@ -19,9 +19,23 @@ const NAV = [
 ] as const;
 
 export function SiteHeader() {
-  const { session, profile, signOut } = useSession();
+  const { session, profile, agency, signOut } = useSession();
   const [open, setOpen] = useState(false);
-  const name = profile?.display_name || 'Account';
+  const isAgency = Boolean(agency) && !profile;
+  const name = profile?.display_name || agency?.name || 'Account';
+  const menu = isAgency
+    ? [
+        { label: 'Agency dashboard', go: '/agency' },
+        { label: 'Messages', go: '/messages' },
+        { label: 'Settings', go: '/settings' },
+      ]
+    : [
+        { label: 'Profile', go: '/home' },
+        { label: 'Messages', go: '/messages' },
+        { label: 'Saved profiles', go: '/saved' },
+        ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', go: '/membership' }] : []),
+        { label: 'Settings', go: '/settings' },
+      ];
 
   return (
     <View style={styles.header}>
@@ -48,13 +62,7 @@ export function SiteHeader() {
           </Pressable>
           {open ? (
             <View style={styles.menu}>
-              {[
-                { label: 'Profile', go: '/home' },
-                { label: 'Messages', go: '/messages' },
-                { label: 'Saved profiles', go: '/saved' },
-                ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', go: '/membership' }] : []),
-                { label: 'Settings', go: '/settings' },
-              ].map((m) => (
+              {menu.map((m) => (
                 <Pressable key={m.label} onPress={() => { setOpen(false); router.push(m.go as never); }} accessibilityRole="button" style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
                   <Text style={styles.menuText}>{m.label}</Text>
                 </Pressable>

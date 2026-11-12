@@ -10,6 +10,21 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { supabase } from '@/lib/supabase';
 
 export type Role = 'surrogate' | 'intended_parent';
+/** Every kind of login: members have a profile, agencies have an agency row. */
+export type AccountRole = Role | 'agency';
+
+export type AgencyStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+export type Agency = {
+  id: string;
+  name: string;
+  website: string;
+  logo_path: string;
+  contact_name: string;
+  status: AgencyStatus;
+  review_note: string;
+  is_complete: boolean;
+  created_at: string;
+};
 
 export type Profile = {
   id: string;
@@ -23,6 +38,11 @@ export type Profile = {
   featured_opt_in: boolean;
   is_complete: boolean;
   is_verified: boolean;
+  /** Independent member, independent member who also works with an agency, or agency-posted. */
+  profile_type: 'independent' | 'with_agency' | 'agency';
+  agency_name: string;
+  agency_messages: boolean;
+  managed_by: string | null;
   /** Approximate location from ZIP (null until the member adds one). */
   approx_lat?: number | null;
   approx_lng?: number | null;
@@ -34,6 +54,8 @@ type SessionState = {
   loading: boolean;
   session: Session | null;
   profile: Profile | null;
+  /** Set when the login is an agency account (then profile is null). */
+  agency: Agency | null;
   /** True once the profile lookup for the current session has finished (so "no profile" is meaningful). */
   profileChecked: boolean;
   /** Re-reads the profile from the database (call after saving). */
@@ -47,6 +69,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [agency, setAgency] = useState<Agency | null>(null);
   // Which user the profile lookup last finished for. "Checked" means it matches
   // the current session, so screens can tell "no profile" from "still loading".
   // It must stay true during a refresh (refreshProfile, token refresh): flipping
@@ -56,11 +79,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const loadProfile = useCallback(async (userId: string | undefined) => {
     if (!supabase || !userId) {
       setProfile(null);
+      setAgency(null);
       setCheckedFor(null);
       return;
     }
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     setProfile((data as Profile | null) ?? null);
+    // No profile: maybe this login is an agency.
+    if (!data) {
+      const { data: ag } = await supabase.from('agencies').select('id, name, website, logo_path, contact_name, status, review_note, is_complete, created_at').eq('id', userId).maybeSingle();
+      setAgency((ag as Agency | null) ?? null);
+    } else {
+      setAgency(null);
+    }
     setCheckedFor(userId);
   }, []);
   const profileChecked = checkedFor !== undefined && checkedFor === (session?.user.id ?? null);
@@ -89,13 +120,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
       loading,
       session,
       profile,
+      agency,
       profileChecked,
       refreshProfile: () => loadProfile(session?.user.id),
       signOut: async () => {
         await supabase?.auth.signOut();
       },
     }),
-    [loading, session, profile, profileChecked, loadProfile],
+    [loading, session, profile, agency, profileChecked, loadProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

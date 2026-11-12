@@ -27,7 +27,7 @@ export const SITE = {
   name: 'Independent Journey',
   domain: 'IndependentJourney.com',
   url: 'https://independentjourney.com',
-  tagline: 'Where intended parents and surrogates meet, on their own terms.',
+  tagline: 'One place to find your match: independent or with an agency.',
 } as const;
 
 /**
