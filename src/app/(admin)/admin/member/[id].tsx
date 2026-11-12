@@ -59,7 +59,6 @@ export default function MemberDetail() {
         <Pill text={p.is_complete ? 'Profile complete' : 'Profile incomplete'} tone={p.is_complete ? 'good' : 'neutral'} />
         <Pill text={p.is_verified ? 'Verified' : 'Not verified'} tone={p.is_verified ? 'good' : 'neutral'} />
         <Pill text={status} tone={status === 'Active' ? 'neutral' : 'bad'} />
-        <Pill text={`Visibility: ${p.visibility === 'public_previews' ? 'public previews' : 'members only'}`} />
       </View>
 
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
@@ -150,7 +149,6 @@ export default function MemberDetail() {
         <KV k="State" v={p.state} />
         <KV k="Bio" v={p.bio} />
         <KV k="Headline tags" v={(p.headline_tags ?? []).join(', ')} />
-        <KV k="Featured opt-in" v={p.featured_opt_in ? 'Yes' : 'No'} />
       </Panel>
 
       <Panel title="Private details (never shown to members)">

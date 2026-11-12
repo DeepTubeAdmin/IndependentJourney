@@ -182,8 +182,8 @@ export default function Home() {
           </Text>
           <Text style={styles.sectionNote}>
             {featured.length > 0
-              ? "Verified members who chose to be featured. Tap a card to see their preview, or browse everyone."
-              : "Example cards. Real verified members who opt in will appear here. Scroll down to see more."}
+              ? "Members on the platform right now. Tap a card to see their preview, or browse everyone."
+              : "Example cards. Real members will appear here as they finish their profiles."}
           </Text>
         </View>
 

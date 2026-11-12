@@ -55,20 +55,15 @@ begin
   perform set_config('request.jwt.claims', '', true);
 end $$;
 
--- Anonymous: only opted-in live profiles (Megan + Daniel & Luis), never the suspended one, max 5.
+-- Anonymous: every live profile (Megan, Brooke, Daniel & Luis), never the suspended or incomplete ones.
 select pg_temp.anon();
 do $$ begin
-  assert (select count(*) from public.browse_profiles('{}', 50, 0)) = 2, 'anon sees exactly the 2 opted-in live profiles';
-  assert not exists (select 1 from public.browse_profiles('{}') where display_name = 'Brooke'), 'anon never sees members-only profiles';
+  assert (select count(*) from public.browse_profiles('{}', 50, 0)) = 3, 'anon sees all 3 live profiles';
+  assert exists (select 1 from public.browse_profiles('{}') where display_name = 'Brooke'), 'the old members-only setting no longer hides a profile';
   assert not exists (select 1 from public.browse_profiles('{}') where display_name like 'Suspended%'), 'anon never sees suspended profiles';
   assert (select count(*) from public.profiles) = 0, 'anon cannot read the profiles table directly';
-  assert (select count(*) from public.featured_profiles()) = 0, 'nobody opted in to featured yet';
-end $$;
-reset role;
-update public.profiles set featured_opt_in = true where id in ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000012');
-select pg_temp.anon();
-do $$ begin
-  assert (select count(*) from public.featured_profiles()) = 1, 'only verified + opted-in + public profiles are featured';
+  assert (select count(*) from public.featured_profiles()) = 3, 'homepage shows every live profile';
+  assert (select id from public.featured_profiles() limit 1) = '00000000-0000-0000-0000-000000000011', 'verified profile is shown first on the homepage';
 end $$;
 
 -- Free IP (incomplete profile): previews of surrogates only, no full details, can save profiles.
