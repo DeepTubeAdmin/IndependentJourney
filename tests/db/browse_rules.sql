@@ -204,5 +204,24 @@ do $$ declare r record; begin
   assert r.display_name = 'Megan', 'with a 400-day threshold Megan is active again and verified ranks first, got ' || r.display_name;
 end $$;
 
+-- Migration 22: six more surrogate answers. Public ones live on surrogate_details
+-- (an IP can read them), private ones on health_self_reports (owner only).
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-000000000011');
+update public.surrogate_details set cycle_preference = 'either', journeys_completed = 2, background_check = 'yes' where id = auth.uid();
+update public.health_self_reports set vaccines_in_pregnancy = 'yes', c_sections = 1, ob_clearance = 'discuss_later' where id = auth.uid();
+do $$ begin
+  begin
+    update public.surrogate_details set cycle_preference = 'bogus' where id = auth.uid();
+    raise exception 'cycle_preference accepted an unknown value';
+  exception when check_violation then null; end;
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ begin
+  assert (select journeys_completed = 2 and cycle_preference = 'either' and background_check = 'yes'
+          from public.surrogate_details where id = '00000000-0000-0000-0000-000000000011'), 'IP reads the new public answers';
+  assert (select count(*) from public.health_self_reports where id = '00000000-0000-0000-0000-000000000011') = 0, 'IP cannot read the private health answers';
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;

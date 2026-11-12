@@ -49,6 +49,12 @@ const YES_NO_DISCUSS: Option[] = [
   { value: 'discuss_later', label: 'Discuss later' },
 ];
 
+const CYCLE: Option[] = [
+  { value: 'medicated', label: 'Medicated' },
+  { value: 'natural', label: 'Natural' },
+  { value: 'either', label: 'Open to either' },
+];
+
 const COMFORT: Option[] = [
   { value: 'comfortable', label: 'Comfortable' },
   { value: 'not_comfortable', label: 'Not comfortable' },
@@ -107,6 +113,9 @@ export const SURROGATE_STEPS: Step[] = [
       { key: 'bmi_range', table: 'health_self_reports', label: 'BMI range', type: 'single', options: [{ value: 'under_30', label: 'Under 30' }, { value: '30_33', label: '30 to 33' }, { value: 'over_33', label: 'Over 33' }, { value: 'not_sure', label: 'Not sure' }, PREFER_NOT] },
       { key: 'lifestyle_attestation', table: 'health_self_reports', label: 'I am a non-smoker, do not use drugs, and do not drink heavily.', type: 'yesno', boolean: true, required: true },
       { key: 'vaccinated', table: 'health_self_reports', label: 'Up to date on routine vaccinations?', type: 'single', options: YES_NO_DISCUSS },
+      { key: 'vaccines_in_pregnancy', table: 'health_self_reports', label: 'Open to recommended vaccines during pregnancy?', type: 'single', required: true, options: YES_NO_DISCUSS },
+      { key: 'c_sections', table: 'health_self_reports', label: 'How many c-sections have you had?', type: 'number', required: true, placeholder: '0' },
+      { key: 'ob_clearance', table: 'health_self_reports', label: 'Current clearance from your OB for surrogacy?', type: 'single', required: true, options: YES_NO_DISCUSS },
       { key: 'condition_affecting_pregnancy', table: 'health_self_reports', label: 'Any condition that could affect a pregnancy?', type: 'single', required: true, options: YES_NO_DISCUSS },
       { key: 'condition_notes', table: 'health_self_reports', label: 'Details (optional)', type: 'textarea', maxLength: 500 },
     ],
@@ -122,12 +131,15 @@ export const SURROGATE_STEPS: Step[] = [
       { key: 'support_system', table: 'surrogate_details', label: 'Your support system (optional)', type: 'textarea', maxLength: 400, placeholder: 'Family, friends, childcare help…' },
       { key: 'reliable_transportation', table: 'surrogate_details', label: 'Reliable transportation to appointments?', type: 'yesno', boolean: true },
       { key: 'financially_stable', table: 'surrogate_details', label: 'Financially stable (not relying on compensation for basic needs)?', type: 'single', options: [...YES_NO_DISCUSS.slice(0, 2), PREFER_NOT] },
+      { key: 'background_check', table: 'surrogate_details', label: 'Able to pass a background check?', type: 'single', required: true, options: YES_NO_DISCUSS },
     ],
   },
   {
     id: 'preferences',
     title: 'Your preferences',
     fields: [
+      { key: 'journeys_completed', table: 'surrogate_details', label: 'How many surrogate journeys have you completed?', type: 'number', required: true, placeholder: '0', help: 'Enter 0 if this would be your first journey.', headlineTag: (v) => { const n = v === '' || v == null ? NaN : Number(v); return !Number.isFinite(n) ? null : n > 0 ? `${n} ${n === 1 ? 'journey' : 'journeys'} completed` : 'First-time surrogate'; } },
+      { key: 'cycle_preference', table: 'surrogate_details', label: 'What type of cycle do you prefer?', type: 'single', required: true, options: CYCLE, help: 'A medicated cycle uses hormones to time the transfer; a natural cycle follows your own ovulation.' },
       { key: 'compensation_open', table: 'surrogate_details', label: 'Compensation', type: 'single', required: true, options: [{ value: 'true', label: 'Open to discuss' }, { value: 'false', label: 'I have a range in mind' }], boolean: true },
       { key: 'compensation_min_usd', table: 'surrogate_details', label: 'Range from (optional)', type: 'money' },
       { key: 'compensation_max_usd', table: 'surrogate_details', label: 'Range to (optional)', type: 'money' },

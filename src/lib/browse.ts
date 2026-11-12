@@ -174,6 +174,9 @@ export function compensationLine(sd: Record<string, unknown> | null | undefined)
 /** Nicer labels than the raw column names where title-casing is not enough. */
 const LABEL_OVERRIDES: Record<string, string> = {
   us_resident: 'US resident',
+  background_check: 'Can pass a background check',
+  journeys_completed: 'Journeys completed',
+  cycle_preference: 'Preferred cycle',
   open_to_ip_types: 'Open to working with',
   carry_donor_embryos: 'Carry donor embryos',
   earliest_start: 'Earliest start',
