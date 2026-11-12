@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
     const termMonths = setting('membership_term_months', 3);
 
     const secretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-    if (!secretKey.startsWith('sk_')) {
-      return json({ error: 'Payments are not set up yet: STRIPE_SECRET_KEY is missing or is not a secret key (it must start with sk_).' }, 500);
+    if (!/^(sk|rk)_/.test(secretKey)) {
+      return json({ error: 'Payments are not set up yet: STRIPE_SECRET_KEY is missing or is not a Stripe secret key (it must start with sk_ or rk_).' }, 500);
     }
     // Stripe rejects addresses like "me@test" that Supabase accepts, so only
     // pre-fill an email that looks like a real one; otherwise Stripe asks for it.

@@ -70,7 +70,7 @@ Supabase → **Edge Functions** → **Secrets** tab at the top of the page (or P
 
 | Name | Where to get it |
 | --- | --- |
-| `STRIPE_SECRET_KEY` | Stripe dashboard → **Developers → API keys** → "Secret key" (starts with `sk_test_` in test mode, `sk_live_` in live mode). Click Reveal, copy. |
+| `STRIPE_SECRET_KEY` | Stripe dashboard → **Developers → API keys** → "Secret key" (starts with `sk_test_` in test mode, `sk_live_` in live mode). Click Reveal, copy. Newer Stripe accounts only offer **Create secret key** with a permissions list and give a key starting `rk_live_`; that works too. Set these to **Write**: Checkout Sessions, Products, Prices, Customers, Identity (Verification Sessions and Verification Reports). Leave the rest at None. |
 | `STRIPE_WEBHOOK_SECRET` | Created in step 6 below (starts with `whsec_`). Add it after step 6. |
 | `SITE_URL` | `https://independentjourney.com` |
 

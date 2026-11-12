@@ -121,7 +121,7 @@ Your own admin account (with 2FA) is the sixth.
 - [ ] Authentication → URL configuration: Site URL `https://independentjourney.com`; Redirect URLs include `https://independentjourney.com/**` and `https://*--independentjourney.netlify.app/**` (deploy previews).
 - [ ] Authentication → Emails (SMTP): custom SMTP through Resend (see RESEND_SETUP.md, optional step) so sign-up and reset emails are not rate-limited and come from `@independentjourney.com`.
 - [ ] Project Settings → API: confirm the app only ever uses the **publishable/anon** key. If the secret key was ever pasted anywhere outside Supabase, rotate it here (Generate new secret) and update the Edge Function secrets.
-- [ ] Edge Functions → Secrets: STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are the **live** keys (`sk_live_…`, `whsec_…` from the live webhook), RESEND_API_KEY, EMAIL_FROM, CRON_SECRET, SITE_URL = `https://independentjourney.com`.
+- [ ] Edge Functions → Secrets: STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are the **live** keys (`sk_live_…` or a scoped `rk_live_…`, `whsec_…` from the live webhook), RESEND_API_KEY, EMAIL_FROM, CRON_SECRET, SITE_URL = `https://independentjourney.com`.
 - [ ] Integrations → Cron: `send-emails` runs every 5 minutes and the Admin → Email delivery tile shows "last sent" moving.
 - [ ] Database → Advisors (Security advisor): run it; everything should be green or "info". Send Claude a screenshot of anything red.
 - [ ] Storage → profile-photos: bucket is **private** (not public).
