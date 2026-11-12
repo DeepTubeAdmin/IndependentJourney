@@ -18,9 +18,7 @@ export type ProfileCardProps = {
   role: 'surrogate' | 'intended_parent' | 'intended_parents';
   verified: boolean;
   headline: string;
-  /** Marks sample content so nobody reads it as a real member. */
-  example?: boolean;
-  /** Signed URL of the first photo (kept for example cards and old callers). */
+  /** Signed URL of the first photo (used when photoUrls is not given). */
   photoUrl?: string;
   /** Signed URLs of all photos; when given, the card shows a swiper. */
   photoUrls?: string[];
@@ -35,7 +33,7 @@ const ROLE_LABEL = {
   intended_parents: 'Intended parents',
 } as const;
 
-export function ProfileCard({ name, state, role, verified, headline, example, photoUrl, photoUrls, meta, onPress }: ProfileCardProps) {
+export function ProfileCard({ name, state, role, verified, headline, photoUrl, photoUrls, meta, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
   const urls = photoUrls && photoUrls.length ? photoUrls : photoUrl ? [photoUrl] : [];
   return (
@@ -63,7 +61,7 @@ export function ProfileCard({ name, state, role, verified, headline, example, ph
         </View>
         <View style={[styles.badge, styles.badgeRole]}>
           <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-            {example ? 'Example' : ROLE_LABEL[role]}
+            {ROLE_LABEL[role]}
           </Text>
         </View>
       </View>

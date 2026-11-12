@@ -1,8 +1,8 @@
 /**
  * Homepage, styled in the "Linen & Sky" direction.
  *
- * The profile row shows real opted-in, verified members, and clearly labelled
- * example cards until there are any.
+ * The profile row shows real members (both roles). While they load it shows
+ * blank placeholder cards, never sample content.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SiteHeader } from "@/components/SiteHeader";
-import { ProfileCard, type ProfileCardProps } from "@/components/ProfileCard";
+import { ProfileCard } from "@/components/ProfileCard";
 import { featuredProfiles, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { pageMeta } from "@/lib/seo";
@@ -25,57 +25,6 @@ export function generateMetadata() {
     path: "/",
   });
 }
-
-const EXAMPLE_PROFILES: ProfileCardProps[] = [
-  {
-    name: "Megan, 31",
-    state: "Texas",
-    role: "surrogate",
-    verified: true,
-    headline: "2 prior births · Open to twins · Ready spring 2027",
-    example: true,
-  },
-  {
-    name: "Daniel & Luis",
-    state: "Colorado",
-    role: "intended_parents",
-    verified: true,
-    headline: "Embryos ready · First child · Hoping to start this year",
-    example: true,
-  },
-  {
-    name: "Aisha, 28",
-    state: "Georgia",
-    role: "surrogate",
-    verified: false,
-    headline: "1 prior birth · Regular updates · Open to all family types",
-    example: true,
-  },
-  {
-    name: "Priya",
-    state: "New Jersey",
-    role: "intended_parent",
-    verified: true,
-    headline: "Single mom by choice · Attorney consulted · Close relationship",
-    example: true,
-  },
-  {
-    name: "Brooke, 34",
-    state: "Ohio",
-    role: "surrogate",
-    verified: true,
-    headline: "3 prior births · Experienced surrogate · Ready now",
-    example: true,
-  },
-  {
-    name: "Sam & Jordan",
-    state: "Washington",
-    role: "intended_parents",
-    verified: true,
-    headline: "Still choosing a clinic · Open to twins · Regular updates",
-    example: true,
-  },
-];
 
 const TRUST_POINTS = [
   "Optional photo ID verification",
@@ -131,12 +80,16 @@ const STEPS = [
 export default function Home() {
   // Real members from both sides (Seth's rule: the homepage shows surrogates
   // and intended parents to everyone; Browse narrows to the other side).
-  // Falls back to example cards while there are none.
   const [featured, setFeatured] = useState<PreviewRow[]>([]);
+  // True until the first load finishes, so the grid never flashes placeholder content.
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
   // After a member deletes their account they land here with ?deleted=1.
   const { deleted } = useLocalSearchParams<{ deleted?: string }>();
   useEffect(() => {
-    featuredProfiles(6).then(setFeatured).catch(() => setFeatured([]));
+    featuredProfiles(6)
+      .then(setFeatured)
+      .catch(() => setFeatured([]))
+      .finally(() => setLoadingFeatured(false));
   }, []);
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -178,15 +131,16 @@ export default function Home() {
             Browsing right now
           </Text>
           <Text style={styles.sectionNote}>
-            {featured.length > 0
+            {loadingFeatured || featured.length > 0
               ? "Members on the platform right now. Tap a card to see their preview, or browse everyone."
-              : "Example cards. Real members will appear here as they finish their profiles."}
+              : "Real members will appear here as they finish their profiles."}
           </Text>
         </View>
 
         <View style={styles.cardGrid}>
-          {featured.length > 0
-            ? featured.map((p) => (
+          {loadingFeatured
+            ? [0, 1, 2].map((i) => <View key={i} style={styles.cardPlaceholder} accessibilityLabel="Loading profiles" />)
+            : featured.map((p) => (
                 <ProfileCard
                   key={p.id}
                   name={p.display_name}
@@ -198,8 +152,7 @@ export default function Home() {
                   photoUrls={p.photo_urls}
                   onPress={() => router.push(`/profile/${p.id}`)}
                 />
-              ))
-            : EXAMPLE_PROFILES.map((p) => <ProfileCard key={p.name} {...p} />)}
+              ))}
         </View>
         <View style={styles.ctaRow}>
           <Button label="Browse all profiles" variant="secondary" onPress={() => router.push("/browse")} />
@@ -323,6 +276,15 @@ const styles = StyleSheet.create({
     color: colors.textSubtle,
   },
   // Vertical feed: one column on phones, wraps into 2 to 3 columns on wider screens.
+  cardPlaceholder: {
+    // Same footprint as a ProfileCard, so the page does not jump when real cards arrive.
+    flexGrow: 1,
+    flexBasis: 300,
+    maxWidth: 560,
+    height: 400,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceSoft,
+  },
   cardGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
