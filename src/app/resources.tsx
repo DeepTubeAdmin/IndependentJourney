@@ -3,7 +3,8 @@
  * surrogacy. PLACEHOLDER CONTENT for Seth and the attorney to review; it is
  * general information, not legal or medical advice.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Disclaimer } from '@/components/Disclaimer';
 import { FormMessage } from '@/components/form';
@@ -59,10 +60,29 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
 ];
 
+/** Articles that live on their own page under /resources/. */
+const ARTICLES: { title: string; blurb: string; path: '/resources/first-conversation' }[] = [
+  {
+    title: 'The First Conversation: What to Ask Before You Match',
+    blurb: 'A thorough question list for the first call between a surrogate and intended parents, with the hard questions first.',
+    path: '/resources/first-conversation',
+  },
+];
+
 export default function Resources() {
   return (
     <Screen width={760} title="Resources" intro="General information to help you plan a safe, well-supported independent journey.">
       <FormMessage kind="info" text="This page is general information, not legal, medical or financial advice. Please consult your own attorney and clinic." />
+      {/* Longer articles get their own page; list them here. */}
+      <View style={styles.card}>
+        <Text style={styles.title} accessibilityRole="header" aria-level={2}>Articles</Text>
+        {ARTICLES.map((a) => (
+          <Pressable key={a.path} onPress={() => router.push(a.path)} accessibilityRole="link" style={styles.article}>
+            <Text style={styles.articleTitle}>{a.title}</Text>
+            <Text style={styles.item}>{a.blurb}</Text>
+          </Pressable>
+        ))}
+      </View>
       {SECTIONS.map((s) => (
         <View key={s.title} style={styles.card}>
           <Text style={styles.title} accessibilityRole="header" aria-level={2}>{s.title}</Text>
@@ -80,4 +100,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.xs },
   title: { fontFamily: fonts.heading, fontSize: 20, color: colors.text, marginBottom: 4 },
   item: { fontFamily: fonts.body, fontSize: 15, lineHeight: 23, color: colors.textMuted },
+  article: { gap: 2, paddingVertical: space.xs },
+  articleTitle: { fontFamily: fonts.heading, fontSize: 17, color: colors.primary, textDecorationLine: 'underline' },
 });
