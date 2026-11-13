@@ -33,7 +33,7 @@ update public.profiles set suspended_until = now() + interval '7 days' where id 
 -- Complete IP ip1 with public previews.
 update public.profiles set display_name='Daniel & Luis', state='CO', bio='Hi', visibility='public_previews' where id='00000000-0000-0000-0000-000000000021';
 update public.profile_private set city='Denver', phone='3035551234' where id='00000000-0000-0000-0000-000000000021';
-update public.ip_details set family_structure='couple', embryos_status='created', clinic_name='CCRM', children_hoped_for='1',
+update public.ip_details set family_structure='couple', embryos_status='created', embryos_tested='yes', embryo_transfer_ok='not_sure', clinic_name='CCRM', children_hoped_for='1',
   open_to_twins='comfortable', desired_start='2027-01-01', relationship_level='close', termination_comfort='comfortable',
   consulted_attorney=true, budget_range='150_200k', aware_of_birth_state_law=true where id='00000000-0000-0000-0000-000000000021';
 insert into public.ip_parents (profile_id, position, first_name, age) values ('00000000-0000-0000-0000-000000000021', 1, 'Daniel', 38);
@@ -208,7 +208,7 @@ end $$;
 -- (an IP can read them), private ones on health_self_reports (owner only).
 reset role;
 select pg_temp.login('00000000-0000-0000-0000-000000000011');
-update public.surrogate_details set cycle_preference = 'either', journeys_completed = 2, background_check = 'yes' where id = auth.uid();
+update public.surrogate_details set cycle_preference = 'either', journeys_completed = 2, background_check = 'yes', untested_embryos_ok = 'not_sure' where id = auth.uid();
 update public.health_self_reports set vaccines_in_pregnancy = 'yes', c_sections = 1, ob_clearance = 'discuss_later' where id = auth.uid();
 do $$ begin
   begin
@@ -218,7 +218,7 @@ do $$ begin
 end $$;
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
 do $$ begin
-  assert (select journeys_completed = 2 and cycle_preference = 'either' and background_check = 'yes'
+  assert (select journeys_completed = 2 and cycle_preference = 'either' and background_check = 'yes' and untested_embryos_ok = 'not_sure'
           from public.surrogate_details where id = '00000000-0000-0000-0000-000000000011'), 'IP reads the new public answers';
   assert (select count(*) from public.health_self_reports where id = '00000000-0000-0000-0000-000000000011') = 0, 'IP cannot read the private health answers';
 end $$;
