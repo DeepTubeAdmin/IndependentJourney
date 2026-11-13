@@ -127,6 +127,7 @@ export default function Home() {
           <View style={styles.ctaRow}>
             <Button label="I'm a surrogate" onPress={() => router.push('/sign-up?role=surrogate')} />
             <Button label="We're intended parents" variant="secondary" onPress={() => router.push('/sign-up?role=intended_parent')} />
+            <Button label="I'm an agency" variant="secondary" onPress={() => router.push('/sign-up?role=agency')} />
           </View>
           <View style={styles.soonPill}>
             <Text style={styles.soonText}>
