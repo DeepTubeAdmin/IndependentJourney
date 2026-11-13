@@ -73,7 +73,7 @@ export default function Agencies() {
           {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
           {detail ? (
             <>
-              <KV k="Website" v={<Text style={styles.link} onPress={() => Linking.openURL(/^https?:\/\//i.test(detail.website) ? detail.website : `https://${detail.website}`)}>{detail.website || '—'}</Text>} />
+              <KV k="Website" v={detail.website ? <Text style={styles.link} onPress={() => Linking.openURL(/^https?:\/\//i.test(detail.website) ? detail.website : `https://${detail.website}`)}>{detail.website}</Text> : ''} />
               <KV k="Contact" v={`${detail.contact_name || '—'} · ${detail.email}${detail.contact_phone ? ` · ${detail.contact_phone}` : ''}`} />
               <KV k="Details complete" v={detail.is_complete ? 'Yes' : 'No'} />
               <KV k="Consent attested" v={detail.attested_consent ? 'Yes' : 'No'} />
