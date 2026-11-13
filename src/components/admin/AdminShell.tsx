@@ -65,7 +65,7 @@ export function KV({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <View style={styles.kv}>
       <Text style={styles.k}>{k}</Text>
-      <Text style={styles.v}>{v === null || v === undefined || v === '' ? '—' : String(v)}</Text>
+      <Text style={styles.v}>{v === null || v === undefined || v === '' ? '—' : typeof v === 'object' ? v : String(v)}</Text>
     </View>
   );
 }
