@@ -1,7 +1,7 @@
 /**
  * Large profile card used on the homepage and in browse.
  *
- * Shows only "limited preview" fields: first name, state, role, verified
+ * Shows only "limited preview" fields: first name, state, role, profile type
  * label, a few headline preferences and the member's photos, all unblurred
  * (Seth's decision, 2026-11-11). With several photos the card becomes a small
  * swiper: swipe or use the arrows, with dots underneath. Without a photo, a
@@ -16,7 +16,7 @@ export type ProfileCardProps = {
   name: string;
   state: string;
   role: 'surrogate' | 'intended_parent' | 'intended_parents';
-  /** null hides the label (agency-posted profiles, where the agency cannot run the ID check). */
+  /** true shows a green "Verified" check at the right of the name line; false or null shows nothing. */
   verified: boolean | null;
   headline: string;
   /** Signed URL of the first photo (used when photoUrls is not given). */
@@ -27,7 +27,7 @@ export type ProfileCardProps = {
   meta?: string;
   /** "Independent", "Agency: Name", ... shown under the name. */
   typeLabel?: string;
-  /** True for agency-posted profiles: an "Agency" badge takes the verified label's spot (top left). */
+  /** True for agency-posted profiles: the top-left pill reads "Agency" instead of "Independent". */
   agency?: boolean;
   onPress?: () => void;
 };
@@ -45,7 +45,7 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}${agency ? ', agency' : ''}${verified == null ? '' : verified ? ', verified' : ', not verified'}`}
+      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}, ${agency ? 'agency' : 'independent'}${verified ? ', verified' : ''}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
     >
       <View style={[styles.photo, tint]}>
@@ -59,18 +59,10 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
             <View style={styles.silhouetteBody} />
           </>
         )}
-        {agency ? (
-          <View style={[styles.badge, styles.badgeAgency]}>
-            <Text style={styles.badgeText}>Agency</Text>
-          </View>
-        ) : null}
-        {verified != null ? (
-          <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
-            <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
-              {verified ? 'Verified' : 'Not verified'}
-            </Text>
-          </View>
-        ) : null}
+        {/* Top-left pill: profile type (Seth's choice, 2026-11-13). */}
+        <View style={[styles.badge, styles.badgeType]}>
+          <Text style={styles.badgeText}>{agency ? 'Agency' : 'Independent'}</Text>
+        </View>
         <View style={[styles.badge, styles.badgeRole]}>
           <Text style={[styles.badgeText, { color: colors.textMuted }]}>
             {ROLE_LABEL[role]}
@@ -78,9 +70,19 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
         </View>
       </View>
       <View style={styles.body}>
-        <Text style={styles.name}>
-          {name} · {state}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>
+            {name} · {state}
+          </Text>
+          {verified ? (
+            <View style={styles.verifiedRow}>
+              <View style={styles.verifiedDot}>
+                <Text style={styles.verifiedCheck}>✓</Text>
+              </View>
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          ) : null}
+        </View>
         {typeLabel ? <Text style={styles.typeLabel}>{typeLabel}</Text> : null}
         <Text style={styles.headline}>{headline}</Text>
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
@@ -203,13 +205,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  badgeVerified: { left: 12, backgroundColor: colors.verified },
-  badgeUnverified: { left: 12, backgroundColor: 'rgba(255,255,255,0.92)' },
-  badgeAgency: { left: 12, backgroundColor: colors.secondary },
+  badgeType: { left: 12, backgroundColor: colors.secondary },
   badgeRole: { right: 12, backgroundColor: 'rgba(255,255,255,0.92)' },
   badgeText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.primaryText },
   body: { padding: space.md, gap: 4 },
-  name: { fontFamily: fonts.heading, fontSize: 19, color: colors.text },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  name: { fontFamily: fonts.heading, fontSize: 19, color: colors.text, flexShrink: 1 },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  verifiedDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.verified, alignItems: 'center', justifyContent: 'center' },
+  verifiedCheck: { fontFamily: fonts.bodyBold, fontSize: 11, lineHeight: 13, color: colors.primaryText },
+  verifiedText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.verified },
   typeLabel: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.secondary, letterSpacing: 0.2, marginBottom: 2 },
   headline: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.textMuted },
   meta: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, marginTop: 4 },
