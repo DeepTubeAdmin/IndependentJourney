@@ -179,6 +179,7 @@ export default function Browse() {
               verified={verifiedLabel(p)}
               headline={p.headline_tags.join(' · ') || 'Profile complete'}
               typeLabel={profileTypeLabel(p)}
+              agency={p.profile_type === 'agency'}
               photoUrl={p.photo_url}
               photoUrls={p.photo_urls}
               meta={[formatDistance(p.distance_miles), p.recently_active === false ? 'Not active recently' : null].filter(Boolean).join(' · ') || undefined}
