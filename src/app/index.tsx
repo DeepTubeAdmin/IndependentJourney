@@ -159,6 +159,7 @@ export default function Home() {
                   verified={verifiedLabel(p)}
                   headline={p.headline_tags.join(" · ")}
                   typeLabel={profileTypeLabel(p)}
+                  agency={p.profile_type === 'agency'}
                   photoUrl={p.photo_url}
                   photoUrls={p.photo_urls}
                   onPress={() => router.push(`/profile/${p.id}`)}

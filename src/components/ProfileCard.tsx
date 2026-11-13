@@ -27,6 +27,8 @@ export type ProfileCardProps = {
   meta?: string;
   /** "Independent", "Agency: Name", ... shown under the name. */
   typeLabel?: string;
+  /** True for agency-posted profiles: an "Agency" badge takes the verified label's spot (top left). */
+  agency?: boolean;
   onPress?: () => void;
 };
 
@@ -36,14 +38,14 @@ const ROLE_LABEL = {
   intended_parents: 'Intended parents',
 } as const;
 
-export function ProfileCard({ name, state, role, verified, headline, photoUrl, photoUrls, meta, typeLabel, onPress }: ProfileCardProps) {
+export function ProfileCard({ name, state, role, verified, headline, photoUrl, photoUrls, meta, typeLabel, agency, onPress }: ProfileCardProps) {
   const tint = role === 'surrogate' ? styles.photoSky : styles.photoLinen;
   const urls = photoUrls && photoUrls.length ? photoUrls : photoUrl ? [photoUrl] : [];
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}${verified == null ? '' : verified ? ', verified' : ', not verified'}`}
+      accessibilityLabel={`${name}, ${state}, ${ROLE_LABEL[role]}${agency ? ', agency' : ''}${verified == null ? '' : verified ? ', verified' : ', not verified'}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
     >
       <View style={[styles.photo, tint]}>
@@ -57,6 +59,11 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
             <View style={styles.silhouetteBody} />
           </>
         )}
+        {agency ? (
+          <View style={[styles.badge, styles.badgeAgency]}>
+            <Text style={styles.badgeText}>Agency</Text>
+          </View>
+        ) : null}
         {verified != null ? (
           <View style={[styles.badge, verified ? styles.badgeVerified : styles.badgeUnverified]}>
             <Text style={[styles.badgeText, !verified && { color: colors.textMuted }]}>
@@ -198,6 +205,7 @@ const styles = StyleSheet.create({
   },
   badgeVerified: { left: 12, backgroundColor: colors.verified },
   badgeUnverified: { left: 12, backgroundColor: 'rgba(255,255,255,0.92)' },
+  badgeAgency: { left: 12, backgroundColor: colors.secondary },
   badgeRole: { right: 12, backgroundColor: 'rgba(255,255,255,0.92)' },
   badgeText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.primaryText },
   body: { padding: space.md, gap: 4 },
