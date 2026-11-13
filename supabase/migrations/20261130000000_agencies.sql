@@ -945,7 +945,7 @@ grant execute on function public.admin_list_agencies(text) to authenticated;
 
 create or replace function public.admin_agency_detail(p_agency uuid)
 returns jsonb
-language plpgsql stable security definer set search_path = ''
+language plpgsql security definer set search_path = ''
 as $$
 declare v jsonb;
 begin

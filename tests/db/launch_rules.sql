@@ -116,5 +116,16 @@ update public.app_settings set value = '["TX"]' where key = 'allowed_states';
 update public.profiles set bio = 'still fine', state = 'CA' where id = '00000000-0000-0000-0000-0000000000a1';
 update public.app_settings set value = '[]' where key = 'allowed_states';
 
+-- No function declared stable (run read-only by PostgREST) may write: a stable
+-- function that calls admin_log or inserts fails in the app with
+-- "cannot execute INSERT in a read-only transaction" (PR #51).
+do $$ declare r record; begin
+  for r in select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.provolatile = 's'
+              and (p.prosrc ~* 'admin_log\(' or p.prosrc ~* '\minsert into' or p.prosrc ~* '\mupdate public\.' or p.prosrc ~* '\mdelete from') loop
+    raise exception 'stable function % writes to the database', r.proname;
+  end loop;
+end $$;
+
 rollback;
 select 'LAUNCH RULES OK' as result;
