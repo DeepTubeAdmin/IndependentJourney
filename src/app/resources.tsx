@@ -61,11 +61,16 @@ const SECTIONS: { title: string; items: string[] }[] = [
 ];
 
 /** Articles that live on their own page under /resources/. */
-const ARTICLES: { title: string; blurb: string; path: '/resources/first-conversation' }[] = [
+const ARTICLES: { title: string; blurb: string; path: '/resources/first-conversation' | '/resources/after-the-match' }[] = [
   {
     title: 'The First Conversation: What to Ask Before You Match',
     blurb: 'A thorough question list for the first call between a surrogate and intended parents, with the hard questions first.',
     path: '/resources/first-conversation',
+  },
+  {
+    title: 'After the Match: The Steps of an Independent Journey',
+    blurb: 'OB clearance, clinic screening, counseling, legal, mock cycle, transfer and birth, with typical timing for each.',
+    path: '/resources/after-the-match',
   },
 ];
 
