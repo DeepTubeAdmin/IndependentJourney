@@ -1,6 +1,6 @@
 /**
  * Where people land after logging in or confirming their email.
- * Sends them to onboarding until their profile is complete, then to the app.
+ * Brand-new profiles go to onboarding; everyone else goes to Home.
  */
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -53,6 +53,8 @@ export default function Welcome() {
     );
   }
   if (!session) return <Redirect href="/log-in" />;
-  if (!profile?.is_complete) return <Redirect href="/onboarding/0" />;
+  // Brand-new profile (nothing answered yet): straight into the questionnaire.
+  // Anyone else lands on Home, which shows "Finish my profile" when needed.
+  if (profile && !profile.is_complete && !profile.display_name) return <Redirect href="/onboarding/0" />;
   return <Redirect href="/home" />;
 }
