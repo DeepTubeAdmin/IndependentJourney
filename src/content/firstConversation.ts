@@ -16,7 +16,8 @@ export type ArticleBlock =
   | { kind: 'p'; text: string }
   | { kind: 'note'; text: string }
   | { kind: 'bullets'; items: string[] }
-  | { kind: 'numbered'; items: string[] };
+  | { kind: 'numbered'; items: string[] }
+  | { kind: 'table'; header: string[]; rows: string[][] };
 
 export const FIRST_CONVERSATION_TITLE = 'The First Conversation: What to Ask Before You Match';
 
