@@ -418,7 +418,7 @@ export const FIRST_CONVERSATION: ArticleBlock[] = [
     kind: 'bullets',
     items: [
       'Anyone who asks for money before a contract is signed, for any reason: travel, a deposit, medical bills, a "good faith" payment.',
-      'Anyone who wants to move off the platform right away, refuses video, or will not show ID.',
+      'Anyone who refuses video, or will not show ID.',
       'A surrogate who has not had a child of her own, or who cannot name her OB or the hospital where she delivered.',
       'Intended parents who will not say which clinic holds their embryos, or who have no embryos yet and no plan.',
       'Anyone who brushes off the hard questions with "we will figure it out" or "that will never happen."',
