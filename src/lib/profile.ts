@@ -104,7 +104,8 @@ async function saveParents(userId: string, row: Record<string, unknown>): Promis
 }
 
 function normalize(field: Field, value: unknown): unknown {
-  if (value === '' || value === undefined) return field.type === 'text' || field.type === 'textarea' ? '' : null;
+  // A blank answer (never typed, or loaded back from the database as null) saves as empty, never as 0.
+  if (value === '' || value === undefined || value === null) return field.type === 'text' || field.type === 'textarea' ? '' : null;
   if (field.type === 'number' || field.type === 'money') {
     const n = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(n) ? n : null;
