@@ -3,6 +3,7 @@
  * The database decides what each viewer may see; this file just asks it.
  */
 import { IP_STEPS, SURROGATE_STEPS, type Field } from '@/config/questionnaire';
+import { cachedPhotoUrls } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
 
 export type PreviewRow = {
@@ -81,16 +82,11 @@ export async function featuredProfiles(limit = 6): Promise<PreviewRow[]> {
   return withPreviewUrls((data ?? []) as PreviewRow[]);
 }
 
-/** Adds short-lived signed URLs for every preview photo. */
+/** Adds cached photo addresses (/photos/...) for every preview photo. Previews only ever show live profiles. */
 export async function withPreviewUrls(rows: PreviewRow[]): Promise<PreviewRow[]> {
-  if (!supabase) return rows;
   const pathsOf = (r: PreviewRow) => (r.photo_paths && r.photo_paths.length ? r.photo_paths : r.preview_photo_path ? [r.preview_photo_path] : []);
-  const paths = Array.from(new Set(rows.flatMap(pathsOf)));
-  if (paths.length === 0) return rows;
-  const { data } = await supabase.storage.from('profile-photos').createSignedUrls(paths, 60 * 30);
-  const byPath = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
   return rows.map((r) => {
-    const urls = pathsOf(r).map((p) => byPath.get(p)).filter((u): u is string => Boolean(u));
+    const urls = cachedPhotoUrls(pathsOf(r));
     return { ...r, photo_url: urls[0], photo_urls: urls };
   });
 }
@@ -124,14 +120,13 @@ export async function loadFullProfile(profileId: string) {
     supabase.from('photos').select('storage_path, position').eq('profile_id', profileId).order('position'),
   ]);
   if (!profile) return null;
-  const paths = (photos ?? []).map((p) => p.storage_path);
-  const { data: signed } = paths.length ? await supabase.storage.from('profile-photos').createSignedUrls(paths, 60 * 30) : { data: [] };
   return {
     profile,
     surrogate: sd,
     ip: ipd,
     parents: parents ?? [],
-    photoUrls: (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[],
+    // Full profiles are only reachable for live profiles, so the cached addresses work here too.
+    photoUrls: cachedPhotoUrls((photos ?? []).map((p) => p.storage_path)),
   };
 }
 
@@ -181,9 +176,7 @@ export async function loadShareView(token: string) {
   const { data } = await supabase.rpc('share_view', { p_token: token });
   if (!data) return null;
   const view = data as Record<string, any>;
-  const paths: string[] = view.photos ?? [];
-  const { data: signed } = paths.length ? await supabase.storage.from('profile-photos').createSignedUrls(paths, 60 * 30) : { data: [] };
-  return { ...view, photoUrls: (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[] };
+  return { ...view, photoUrls: cachedPhotoUrls((view.photos ?? []) as string[]) };
 }
 
 /** Turns stored answers into readable "Label: value" pairs for the full profile. */

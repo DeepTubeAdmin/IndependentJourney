@@ -8,7 +8,8 @@ Two kinds of link get a preview card:
   site, needs nothing clicked, and uses only what a visitor can already see
   (the same data as the homepage card). The card shows the member's first
   photo, "Emily R. · TX · Surrogate", Independent or Agency, Identity verified,
-  and their highlights.
+  and their highlights. The photo comes from the cached `/photos/...` address
+  (see PHOTO_CACHE.md).
 - **Share links** (`https://independentjourney.com/s/<token>`), described
   below, which a member creates on purpose and can turn off.
 

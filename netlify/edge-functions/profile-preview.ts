@@ -9,8 +9,8 @@
  *   - a link-preview crawler gets a tiny HTML page whose Open Graph tags carry
  *     the member's first photo, name, state, role and headline tags: the same
  *     information as the homepage card;
- *   - /profile/<id>/photo streams the first photo so the preview image has a
- *     stable address on our own domain;
+ *   - the preview image is the member's first photo at /photos/<path>, a cached
+ *     address on our own domain (see photo.ts);
  *   - everyone else is passed straight through to the normal page.
  *
  * It uses only what a visitor can already see: the public browse_profiles()
@@ -84,7 +84,7 @@ export function card(row: Row | null, id: string, origin: string): string {
   for (const t of row.headline_tags ?? []) bits.push(t);
   const description = `${bits.join(' · ')}. See the full profile on ${SITE_NAME}.`;
   const pageUrl = `${origin}/profile/${row.id}`;
-  const image = row.preview_photo_path ? `${origin}/profile/${row.id}/photo` : `${origin}/og-image.png`;
+  const image = row.preview_photo_path ? `${origin}/photos/${row.preview_photo_path.split('/').map(encodeURIComponent).join('/')}` : `${origin}/og-image.png`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>${esc(title)} | ${SITE_NAME}</title>
 <meta name="description" content="${esc(description)}">
@@ -122,17 +122,11 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
 
   const row = await loadRow(sb, id);
 
-  // The first photo, served from our own domain so the preview image never expires.
+  // Older previews still point at /profile/<id>/photo: send them to the cached photo address.
   if (wantsPhoto) {
     const path = row?.preview_photo_path;
-    if (!path) return Response.redirect(`${url.origin}/og-image.png`, 302);
-    const file = await fetch(`${sb.url}/storage/v1/object/authenticated/profile-photos/${path.split('/').map(encodeURIComponent).join('/')}`, {
-      headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}` },
-    });
-    if (!file.ok || !file.body) return Response.redirect(`${url.origin}/og-image.png`, 302);
-    return new Response(file.body, {
-      headers: { 'Content-Type': file.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=86400' },
-    });
+    const target = path ? `${url.origin}/photos/${path.split('/').map(encodeURIComponent).join('/')}` : `${url.origin}/og-image.png`;
+    return new Response(null, { status: 302, headers: { Location: target, 'Cache-Control': 'public, max-age=3600' } });
   }
 
   return html(card(row, id, url.origin), row ? 200 : 404);
