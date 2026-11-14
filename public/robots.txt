@@ -16,4 +16,21 @@ Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /_sitemap
 
+# Link-preview fetchers (Facebook, X, LinkedIn, WhatsApp, Slack...) may read
+# any page someone pastes, so profile and share links get a preview card.
+# A more specific group replaces the "*" rules for these fetchers entirely.
+User-agent: facebookexternalhit
+User-agent: Facebot
+User-agent: Twitterbot
+User-agent: LinkedInBot
+User-agent: WhatsApp
+User-agent: Slackbot
+User-agent: TelegramBot
+User-agent: Discordbot
+User-agent: Pinterestbot
+User-agent: Applebot
+User-agent: Embedly
+User-agent: redditbot
+Allow: /
+
 Sitemap: https://independentjourney.com/sitemap.xml
