@@ -35,3 +35,10 @@
 [[edge_functions]]
   path = "/profile/*"
   function = "profile-preview"
+
+# Cached member photos at /photos/<path>: fetched from Supabase once, then kept
+# on Netlify's CDN so page views stop counting against Supabase egress.
+[[edge_functions]]
+  path = "/photos/*"
+  function = "photo"
+  cache = "manual"

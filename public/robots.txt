@@ -9,6 +9,7 @@ Disallow: /settings
 Disallow: /membership
 Disallow: /onboarding
 Disallow: /profile/
+Disallow: /photos/
 Disallow: /s/
 Disallow: /welcome
 Disallow: /verify-email
