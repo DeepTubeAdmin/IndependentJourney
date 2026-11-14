@@ -167,6 +167,14 @@ export default function ProfilePage() {
   return (
     <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={preview.profile_type === 'agency' ? profileTypeLabel(preview) : `${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
+      {isMine && !isAgencyViewer ? (
+        <FormMessage
+          kind="info"
+          text={me?.is_verified && me?.is_complete
+            ? 'This is your profile as members see it. To show it to someone outside the site, use My profile in the account menu: that address opens your full profile for anyone who has it.'
+            : 'This is your profile. People who are not members see only a preview at this address. Once your profile is complete and verified, My profile in the account menu gives you a link that shows the full profile to anyone.'}
+        />
+      ) : null}
       {preview.profile_type === 'agency' ? (
         <FormMessage kind="info" text={`This profile was posted by ${preview.agency_name ?? 'an agency'} for a client they represent. Messages go to the agency, which replies on the client’s behalf. The agency has told us it has the client’s written consent to be listed.`} />
       ) : null}
