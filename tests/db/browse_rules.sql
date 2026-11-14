@@ -42,6 +42,20 @@ insert into public.photos (profile_id, storage_path, position) values
   ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000021/b.jpg', 1),
   ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000021/c.jpg', 2);
 
+-- Photo cap: a seventh photo is refused (migration 20).
+insert into public.photos (profile_id, storage_path, position) values
+  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000011/d.jpg', 3),
+  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000011/e.jpg', 4),
+  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000011/f.jpg', 5);
+do $$ begin
+  begin
+    insert into public.photos (profile_id, storage_path, position) values ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000011/g.jpg', 6);
+    raise exception 'seventh photo should have been refused';
+  exception when check_violation then null;
+  end;
+end $$;
+delete from public.photos where profile_id = '00000000-0000-0000-0000-000000000011' and position >= 3;
+
 create or replace function pg_temp.login(uid text, aal text default 'aal1') returns void language plpgsql as $$
 begin
   perform set_config('role', 'authenticated', true);
