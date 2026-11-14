@@ -34,6 +34,12 @@ photo, copy its address: it should start with `/photos/`. Reloading the page
 should not download the photo again (status 200 "from disk cache" or
 `Cache-Status: "Netlify Edge"; hit` in the browser's Network tab).
 
-**If egress is still high later**, the next lever is shrinking photos on
-upload (currently stored at full size, often 2 to 5 MB each). Seth chose to
-leave sizes alone for now (14 Nov 2026).
+**Photo size and framing (added the same day).** Every photo now goes through
+a framing step before it is saved (`src/components/photos/PhotoCropper.tsx`):
+the member drags and zooms the photo inside a 4:5 portrait frame, the shape
+of the photo box on profile cards, so faces are where they want them. The
+saved file is that crop, at most 1200 x 1500 pixels, JPEG at 85% quality:
+a few hundred KB instead of 2 to 5 MB. Existing photos can be re-framed with
+the **Adjust** button in the photos step, which replaces the stored file.
+Photos uploaded before this change stay at their original size until the
+member adjusts them.
