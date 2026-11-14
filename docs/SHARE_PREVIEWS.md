@@ -1,4 +1,24 @@
-# Share-link previews (Facebook, iMessage, WhatsApp, X, LinkedIn)
+# Link previews (Facebook, iMessage, WhatsApp, X, LinkedIn)
+
+Two kinds of link get a preview card:
+
+- **Profile links** (`https://independentjourney.com/profile/<id>`), the
+  address in the browser on any profile page. Handled by a Netlify Edge
+  Function in `netlify/edge-functions/profile-preview.ts`. It deploys with the
+  site, needs nothing clicked, and uses only what a visitor can already see
+  (the same data as the homepage card). The card shows the member's first
+  photo, "Emily R. · TX · Surrogate", Independent or Agency, Identity verified,
+  and their highlights.
+- **Share links** (`https://independentjourney.com/s/<token>`), described
+  below, which a member creates on purpose and can turn off.
+
+To check a profile link: open
+`https://independentjourney.com/profile/<id>?preview=1` in a browser to see
+what Facebook reads, or paste the link into
+https://developers.facebook.com/tools/debug/ and click **Scrape Again** for a
+link that was posted before this went live (Facebook caches old previews).
+
+## Share-link previews
 
 When a member pastes their share link (`https://independentjourney.com/s/…`)
 into Facebook or a chat app, that app fetches the link *without running the

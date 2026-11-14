@@ -29,3 +29,9 @@
 [context.deploy-preview]
   [context.deploy-preview.environment]
     EXPO_PUBLIC_APP_ENV = "preview"
+
+# Link previews for profile links (Facebook, iMessage, WhatsApp, X...).
+# Runs in front of /profile/*; people pass straight through to the page.
+[[edge_functions]]
+  path = "/profile/*"
+  function = "profile-preview"
