@@ -31,7 +31,8 @@ export function SiteHeader() {
         { label: 'Settings', go: '/settings' },
       ]
     : [
-        { label: 'Profile', go: '/home' },
+        { label: 'My profile', go: '/my-profile' },
+        { label: 'Edit profile', go: '/home' },
         { label: 'Messages', go: '/messages' },
         { label: 'Saved profiles', go: '/saved' },
         ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', go: '/membership' }] : []),

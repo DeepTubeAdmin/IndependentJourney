@@ -106,7 +106,7 @@ export default function Home() {
         <Text style={styles.cardTitle}>Share your profile</Text>
         <Text style={styles.status}>
           {profile.is_verified && profile.is_complete
-            ? 'Create a private link to show your profile to someone off the platform, like your attorney or family. You can turn it off any time.'
+            ? 'My profile in the account menu opens your shareable link: copy that address to show your full profile to someone off the platform, like your attorney or family. You can turn it off any time.'
             : 'Share links unlock once your profile is complete and verified.'}
         </Text>
         {shareMsg ? <FormMessage kind="info" text={shareMsg} /> : null}
