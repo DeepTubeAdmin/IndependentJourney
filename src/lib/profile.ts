@@ -178,17 +178,42 @@ export async function loadPhotos(userId: string): Promise<Photo[]> {
   return photos.map((p, i) => ({ ...p, url: signed?.[i]?.signedUrl ?? undefined }));
 }
 
+/**
+ * Saves a framed photo (see PhotoCropper) to storage and the photos table.
+ * Photos arrive already cropped and shrunk, always as JPEG.
+ */
 export async function uploadPhoto(userId: string, uri: string, position: number): Promise<string | null> {
   if (!supabase) return 'Not connected to storage.';
+  const path = await storePhotoFile(userId, uri, position);
+  if (typeof path !== 'string') return path.error;
+  const { error } = await supabase.from('photos').insert({ profile_id: userId, storage_path: path, position });
+  if (error) return error.message;
+  return null;
+}
+
+/**
+ * Replaces an existing photo with a re-framed copy. The photo keeps its place
+ * in the order; the old file is removed afterwards. Returns an error or null.
+ */
+export async function replacePhoto(userId: string, photo: Photo, uri: string): Promise<string | null> {
+  if (!supabase) return 'Not connected to storage.';
+  const path = await storePhotoFile(userId, uri, photo.position);
+  if (typeof path !== 'string') return path.error;
+  const { error } = await supabase.from('photos').update({ storage_path: path }).eq('id', photo.id);
+  if (error) return error.message;
+  await supabase.storage.from('profile-photos').remove([photo.storage_path]);
+  return null;
+}
+
+/** Uploads one image file and returns its storage path (or an error). */
+async function storePhotoFile(userId: string, uri: string, position: number): Promise<string | { error: string }> {
+  if (!supabase) return { error: 'Not connected to storage.' };
   const res = await fetch(uri);
   const blob = await res.blob();
   const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
   const path = `${userId}/${Date.now()}-${position}.${ext}`;
-  const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, blob, { contentType: blob.type || 'image/jpeg' });
-  if (upErr) return upErr.message;
-  const { error } = await supabase.from('photos').insert({ profile_id: userId, storage_path: path, position });
-  if (error) return error.message;
-  return null;
+  const { error } = await supabase.storage.from('profile-photos').upload(path, blob, { contentType: blob.type || 'image/jpeg' });
+  return error ? { error: error.message } : path;
 }
 
 export async function deletePhoto(photo: Photo) {
