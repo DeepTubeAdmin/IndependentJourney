@@ -6,6 +6,15 @@ import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html
 import type { PropsWithChildren } from 'react';
 
 const SITE_URL = 'https://independentjourney.com';
+/**
+ * Google tag, loaded through Seth's Google Tag Manager container (15 Nov 2026).
+ * Not a secret. Left out of deploy previews and local builds so test clicks
+ * do not count. Page views, including moves between pages inside the site,
+ * are handled by the Google Analytics tag configured in Tag Manager (GA4's
+ * "page changes based on browser history events" is on by default).
+ */
+export const GTM_CONTAINER_ID = 'GTM-5JLGHV3C';
+const ANALYTICS_ON = process.env.EXPO_PUBLIC_APP_ENV !== 'preview' && process.env.NODE_ENV === 'production';
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -50,6 +59,17 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/site.webmanifest" />
         {/* Tells search engines who runs the site and what it is (shown as a knowledge panel / sitelinks search box). */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
+        {/* Google tag via Tag Manager, exactly as Google provides it. */}
+        {ANALYTICS_ON ? (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());`,
+              }}
+            />
+          </>
+        ) : null}
         {headNodes}
       </head>
       <body {...bodyAttributes}>
