@@ -12,7 +12,7 @@ export type CanMessage =
 /** Plain-English explanation for each reason the Message button is unavailable. */
 export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   sign_in: 'Join free or log in to send a message.',
-  same_role: '',
+  same_role: 'Messages are only between surrogates and intended parents.',
   not_available: 'This member is not available for messages right now.',
   account_restricted: 'Your account is currently restricted. Contact us if you think this is a mistake.',
   blocked: 'Messaging is not available between you and this member.',

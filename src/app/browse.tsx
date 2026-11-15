@@ -36,9 +36,12 @@ export default function Browse() {
   const { session, profile, agency, loading } = useSession();
   const anon = !loading && !session;
   const isAgency = Boolean(agency) && !profile;
-  // Agencies (like visitors) see both sides and pick one with the role filter.
-  const [agencySide, setAgencySide] = useState<'surrogate' | 'intended_parent'>('surrogate');
-  const lookingFor = profile?.role === 'surrogate' ? 'intended_parent' : profile?.role === 'intended_parent' ? 'surrogate' : isAgency ? agencySide : null;
+  // Everyone signed in can browse both sides (Seth, 15 Nov 2026). Members start
+  // on the other side; agencies start on surrogates. The toggle switches.
+  const [sideChoice, setSideChoice] = useState<'surrogate' | 'intended_parent' | null>(null);
+  const otherSide: 'surrogate' | 'intended_parent' | null = profile?.role === 'surrogate' ? 'intended_parent' : profile?.role === 'intended_parent' ? 'surrogate' : null;
+  const lookingFor: 'surrogate' | 'intended_parent' | null = sideChoice ?? otherSide ?? (isAgency ? 'surrogate' : null);
+  const sameSide = Boolean(profile) && lookingFor === profile?.role;
 
   const [filters, setFilters] = useState<BrowseFilters>({});
   const [rows, setRows] = useState<PreviewRow[]>([]);
@@ -50,8 +53,8 @@ export default function Browse() {
   const [saving, setSaving] = useState(false);
   const [searchName, setSearchName] = useState('');
   const [saveMsg, setSaveMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
-  // Saved-search alerts are built around a member's own role, so agencies do not get them.
-  const canSave = !isAgency && Object.keys(alertableFilters(filters)).length > 0;
+  // Saved-search alerts watch the other side only, so agencies and same-side browsing do not get them.
+  const canSave = !isAgency && !sameSide && Object.keys(alertableFilters(filters)).length > 0;
 
   async function onSaveSearch() {
     if (!session) return;
@@ -65,8 +68,8 @@ export default function Browse() {
   async function load(offset = 0) {
     setBusy(true);
     // The map wants everyone at once; the list pages.
-    // An agency sees both sides; the toggle narrows to one.
-    const data = await browseProfiles(isAgency ? { ...filters, role: agencySide } : filters, view === 'map' ? 200 : PAGE, offset);
+    // Signed-in people see one side at a time, chosen with the toggle.
+    const data = await browseProfiles(lookingFor ? { ...filters, role: lookingFor } : filters, view === 'map' ? 200 : PAGE, offset);
     setRows((r) => (offset === 0 ? data : [...r, ...data]));
     setMore(view === 'list' && data.length === PAGE);
     setBusy(false);
@@ -74,7 +77,7 @@ export default function Browse() {
 
   useEffect(() => {
     if (!loading) load(0);
-  }, [loading, filters, view, session?.user.id, isAgency, agencySide]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, filters, view, session?.user.id, lookingFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: keyof BrowseFilters, v: unknown) => setFilters((f) => ({ ...f, [k]: v }));
 
@@ -87,6 +90,8 @@ export default function Browse() {
           ? 'Limited previews of our members. Join free to open full profiles and get in touch.'
           : isAgency
             ? 'Browse both sides. Open a profile to write to them on behalf of one of your client profiles.'
+          : sameSide
+            ? `See who else is here on your side of the journey. Messages are only between surrogates and intended parents, so there is no Message button on these profiles.`
           : lookingFor === 'surrogate'
             ? 'Limited previews are free. A membership unlocks full profiles and messaging.'
             : 'You can read every intended parent’s full profile. Complete your own profile to start conversations.'
@@ -94,12 +99,8 @@ export default function Browse() {
     >
       {!anon ? (
         <View style={styles.filterBar}>
-          {isAgency ? (
-            <>
-              <Button label="Surrogates" variant={agencySide === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => setAgencySide('surrogate')} />
-              <Button label="Intended parents" variant={agencySide === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => setAgencySide('intended_parent')} />
-            </>
-          ) : null}
+          <Button label="Surrogates" variant={lookingFor === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('surrogate')} />
+          <Button label="Intended parents" variant={lookingFor === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('intended_parent')} />
           <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
           {profile?.journey_types === 'independent_only' ? (

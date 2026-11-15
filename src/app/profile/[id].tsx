@@ -93,7 +93,7 @@ export default function ProfilePage() {
         title="Profile not available"
         intro={`${sameRoleNote}Otherwise this profile is private, not finished yet, or no longer on the platform.`}
       >
-        <Button label={me?.role === 'intended_parent' ? 'Browse surrogates' : me?.role === 'surrogate' ? 'Browse intended parents' : 'Browse profiles'} onPress={() => router.replace('/browse')} />
+        <Button label="Browse profiles" onPress={() => router.replace('/browse')} />
       </Screen>
     );
   }
@@ -258,7 +258,7 @@ export default function ProfilePage() {
           {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
         </View>
       ) : null}
-      {!isMine && can && can !== 'ok' && can !== 'same_role' ? <Text style={styles.note}>{CAN_MESSAGE_TEXT[can]}</Text> : null}
+      {!isMine && can && can !== 'ok' ? <Text style={styles.note}>{CAN_MESSAGE_TEXT[can]}</Text> : null}
       {!isMine && composing && (can === 'ok' || can === 'sign_in') ? (
         <View style={styles.reportBox}>
           <TextField label={`Message to ${preview.display_name}`} value={draft} onChangeText={setDraft} multiline maxLength={4000} placeholder="Say hello: who you are, what drew you to this profile, and what you hope for. Leave out contact details for now." />
