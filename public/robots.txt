@@ -13,6 +13,7 @@ Disallow: /photos/
 Disallow: /s/
 Disallow: /welcome
 Disallow: /verify-email
+Disallow: /confirm
 Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /_sitemap
