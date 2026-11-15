@@ -6,6 +6,13 @@ import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html
 import type { PropsWithChildren } from 'react';
 
 const SITE_URL = 'https://independentjourney.com';
+/**
+ * Google Analytics 4 measurement ID (Seth's property, added 15 Nov 2026).
+ * Not a secret. Left out of deploy previews so test clicks do not count.
+ * Page views on in-site navigation are sent by src/components/Analytics.tsx.
+ */
+export const GA_MEASUREMENT_ID = 'G-L8TJ66XBFY';
+const ANALYTICS_ON = process.env.EXPO_PUBLIC_APP_ENV !== 'preview' && process.env.NODE_ENV === 'production';
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -50,6 +57,17 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/site.webmanifest" />
         {/* Tells search engines who runs the site and what it is (shown as a knowledge panel / sitelinks search box). */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
+        {/* Google Analytics (gtag.js). send_page_view is off here; the app sends one per page, including in-site navigation. */}
+        {ANALYTICS_ON ? (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false});`,
+              }}
+            />
+          </>
+        ) : null}
         {headNodes}
       </head>
       <body {...bodyAttributes}>

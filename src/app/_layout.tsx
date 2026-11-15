@@ -11,6 +11,7 @@ import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Analytics } from '@/components/Analytics';
 import { BetaWelcome } from '@/components/BetaWelcome';
 import { SessionProvider } from '@/lib/auth';
 import { colors, fonts, space } from '@/lib/theme';
@@ -37,6 +38,8 @@ export default function RootLayout() {
       />
       {/* One-time "we just launched" note for visitors (admin setting beta_banner_enabled). */}
       <BetaWelcome />
+      {/* Google Analytics page views (web only). */}
+      <Analytics />
     </SessionProvider>
   );
 }
