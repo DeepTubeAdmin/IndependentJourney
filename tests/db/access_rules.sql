@@ -64,19 +64,22 @@ reset role;
 
 -- As incomplete surrogate s2: sees IP previews AND full IP details
 -- (Seth's rule, 2026-11-09: every surrogate account sees full IP profiles;
--- a complete profile is only needed to message).
+-- a complete profile is only needed to message). Since migration 26 she also
+-- sees the other live surrogate, s1 (Seth, 2026-11-15).
 select pg_temp.login('00000000-0000-0000-0000-000000000002');
 do $$ begin
-  assert (select count(*) from public.profiles where id <> auth.uid()) = 1, 's2 sees ip1 preview';
+  assert (select count(*) from public.profiles where id <> auth.uid()) = 2, 's2 sees ip1 and s1 previews';
+  assert (select count(*) from public.surrogate_details where id <> auth.uid()) = 1, 's2 (surrogate) sees full details of the other surrogate';
   assert (select count(*) from public.ip_details) = 1, 's2 (incomplete) sees full IP details';
 end $$;
 reset role;
 
--- As IP ip1 (no membership): sees surrogate previews, NOT surrogate details, never other IPs.
+-- As IP ip1 (no membership): sees surrogate previews, NOT surrogate details.
+-- (ip2 is incomplete, so not live: same-role browsing shows live profiles only.)
 select pg_temp.login('00000000-0000-0000-0000-000000000003');
 do $$ begin
-  assert (select count(*) from public.profiles where id <> auth.uid()) = 1, 'ip1 sees exactly one other profile (s1)';
-  assert (select role from public.profiles where id <> auth.uid()) = 'surrogate', 'ip1 must not see other IPs';
+  assert (select count(*) from public.profiles where id <> auth.uid()) = 1, 'ip1 sees exactly one other profile (s1); ip2 is not live';
+  assert (select role from public.profiles where id <> auth.uid()) = 'surrogate', 'only the live surrogate is visible';
   assert (select count(*) from public.surrogate_details) = 0, 'ip1 without membership must not see surrogate details';
   assert (select count(*) from public.health_self_reports) = 0, 'ip1 must never see health reports';
   assert (select count(*) from public.photos where profile_id <> auth.uid()) = 3, 'ip1 sees s1 photo list';

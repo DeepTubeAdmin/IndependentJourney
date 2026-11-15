@@ -69,20 +69,21 @@ end $$;
 -- Free IP (incomplete profile): previews of surrogates only, no full details, can save profiles.
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
 do $$ begin
-  assert (select count(*) from public.browse_profiles('{}')) = 2, 'free IP sees the 2 live surrogates (public and members-only)';
-  assert not exists (select 1 from public.browse_profiles('{}') where role = 'intended_parent'), 'IP never sees other IPs';
-  assert (select id from public.browse_profiles('{}') limit 1) = '00000000-0000-0000-0000-000000000011', 'verified surrogate ranks first';
-  assert (select count(*) from public.browse_profiles('{"verified_only": true}')) = 1, 'verified-only filter works';
-  assert (select count(*) from public.browse_profiles('{"state": "CO"}')) = 0, 'state filter works';
+  assert (select count(*) from public.browse_profiles('{"role": "surrogate"}')) = 2, 'free IP sees the 2 live surrogates (public and members-only)';
+  -- Since migration 26 members may also look at their own side (Seth, 15 Nov 2026).
+  assert (select count(*) from public.browse_profiles('{"role": "intended_parent"}')) = 1, 'IP can browse other live IPs';
+  assert (select count(*) from public.browse_profiles('{}')) = 3, 'without a role filter a member sees every live profile';
+  assert (select id from public.browse_profiles('{"role": "surrogate"}') limit 1) = '00000000-0000-0000-0000-000000000011', 'verified surrogate ranks first';
+  assert (select count(*) from public.browse_profiles('{"verified_only": true, "role": "surrogate"}')) = 1, 'verified-only filter works';
+  assert (select count(*) from public.browse_profiles('{"state": "CO", "role": "surrogate"}')) = 0, 'state filter works';
   assert public.my_access_to('00000000-0000-0000-0000-000000000011') = 'preview', 'free IP gets preview access only';
   assert (select count(*) from public.surrogate_details) = 0, 'free IP cannot read surrogate details';
-  -- Saving a profile is allowed for anyone who can see its preview.
+  -- Saving a profile is allowed for anyone who can see its preview (now including the same role).
   insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000011');
   assert (select count(*) from public.saved_profiles) = 1, 'free IP saved a profile';
-  begin
-    insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000021');
-    raise exception 'IP must not be able to save another IP';
-  exception when insufficient_privilege or check_violation then null; end;
+  insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000021');
+  assert (select count(*) from public.saved_profiles) = 2, 'IP can save another IP (same-role browsing, migration 26)';
+  delete from public.saved_profiles where profile_id = '00000000-0000-0000-0000-000000000021';
 end $$;
 
 -- Admin grants the IP a membership (logged). Now full access.
@@ -100,8 +101,10 @@ end $$;
 select pg_temp.login('00000000-0000-0000-0000-000000000011');
 do $$ declare t text; begin
   assert (select count(*) from public.saved_profiles) = 0, 'saved profiles are private: the saved surrogate sees nothing';
-  assert (select count(*) from public.browse_profiles('{}')) = 1, 'surrogate sees the one live IP';
-  assert not exists (select 1 from public.browse_profiles('{}') where role = 'surrogate'), 'surrogate never sees surrogates';
+  assert (select count(*) from public.browse_profiles('{"role": "intended_parent"}')) = 1, 'surrogate sees the one live IP';
+  assert (select count(*) from public.browse_profiles('{"role": "surrogate"}')) = 1, 'surrogate sees the other live surrogate (not herself)';
+  assert public.my_access_to('00000000-0000-0000-0000-000000000012') = 'full', 'surrogate gets full access to another surrogate';
+  assert public.can_message('00000000-0000-0000-0000-000000000012') = 'same_role', 'messaging stays between the two sides only';
   assert public.my_access_to('00000000-0000-0000-0000-000000000021') = 'full', 'complete surrogate gets full IP access';
   t := public.create_share_link();
   assert length(t) = 32, 'share token created';
@@ -137,7 +140,7 @@ end $$;
 select pg_temp.login('00000000-0000-0000-0000-000000000014');
 do $$ begin
   assert public.my_access_to('00000000-0000-0000-0000-000000000021') = 'full', 'incomplete surrogate sees full IP profiles';
-  assert (select count(*) from public.browse_profiles('{}')) = 1, 'incomplete surrogate browses IPs';
+  assert (select count(*) from public.browse_profiles('{"role": "intended_parent"}')) = 1, 'incomplete surrogate browses IPs';
   insert into public.saved_profiles (user_id, profile_id) values ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000021');
   delete from public.saved_profiles where profile_id = '00000000-0000-0000-0000-000000000021';
   assert (select count(*) from public.saved_profiles) = 0, 'unsaved';
@@ -184,15 +187,16 @@ update public.profiles set last_active_at = now() - interval '1 day',    approx_
 update public.profiles set last_active_at = now() - interval '3 days',   approx_lat = 29.76, approx_lng = -95.37 where id = '00000000-0000-0000-0000-000000000022'; -- viewer in Houston
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
 do $$ declare r record; begin
-  select * into r from public.browse_profiles('{}') limit 1;
+  -- Ranking checks look at surrogates only (the IP viewer can now see other IPs too).
+  select * into r from public.browse_profiles('{"role": "surrogate"}') limit 1;
   assert r.display_name = 'Brooke', 'active unverified member ranks above inactive verified member, got ' || r.display_name;
   assert r.recently_active, 'Brooke is recently active';
   assert abs(r.distance_miles - 225) < 10, 'distance from Houston to Dallas ~225 mi, got ' || r.distance_miles;
   select * into r from public.browse_profiles('{"id":"00000000-0000-0000-0000-000000000011"}');
   assert not r.recently_active, 'Megan is inactive';
   assert abs(r.distance_miles - 146) < 10, 'Houston to Austin ~146 mi, got ' || r.distance_miles;
-  assert (select count(*) from public.browse_profiles('{"radius_miles": 160}')) = 1, 'radius filter keeps only Austin';
-  assert (select count(*) from public.browse_profiles('{"near_lat": 32.78, "near_lng": -96.80, "radius_miles": 5}')) = 1, 'explicit location: only Dallas within 5 mi';
+  assert (select count(*) from public.browse_profiles('{"radius_miles": 160, "role": "surrogate"}')) = 1, 'radius filter keeps only Austin';
+  assert (select count(*) from public.browse_profiles('{"near_lat": 32.78, "near_lng": -96.80, "radius_miles": 5, "role": "surrogate"}')) = 1, 'explicit location: only Dallas within 5 mi';
   perform public.touch_activity();
   assert (select last_active_at > now() - interval '1 minute' from public.profiles where id = auth.uid()), 'touch_activity bumps last_active_at';
 end $$;
@@ -200,7 +204,7 @@ reset role;
 update public.app_settings set value = '400' where key = 'inactive_after_days';
 select pg_temp.login('00000000-0000-0000-0000-000000000022');
 do $$ declare r record; begin
-  select * into r from public.browse_profiles('{}') limit 1;
+  select * into r from public.browse_profiles('{"role": "surrogate"}') limit 1;
   assert r.display_name = 'Megan', 'with a 400-day threshold Megan is active again and verified ranks first, got ' || r.display_name;
 end $$;
 
