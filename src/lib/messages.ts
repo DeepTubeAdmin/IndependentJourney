@@ -122,6 +122,20 @@ export async function conversationMessages(conversationId: string): Promise<Mess
 
 export async function markRead(conversationId: string) {
   await supabase?.rpc('mark_conversation_read', { p_conversation: conversationId });
+  notifyUnreadChanged();
+}
+
+// The header shows an unread badge. Screens that change what is unread
+// (opening a conversation) call notifyUnreadChanged() so it updates at once.
+const unreadListeners = new Set<() => void>();
+export function subscribeUnread(listener: () => void): () => void {
+  unreadListeners.add(listener);
+  return () => {
+    unreadListeners.delete(listener);
+  };
+}
+export function notifyUnreadChanged() {
+  unreadListeners.forEach((fn) => fn());
 }
 
 export async function unreadCount(): Promise<number> {
