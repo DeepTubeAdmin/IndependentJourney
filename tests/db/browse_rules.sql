@@ -103,6 +103,7 @@ do $$ declare t text; begin
   assert (select count(*) from public.saved_profiles) = 0, 'saved profiles are private: the saved surrogate sees nothing';
   assert (select count(*) from public.browse_profiles('{"role": "intended_parent"}')) = 1, 'surrogate sees the one live IP';
   assert (select count(*) from public.browse_profiles('{"role": "surrogate"}')) = 1, 'surrogate sees the other live surrogate (not herself)';
+  assert (select count(*) from public.browse_profiles('{"id": "00000000-0000-0000-0000-000000000011"}')) = 1, 'a member can look up their own profile by id (migration 27)';
   assert public.my_access_to('00000000-0000-0000-0000-000000000012') = 'full', 'surrogate gets full access to another surrogate';
   assert public.can_message('00000000-0000-0000-0000-000000000012') = 'same_role', 'messaging stays between the two sides only';
   assert public.my_access_to('00000000-0000-0000-0000-000000000021') = 'full', 'complete surrogate gets full IP access';
