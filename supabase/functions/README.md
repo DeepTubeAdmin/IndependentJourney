@@ -10,10 +10,11 @@ Server-side code lives here (one folder per function). Planned functions:
 | `revenuecat-webhook` | 8 | Updates `memberships` from Apple/Google in-app purchases |
 | `scan-message` | 6 | Flags scam patterns in new messages |
 | `send-emails` | 8a | Scheduled every 5 minutes: queues due reminders and sends the outbox through Resend (built) |
+| `auth-email` | 10 | Supabase "Send Email" auth hook: sends confirm / reset / email-change emails through Resend and logs them (built, docs/AUTH_EMAILS.md) |
 | `share-preview` | 5 | Preview cards for share links on Facebook, iMessage etc.; redirects people to /share/<token> (built, docs/SHARE_PREVIEWS.md) |
 
 Secrets (Stripe, RevenueCat, Resend) are set in the Supabase dashboard under
 Edge Functions → Secrets, never in this repository. Needed now:
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SITE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`,
-`CRON_SECRET`. The Supabase URL,
+`CRON_SECRET`, `SEND_EMAIL_HOOK_SECRET`. The Supabase URL,
 anon key and service-role key are provided to every function automatically.

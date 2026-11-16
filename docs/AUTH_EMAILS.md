@@ -1,74 +1,104 @@
 # Login emails: confirmation, password reset, email change
 
-Supabase sends these itself. The files in `supabase/email-templates/` give
-them a professional look and, more importantly, make them easier to deliver
-and to act on:
+Supabase no longer sends these itself. Instead it calls our Edge Function
+`auth-email` (the "Send Email" auth hook), which sends the email through
+Resend's API and writes a line to the `auth_email_log` table. Why this is
+more reliable than the old SMTP route:
 
-- **Links point at independentjourney.com**, not `supabase.co`. The email
-  domain and the link domain now match, which spam filters like, and the
-  one-time token is only used when the page runs in a real browser, so
-  corporate mail scanners that "click" links no longer burn it. The page
-  `/confirm` on the site does the exchange.
-- **Every email also carries a 6-digit code.** People whose mail app hides or
-  disables links (Gmail disables links on anything it put in Spam) can type
-  the code on the page they just left instead of clicking anything.
-- Table-based layout with a button that works in Outlook, preview text, a
-  "why you received this" line, and the privacy link. No tracking, one link
-  domain, mostly text: all things that score well with filters.
+- **One fast HTTP call to Resend** instead of an SMTP conversation that can
+  time out or be throttled quietly. Resend answers "accepted" or an error
+  within a second.
+- **Every attempt is recorded.** Supabase → **Table Editor → auth_email_log**
+  shows who was emailed, when, sent or failed, and the reason. A "never got
+  the email" report takes seconds to check. Resend → **Emails** then shows
+  delivered / bounced / spam for the same message (`provider_id` is Resend's
+  id).
+- **Failures are visible to the person.** If Resend rejects the email, the
+  sign-up page says "We could not send the email just now" instead of
+  pretending it went out.
+- **The templates live in code**, so there is nothing to paste into the
+  dashboard and nothing can drift. Same look as before: button that works in
+  Outlook, a 6-digit code for people whose mail app blocks links, links that
+  point at independentjourney.com (not supabase.co), plain-text version.
 
-## 1. Make sure Supabase sends through your own domain (5 minutes)
+## Setup (about 15 minutes, in this order)
 
-This is the single biggest deliverability fix. Without it, login emails come
-from Supabase's shared sender, which is rate-limited (a few per hour) and
-often lands in spam or is rejected outright.
+Do steps 1–3 before step 4. Once the hook is on, sign-ups fail if the
+function is not ready.
 
-Supabase → **Authentication → Emails → SMTP Settings**:
+### 1. Run migration 28
 
-| Field | Value |
-| --- | --- |
-| Enable Custom SMTP | on |
-| Sender email | `hello@independentjourney.com` |
-| Sender name | `Independent Journey` |
-| Host | `smtp.resend.com` |
-| Port | `465` |
-| Username | `resend` |
-| Password | your Resend API key (starts with `re_`; Resend → API Keys) |
+Open [20261205000000_auth_email_log.sql](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/migrations/20261205000000_auth_email_log.sql),
+click the copy icon, paste into Supabase → **SQL Editor**, **Run**. Safe to
+run twice.
 
-Save. From now on these emails appear in Resend → **Emails** like the
-notification emails do, so you can see Delivered / Bounced for each one.
+### 2. Deploy the `auth-email` function
 
-## 2. Check the site address Supabase uses in links
+1. Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Name: `auth-email` (exactly).
+3. Replace everything in the editor with
+   [supabase/functions/auth-email/index.ts](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/functions/auth-email/index.ts)
+   (click the copy icon on GitHub), then **Deploy**.
+4. On the function's page open **Details** and switch **Verify JWT with
+   legacy secret** **off**. Supabase Auth signs its requests with the hook
+   secret instead.
+5. Still on that page, copy the function's **URL**. It looks like
+   `https://<project id>.supabase.co/functions/v1/auth-email`.
 
-Supabase → **Authentication → URL Configuration**:
+### 3. Turn on the hook and give the function its secret
 
-- **Site URL** must be exactly `https://independentjourney.com` (no trailing
-  slash). The templates build their links from it.
-- **Redirect URLs** should include `https://independentjourney.com/**`.
+1. Supabase → **Authentication** → **Hooks** → **Send Email** → **Add hook**
+   (or Enable).
+2. Hook type: **HTTPS**. URL: the function URL from step 2.
+3. Click **Generate secret**, then copy the whole value (it starts with
+   `v1,whsec_`). **Save** the hook. Do not close the tab yet; the secret is
+   only shown here.
+4. Supabase → **Edge Functions** → **Secrets** → **Add new secret**:
+   name `SEND_EMAIL_HOOK_SECRET`, value = the secret you just copied. Save.
 
-## 3. Paste the templates (about 5 minutes)
+The function also uses `RESEND_API_KEY`, `EMAIL_FROM` and `SITE_URL`, which
+already exist from the notification emails setup.
 
-Supabase → **Authentication → Emails** → **Templates** tab. For each row
-below: open the template, replace the **Subject**, select everything in the
-**Body (HTML)** box and replace it with the file's contents (click the copy
-icon on GitHub), then **Save**.
+### 4. Test
 
-| Supabase template | Subject | File |
-| --- | --- | --- |
-| Confirm sign up | Confirm your email for Independent Journey | [confirm-signup.html](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/email-templates/confirm-signup.html) |
-| Reset password | Reset your Independent Journey password | [reset-password.html](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/email-templates/reset-password.html) |
-| Change email address | Confirm your new email for Independent Journey | [change-email.html](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/email-templates/change-email.html) |
-| Magic link | Your Independent Journey log-in link | [magic-link.html](https://github.com/DeepTubeAdmin/IndependentJourney/blob/main/supabase/email-templates/magic-link.html) |
+Sign up with a fresh address. Then:
 
-The first line of each file is a comment with the subject; pasting it along
-with the rest is harmless. `{{ .SiteURL }}`, `{{ .TokenHash }}` and
-`{{ .Token }}` are filled in by Supabase. The site does not use magic links
-today, so that one is only there for completeness.
+- **Table Editor → auth_email_log**: one row, `action = signup`,
+  `status = sent`. If it says `failed`, the `error` column tells you why
+  (usually a Resend key or quota problem).
+- **Resend → Emails**: the same message, Delivered.
+- Confirm with the button, then sign up with another address and confirm by
+  typing the code. Request a password reset and try both ways.
 
-Then test: sign up with a fresh address, confirm with the button; sign up
-with another and confirm by typing the code; request a password reset and
-try both ways.
+If no row appears at all, Supabase never called the function: check that the
+hook is enabled and the URL ends in `/auth-email`.
 
-## 4. Domain records (already in place, checked 15 Nov 2026)
+### 5. Limits worth raising
+
+- Supabase → **Authentication** → **Rate Limits** → "Rate limit for sending
+  emails": default is 30 per hour. Set it to **200** so a busy sign-up day is
+  not silently capped. (Only editable because custom SMTP is on; leave SMTP
+  configured even though the hook now does the sending.)
+- Resend's free plan is **100 emails per day**, counting notifications too.
+  Resend → **Usage** shows the count. If you get close, Resend's $20/month plan
+  lifts it to 50,000.
+
+## When someone says the email never arrived
+
+1. **auth_email_log** (Table Editor, newest first; filter by `email`):
+   - no row: they typed a different address, or the hook is off.
+   - `failed`: the `error` column says why; fix and ask them to use
+     **Send the email again** on the verify page.
+   - `sent`: Resend accepted it, go to step 2.
+2. **Resend → Emails**, search the address: Delivered means the mailbox
+   provider took it, so it is in Spam, Junk, Promotions or Other. Bounced or
+   Complained gives the reason.
+3. The person can always type the **6-digit code** instead of clicking, and
+   can request the email again from the verify-email page or the log-in page.
+4. To unblock someone by hand: Supabase → **Authentication → Users** → open
+   the user → **Confirm email**.
+
+## Domain records (checked 15 Nov 2026)
 
 Resend's records for `independentjourney.com` are live: DKIM
 (`resend._domainkey`), SPF and MX on `send.independentjourney.com`, and a
@@ -78,22 +108,12 @@ Yahoo's sender requirements. Two optional upgrades for later:
 - **Receive mail at hello@independentjourney.com.** The domain has no inbound
   mail today, so replies to any email bounce. A free forwarder such as
   ImprovMX or Cloudflare Email Routing adds an MX record and forwards
-  hello@ to your inbox. Replies that bounce are a mild spam signal and look
-  unprofessional when someone writes back.
+  hello@ to your inbox.
 - **Tighten DMARC** to `p=quarantine` once a few weeks of mail have gone out
-  cleanly. It tells providers to junk mail that fakes your domain.
+  cleanly.
 
-## If confirmation emails still do not arrive
+## Changing the wording
 
-1. **Resend → Emails** shows every attempt. "Delivered" means the mailbox
-   provider accepted it; look in Junk, Other/Focused (Outlook) or Promotions
-   (Gmail), and search the mailbox for "Independent Journey". "Bounced" or
-   "Complained" tells you the reason.
-2. Members can type the 6-digit code instead of clicking, and can ask for
-   the email again: the log-in page shows **Resend the confirmation email**
-   when an account is unconfirmed, and the "Didn't get the confirmation
-   email?" link works for anyone.
-3. For a member who is stuck, you can confirm them by hand: Supabase →
-   **Authentication → Users** → open the user → **Confirm email**.
-4. New domains build reputation slowly. Steady, wanted mail for a few weeks
-   is what moves the needle; there is no setting that skips it.
+Edit the text in `supabase/functions/auth-email/index.ts` (the `build`
+function has one block per email type), then paste the whole file into the
+function in the dashboard again and **Deploy**.
