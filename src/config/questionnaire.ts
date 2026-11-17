@@ -11,7 +11,7 @@
  */
 import type { Role } from '@/lib/auth';
 
-export type FieldType = 'text' | 'textarea' | 'number' | 'money' | 'date' | 'state' | 'single' | 'multi' | 'yesno';
+export type FieldType = 'text' | 'textarea' | 'number' | 'money' | 'date' | 'state' | 'country' | 'single' | 'multi' | 'yesno';
 
 export type Option = { value: string; label: string };
 
@@ -32,7 +32,12 @@ export type Field = {
   years?: 'past' | 'future';
   /** When set, this field is also saved into profiles.headline_tags for preview cards. */
   headlineTag?: (value: unknown) => string | null;
+  /** Hide this field (and skip its validation, saving it blank) unless the other answers say so. */
+  showWhen?: (answers: Record<string, unknown>) => boolean;
 };
+
+/** True unless the member said they live outside the US (blank counts as US). */
+export const livesInUS = (a: Record<string, unknown>) => !a.country || a.country === 'US';
 
 export type Step = {
   id: string;
@@ -188,14 +193,15 @@ export const IP_STEPS: Step[] = [
   {
     id: 'basics',
     title: 'About your family',
-    intro: 'Only first names, ages, photos and your state are shown to others.',
+    intro: 'Only first names, ages, photos and your state (or country, if you live outside the US) are shown to others.',
     fields: [
       { key: 'display_name', table: 'profiles', label: 'How should we show your family?', type: 'text', required: true, placeholder: 'e.g. Daniel & Luis, or Priya' },
       { key: 'family_structure', table: 'ip_details', label: 'Family structure', type: 'single', required: true, options: [{ value: 'couple', label: 'Couple' }, { value: 'single', label: 'Single parent' }, PREFER_NOT] },
-      { key: 'city', table: 'profile_private', label: 'City', type: 'text', required: true, help: 'Private. Only your state is shown.' },
-      { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.' },
-      { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true },
-      { key: 'phone', table: 'profile_private', label: 'Mobile phone', type: 'text', required: true, help: 'Private. Used to verify your account.' },
+      { key: 'country', table: 'profiles', label: 'Where do you live?', type: 'country', required: true, help: 'Surrogates on Independent Journey live in the US. Intended parents can live anywhere; the baby would still be born in the US.' },
+      { key: 'city', table: 'profile_private', label: 'City', type: 'text', required: true, help: 'Private. Only your state or country is shown.' },
+      { key: 'zip', table: 'profile_private', label: 'ZIP code', type: 'text', required: true, maxLength: 5, help: 'Private. We place you approximately on the map (about your ZIP area), never your address.', showWhen: livesInUS },
+      { key: 'state', table: 'profiles', label: 'State', type: 'state', required: true, showWhen: livesInUS },
+      { key: 'phone', table: 'profile_private', label: 'Mobile phone', type: 'text', required: true, help: 'Private. Used to verify your account. Outside the US, include your country code, like +44.' },
       ...AGENCY_QUESTIONS,
     ],
   },

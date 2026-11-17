@@ -43,10 +43,16 @@ export async function saveStep(userId: string, step: Step, allSteps: Step[], ans
   if (!supabase) return 'The app is not connected to a database yet.';
   const byTable = new Map<TableName, Record<string, unknown>>();
   for (const f of step.fields) {
-    if (!(f.key in answers)) continue;
+    const hidden = f.showWhen ? !f.showWhen(answers) : false;
+    if (!hidden && !(f.key in answers)) continue;
     const row = byTable.get(f.table) ?? {};
-    row[f.key] = normalize(f, answers[f.key]);
+    // A hidden field (e.g. State for a parent living abroad) is saved blank so stale answers never linger.
+    row[f.key] = normalize(f, hidden ? '' : answers[f.key]);
     byTable.set(f.table, row);
+  }
+  // Outside the US there is no ZIP, so there is no approximate map point either.
+  if (byTable.get('profiles')?.country && byTable.get('profiles')!.country !== 'US') {
+    Object.assign(byTable.get('profiles')!, { approx_lat: null, approx_lng: null });
   }
 
   // Headline tags: short phrases shown on preview cards.
@@ -117,7 +123,9 @@ function normalize(field: Field, value: unknown): unknown {
 /** Simple client-side checks before saving a step. Returns { key: message }. */
 export function validateStep(step: Step, answers: Answers): Record<string, string> {
   const errors: Record<string, string> = {};
+  const abroad = typeof answers.country === 'string' && answers.country !== '' && answers.country !== 'US';
   for (const f of step.fields) {
+    if (f.showWhen && !f.showWhen(answers)) continue;
     const v = answers[f.key];
     const empty = v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
     if (f.required && empty) errors[f.key] = 'Please answer this one.';
@@ -126,7 +134,10 @@ export function validateStep(step: Step, answers: Answers): Record<string, strin
       const age = yearsSince(v);
       if (age < 21) errors[f.key] = 'Surrogates must be 21 or older.';
     }
-    if (f.key === 'phone' && typeof v === 'string' && v && v.replace(/\D/g, '').length < 10) errors[f.key] = 'Enter a 10-digit US mobile number.';
+    if (f.key === 'phone' && typeof v === 'string' && v) {
+      const digits = v.replace(/\D/g, '').length;
+      if (abroad ? digits < 7 || digits > 15 : digits < 10) errors[f.key] = abroad ? 'Enter your mobile number with the country code, like +44 7700 900123.' : 'Enter a 10-digit US mobile number.';
+    }
     if (f.key === 'website' && typeof v === 'string' && v && !/^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(v.trim())) errors[f.key] = 'Enter your website address, like www.youragency.com.';
     if (f.key === 'attested_consent' && v !== true) errors[f.key] = 'We can only list agencies that confirm this.';
     if (f.key === 'year_founded' && !empty && !(Number(v) >= 1950 && Number(v) <= new Date().getFullYear())) errors[f.key] = 'Enter a four-digit year.';

@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import { placeLabel } from '@/lib/browse';
 import { myConversations, NEVER_SEND_MONEY, timeAgo, type ConversationRow } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
@@ -45,7 +46,7 @@ export default function Inbox() {
         <Pressable key={r.conversation_id} onPress={() => router.push(`/messages/${r.conversation_id}`)} style={({ pressed }) => [styles.row, pressed && styles.pressed]} accessibilityRole="button">
           <View style={styles.rowMain}>
             <Text style={styles.name}>
-              {r.other_name} · {r.other_state} <Text style={r.other_verified ? styles.verified : styles.unverified}>{r.other_verified ? 'Verified' : 'Not verified'}</Text>
+              {r.other_name} · {placeLabel({ state: r.other_state, country: r.other_country })} <Text style={r.other_verified ? styles.verified : styles.unverified}>{r.other_verified ? 'Verified' : 'Not verified'}</Text>
               {r.other_profile_type === 'agency' ? <Text style={styles.unverified}> · Agency{r.other_agency_name ? `: ${r.other_agency_name}` : ''}</Text> : null}
             </Text>
             {isAgency ? <Text style={styles.forLine}>For {r.mine_name}</Text> : null}

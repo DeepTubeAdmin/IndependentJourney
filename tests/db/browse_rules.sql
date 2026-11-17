@@ -228,5 +228,37 @@ do $$ begin
   assert (select count(*) from public.health_self_reports where id = '00000000-0000-0000-0000-000000000011') = 0, 'IP cannot read the private health answers';
 end $$;
 
+-- Migration 30: intended parents may live abroad; surrogates may not.
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000023', 'ip3@test', '{"role":"intended_parent"}'); -- complete, lives in Germany
+update public.profiles set display_name='Lena & Jonas', country='DE', state='TX', bio='Hallo' where id='00000000-0000-0000-0000-000000000023';
+update public.profile_private set city='Berlin', phone='+4915112345678' where id='00000000-0000-0000-0000-000000000023';
+update public.ip_details set family_structure='couple', embryos_status='created', open_to_twins='comfortable', desired_start='2027-01-01',
+  relationship_level='close', termination_comfort='comfortable', consulted_attorney=true, budget_range='150_200k', aware_of_birth_state_law=true
+  where id='00000000-0000-0000-0000-000000000023';
+insert into public.ip_parents (profile_id, position, first_name, age) values ('00000000-0000-0000-0000-000000000023', 1, 'Lena', 36);
+insert into public.photos (profile_id, storage_path, position) values
+  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000023/a.jpg', 0),
+  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000023/b.jpg', 1),
+  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000023/c.jpg', 2);
+do $$ begin
+  assert (select state = '' from public.profiles where id = '00000000-0000-0000-0000-000000000023'), 'a parent abroad carries no US state';
+  assert (select is_complete from public.profiles where id = '00000000-0000-0000-0000-000000000023'), 'a parent abroad is complete without a state';
+  begin
+    update public.profiles set country = 'CA' where id = '00000000-0000-0000-0000-000000000011';
+    raise exception 'a surrogate was allowed to live outside the US';
+  exception when check_violation then null; end;
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-000000000011');
+do $$ declare r record; begin
+  assert (select count(*) from public.browse_profiles('{"role": "intended_parent"}')) = 2, 'surrogate sees both parents by default';
+  assert (select count(*) from public.browse_profiles('{"role": "intended_parent", "us_only": true}')) = 1, 'us_only hides the parent abroad';
+  select * into r from public.browse_profiles('{"id": "00000000-0000-0000-0000-000000000023"}');
+  assert r.country = 'DE' and r.state = '', 'browse returns the country for cards';
+  assert public.profile_matches_filters((select p from public.profiles p where p.id = '00000000-0000-0000-0000-000000000023'), '{"us_only": true}') = false, 'saved searches honour us_only';
+  assert (select count(*) from public.featured_profiles(12) f where f.id = '00000000-0000-0000-0000-000000000023' and f.country = 'DE') = 1, 'homepage cards carry the country';
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;
