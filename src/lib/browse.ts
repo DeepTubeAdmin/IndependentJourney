@@ -211,6 +211,7 @@ const LABEL_OVERRIDES: Record<string, string> = {
   aware_of_birth_state_law: 'Aware of birth-state law',
   embryos_status: 'Embryos',
   untested_embryos_ok: 'Open to untested embryos',
+  international_ips_ok: 'Open to international parents',
   embryos_tested: 'Embryos genetically tested',
   embryo_transfer_ok: 'Open to transferring embryos elsewhere',
   embryo_count_range: 'Number of embryos',
