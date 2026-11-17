@@ -126,7 +126,7 @@ export default function OnboardingStep() {
       {current.notice ? <FormMessage kind="info" text={current.notice} /> : null}
       {serverError ? <FormMessage kind="error" text={serverError} /> : null}
       {!loaded ? <Text style={styles.loading}>Loading your answers…</Text> : null}
-      {current.fields.map((f) => (
+      {current.fields.filter((f) => !f.showWhen || f.showWhen(answers)).map((f) => (
         <FieldControl key={f.key} field={f} value={answers[f.key]} onChange={(v) => set(f.key, v)} error={errors[f.key]} />
       ))}
       <View style={styles.nav}>

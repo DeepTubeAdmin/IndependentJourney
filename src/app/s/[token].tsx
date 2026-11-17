@@ -11,7 +11,7 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { Screen } from '@/components/Screen';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
-import { compensationLine, loadShareView, prettyAnswers, revokeShareLink } from '@/lib/browse';
+import { compensationLine, loadShareView, placeLabel, prettyAnswers, revokeShareLink } from '@/lib/browse';
 import { privateMeta } from '@/lib/seo';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
@@ -59,7 +59,7 @@ export default function ShareView() {
   if (!view) return <Screen title="This link is no longer active" intro="The member may have turned sharing off, or the link was typed incorrectly."><Disclaimer /></Screen>;
 
   return (
-    <Screen width={880} title={`${view.display_name} · ${view.state}`} intro={`${view.role === 'surrogate' ? 'Gestational surrogate' : 'Intended parent'} · Identity verified · Shared by the member`}>
+    <Screen width={880} title={`${view.display_name} · ${placeLabel(view)}`} intro={`${view.role === 'surrogate' ? 'Gestational surrogate' : 'Intended parent'} · Identity verified · Shared by the member`}>
       {isOwner ? (
         <View style={styles.ownerBox}>
           <Text style={styles.ownerTitle}>This is your shareable profile link</Text>

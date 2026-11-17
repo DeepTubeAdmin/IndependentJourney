@@ -4,6 +4,7 @@
  */
 import { IP_STEPS, SURROGATE_STEPS, type Field } from '@/config/questionnaire';
 import { cachedPhotoUrls } from '@/lib/photos';
+import { countryName } from '@/config/countries';
 import { supabase } from '@/lib/supabase';
 
 export type PreviewRow = {
@@ -11,6 +12,8 @@ export type PreviewRow = {
   role: 'surrogate' | 'intended_parent';
   display_name: string;
   state: string;
+  /** ISO country code; 'US' for everyone except intended parents living abroad (migration 30). */
+  country?: string | null;
   is_verified: boolean;
   headline_tags: string[];
   preview_photo_path: string | null;
@@ -47,6 +50,8 @@ export function profileTypeLabel(r: { profile_type?: string | null; agency_name?
 export type BrowseFilters = {
   role?: 'surrogate' | 'intended_parent';
   state?: string;
+  /** Hide intended parents who live outside the US. */
+  us_only?: boolean;
   verified_only?: boolean;
   open_to_twins?: string;
   compensation_open?: boolean;
@@ -255,4 +260,11 @@ export function prettyAnswers(obj: Record<string, unknown> | null | undefined, s
     .filter(([k, v]) => !skip.includes(k) && !HIDDEN_KEYS.includes(k) && v !== null && v !== '' && v !== undefined && !(Array.isArray(v) && v.length === 0))
     .sort(([a], [b]) => (order.indexOf(a) === -1 ? 999 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 999 : order.indexOf(b)))
     .map(([k, v]) => ({ label: prettyLabel(k), value: prettyValue(k, v) }));
+}
+
+/** Where a member lives, as shown on cards: the US state, or the country for parents living abroad. */
+export function placeLabel(p: { state?: string | null; country?: string | null } | null | undefined): string {
+  if (!p) return '';
+  if (p.country && p.country !== 'US') return countryName(p.country);
+  return p.state ?? '';
 }

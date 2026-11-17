@@ -32,6 +32,8 @@ export type Profile = {
   display_name: string;
   last_initial: string;
   state: string;
+  /** ISO country code; 'US' unless an intended parent living abroad. */
+  country?: string;
   bio: string;
   headline_tags: string[];
   visibility: 'members_only' | 'public_previews';

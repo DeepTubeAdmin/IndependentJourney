@@ -12,7 +12,7 @@ import { Button } from "@/components/Button";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard } from "@/components/ProfileCard";
-import { featuredProfiles, profileTypeLabel, verifiedLabel, type PreviewRow } from "@/lib/browse";
+import { featuredProfiles, placeLabel, profileTypeLabel, verifiedLabel, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
 import { pageMeta } from "@/lib/seo";
 import { colors, fonts, radius, space } from "@/lib/theme";
@@ -63,7 +63,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Which states does it cover?",
-    "Independent Journey is for people in the United States. Surrogacy law differs by state, so always talk to a reproductive attorney licensed where the surrogate lives and where the baby would be born.",
+    "Surrogates on Independent Journey live in the United States. Intended parents can live anywhere in the world; many international families match with US surrogates. Surrogacy law differs by state, so always talk to a reproductive attorney licensed where the surrogate lives and where the baby would be born.",
   ],
   [
     "Can surrogates message intended parents directly?",
@@ -154,7 +154,7 @@ export default function Home() {
                 <ProfileCard
                   key={p.id}
                   name={p.display_name}
-                  state={p.state}
+                  state={placeLabel(p)}
                   role={p.role}
                   verified={verifiedLabel(p)}
                   headline={p.headline_tags.join(" · ")}

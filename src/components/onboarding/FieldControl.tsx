@@ -1,5 +1,6 @@
 /** Renders one questionnaire field from src/config/questionnaire.ts with the matching form control. */
 import { ChoiceField, DateField, MoneyField, MultiChoiceField, SelectField, TextField, YesNoField } from '@/components/form';
+import { COUNTRIES } from '@/config/countries';
 import { US_STATES, type Field } from '@/config/questionnaire';
 
 export function FieldControl({ field, value, onChange, error }: { field: Field; value: unknown; onChange: (v: unknown) => void; error?: string }) {
@@ -25,6 +26,8 @@ export function FieldControl({ field, value, onChange, error }: { field: Field; 
       );
     case 'state':
       return <SelectField {...common} options={US_STATES} value={(value as string) ?? null} onChange={onChange} />;
+    case 'country':
+      return <SelectField {...common} options={COUNTRIES} value={(value as string) ?? null} onChange={onChange} />;
     case 'single':
       return <ChoiceField {...common} options={field.options ?? []} value={value == null ? null : String(value)} onChange={onChange} />;
     case 'multi':

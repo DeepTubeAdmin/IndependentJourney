@@ -37,6 +37,8 @@ export type ConversationRow = {
   other_id: string;
   other_name: string;
   other_state: string;
+  /** ISO country code of the other member ('US' unless an intended parent abroad). */
+  other_country?: string | null;
   other_role: 'surrogate' | 'intended_parent';
   other_verified: boolean;
   other_photo_path: string | null;

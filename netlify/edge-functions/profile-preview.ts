@@ -30,12 +30,17 @@ type Row = {
   role: 'surrogate' | 'intended_parent';
   display_name: string;
   state: string;
+  country?: string | null;
   is_verified: boolean;
   headline_tags: string[] | null;
   preview_photo_path: string | null;
   profile_type?: string | null;
   agency_name?: string | null;
 };
+
+/** US state, or the country name for intended parents living abroad. */
+const place = (r: { state: string; country?: string | null }) =>
+  r.country && r.country !== 'US' ? (new Intl.DisplayNames(['en'], { type: 'region' }).of(r.country) ?? r.country) : r.state;
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const html = (body: string, status = 200) =>
@@ -77,7 +82,7 @@ export function card(row: Row | null, id: string, origin: string): string {
   const role = row.role === 'surrogate' ? 'Surrogate' : 'Intended parents';
   const roleLong = row.role === 'surrogate' ? 'Gestational surrogate' : 'Intended parents';
   const agency = row.profile_type === 'agency';
-  const title = `${row.display_name} · ${row.state} · ${role}`;
+  const title = `${row.display_name} · ${place(row)} · ${role}`;
   const bits: string[] = [roleLong];
   bits.push(agency ? (row.agency_name ? `Agency: ${row.agency_name}` : 'Agency') : 'Independent');
   if (row.is_verified && !agency) bits.push('Identity verified');

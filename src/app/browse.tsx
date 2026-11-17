@@ -15,7 +15,7 @@ import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
-import { browseProfiles, profileTypeLabel, verifiedLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, placeLabel, profileTypeLabel, verifiedLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -111,6 +111,7 @@ export default function Browse() {
               <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
             </>
           )}
+          {lookingFor === 'intended_parent' ? <Checkbox label="US-based parents only" checked={Boolean(filters.us_only)} onChange={(v) => set('us_only', v || undefined)} /> : null}
           {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
@@ -140,7 +141,7 @@ export default function Browse() {
               onChange={(v) => set('radius_miles', v ? Number(v) : undefined)}
             />
           ) : (
-            !anon && <Text style={styles.note}>Add your ZIP code to your profile to filter and sort by distance and to appear on the map.</Text>
+            !anon && (!profile?.country || profile.country === 'US') && <Text style={styles.note}>Add your ZIP code to your profile to filter and sort by distance and to appear on the map.</Text>
           )}
           <ChoiceField
             label="Relationship during the journey"
@@ -175,7 +176,7 @@ export default function Browse() {
             <ProfileCard
               key={p.id}
               name={p.display_name}
-              state={p.state}
+              state={placeLabel(p)}
               role={p.role}
               verified={verifiedLabel(p)}
               headline={p.headline_tags.join(' · ') || 'Profile complete'}

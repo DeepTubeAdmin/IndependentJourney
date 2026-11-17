@@ -12,7 +12,7 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
-import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, verifiedLabel, type Access, type PreviewRow } from '@/lib/browse';
+import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, placeLabel, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, verifiedLabel, type Access, type PreviewRow } from '@/lib/browse';
 import { myAgency } from '@/lib/agency';
 import { blockMember, canMessage, canMessageAs, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessageAs, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
@@ -161,7 +161,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <Screen width={880} title={`${preview.display_name} · ${preview.state}`} intro={preview.profile_type === 'agency' ? profileTypeLabel(preview) : `${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
+    <Screen width={880} title={`${preview.display_name} · ${placeLabel(preview)}`} intro={preview.profile_type === 'agency' ? profileTypeLabel(preview) : `${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
       {isMine && !isAgencyViewer ? (
         <FormMessage
@@ -179,7 +179,7 @@ export default function ProfilePage() {
       {access === 'preview' ? (
         <>
           <View style={styles.previewWrap}>
-            <ProfileCard name={preview.display_name} state={preview.state} role={preview.role} verified={verifiedLabel(preview)} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
+            <ProfileCard name={preview.display_name} state={placeLabel(preview)} role={preview.role} verified={verifiedLabel(preview)} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
             <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>

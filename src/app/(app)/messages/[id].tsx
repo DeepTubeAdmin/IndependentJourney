@@ -11,6 +11,7 @@ import { Button } from '@/components/Button';
 import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
+import { placeLabel } from '@/lib/browse';
 import {
   blockMember, conversationMessages, haveBlocked, markRead, myConversations,
   NEVER_SEND_MONEY, SCAM_WARNING, sendMessageAs, unblockMember, UNVERIFIED_WARNING,
@@ -99,7 +100,7 @@ export default function Conversation() {
   }
 
   return (
-    <Screen width={760} title={`${conv.other_name} · ${conv.other_state}`} intro={[
+    <Screen width={760} title={`${conv.other_name} · ${placeLabel({ state: conv.other_state, country: conv.other_country })}`} intro={[
       conv.other_role === 'surrogate' ? 'Surrogate' : 'Intended parent',
       conv.other_verified ? 'Identity verified' : 'Identity not verified',
       conv.other_profile_type === 'agency' ? `Agency profile${conv.other_agency_name ? ` (${conv.other_agency_name})` : ''}: you are talking with the agency` : null,
