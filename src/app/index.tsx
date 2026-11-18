@@ -55,7 +55,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "How much does it cost?",
-    "Surrogates always join free. Intended parents browse limited previews free, and a simple membership unlocks full profiles and messaging. There are no match fees and no fees tied to a pregnancy or birth.",
+    "Surrogates always join free. Anyone can read a few full profiles as a guest; intended parents browse previews free, and a simple membership unlocks full profiles and messaging. There are no match fees and no fees tied to a pregnancy or birth.",
   ],
   [
     "How do I know a profile is real?",
