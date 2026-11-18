@@ -73,8 +73,14 @@ function render(row: Row): { subject: string; body: string; text: string } {
   const p = row.payload ?? {};
   const first = esc((row.display_name || 'there').split(' ')[0]);
   const url = siteUrl();
+  // Same button as the login emails: a table cell with the brand brown, so it
+  // keeps its shape in Gmail, Apple Mail and Outlook.
   const btn = (href: string, label: string) =>
-    `<p style="margin:24px 0"><a href="${href}" style="background:#7A5C44;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600;display:inline-block">${label}</a></p>`;
+    `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0 24px"><tr>
+      <td align="center" bgcolor="#8C6E57" style="background:#8C6E57;border-radius:10px">
+        <a href="${href}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;border-radius:10px">${label}</a>
+      </td>
+    </tr></table>`;
   const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '');
 
   switch (row.template) {
@@ -90,7 +96,7 @@ function render(row: Row): { subject: string; body: string; text: string } {
       const via = p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : '';
       const forWhom = p.for_name ? `<p>This message is for your client <strong>${esc(p.for_name)}</strong>.</p>` : '';
       return msg(`${who} sent you a message`,
-        `<p>Hi ${first},</p>${forWhom}<p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''}${via} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #B8CFE0;color:#444">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}<p style="color:#777;font-size:13px">We send at most one email per conversation per hour.</p>`,
+        `<p>Hi ${first},</p>${forWhom}<p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''}${via} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #A9C4D4;color:#4F4A44">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}<p style="color:#6E6760;font-size:13px">We send at most one email per conversation per hour.</p>`,
         `${who} sent you a message on ${SITE_NAME}. Read it at ${url}/messages/${p.conversation_id}`);
     }
     case 'locked_message': {
@@ -101,7 +107,7 @@ function render(row: Row): { subject: string; body: string; text: string } {
     }
     case 'membership_receipt':
       return msg(`Your ${SITE_NAME} membership receipt`,
-        `<p>Hi ${first},</p><p>Thank you. Your payment of <strong>$${Number(p.price_usd ?? 0)}</strong> for a ${p.term_months}-month membership went through. It runs until <strong>${date(p.period_end)}</strong>. There is no automatic renewal; we will remind you a week before it ends.</p>${btn(`${url}/browse`, 'Browse surrogates')}<p style="color:#777;font-size:13px">Stripe also emails you a card receipt. Keep this for your records.</p>`,
+        `<p>Hi ${first},</p><p>Thank you. Your payment of <strong>$${Number(p.price_usd ?? 0)}</strong> for a ${p.term_months}-month membership went through. It runs until <strong>${date(p.period_end)}</strong>. There is no automatic renewal; we will remind you a week before it ends.</p>${btn(`${url}/browse`, 'Browse surrogates')}<p style="color:#6E6760;font-size:13px">Stripe also emails you a card receipt. Keep this for your records.</p>`,
         `Your $${Number(p.price_usd ?? 0)} ${SITE_NAME} membership runs until ${date(p.period_end)}.`);
     case 'membership_ending':
       return msg('Your membership ends in a week',
@@ -126,10 +132,10 @@ function render(row: Row): { subject: string; body: string; text: string } {
     case 'saved_search': {
       const items: any[] = Array.isArray(p.items) ? p.items : [];
       const list = items.map((i) =>
-        `<li style="margin:6px 0"><a href="${url}/profile/${i.id}" style="color:#7A5C44;font-weight:600">${esc(i.display_name)}</a> · ${esc(i.state ?? '')}${i.is_verified ? ' · Verified' : ''}${i.headline ? `<br><span style="color:#666">${esc(i.headline)}</span>` : ''}</li>`).join('');
+        `<li style="margin:6px 0"><a href="${url}/profile/${i.id}" style="color:#8C6E57;font-weight:600">${esc(i.display_name)}</a> · ${esc(i.state ?? '')}${i.is_verified ? ' · Verified' : ''}${i.headline ? `<br><span style="color:#6E6760">${esc(i.headline)}</span>` : ''}</li>`).join('');
       const n = Number(p.count ?? items.length);
       return msg(`${n} new ${n === 1 ? 'profile matches' : 'profiles match'} “${esc(p.search_name ?? 'your search')}”`,
-        `<p>Hi ${first},</p><p>New or updated profiles match your saved search <strong>${esc(p.search_name ?? '')}</strong>:</p><ul style="padding-left:18px">${list}</ul>${n > items.length ? `<p>…and ${n - items.length} more.</p>` : ''}${btn(`${url}/browse`, 'Browse now')}<p style="color:#777;font-size:13px">Turn alerts off for this search under Settings.</p>`,
+        `<p>Hi ${first},</p><p>New or updated profiles match your saved search <strong>${esc(p.search_name ?? '')}</strong>:</p><ul style="padding-left:18px">${list}</ul>${n > items.length ? `<p>…and ${n - items.length} more.</p>` : ''}${btn(`${url}/browse`, 'Browse now')}<p style="color:#6E6760;font-size:13px">Turn alerts off for this search under Settings.</p>`,
         `${n} new profiles match your saved search "${p.search_name ?? ''}" on ${SITE_NAME}. Browse at ${url}/browse`);
     }
     // ----- Agency accounts (migration 23) -----
@@ -139,7 +145,7 @@ function render(row: Row): { subject: string; body: string; text: string } {
         `Thanks for applying for an agency account. Finish your details at ${url}/agency and we will review it by hand.`);
     case 'agency_pending':
       return msg(`New agency to review: ${esc(p.agency_name ?? '')}`,
-        `<p>A new agency has signed up and is waiting for your approval.</p><p><strong>${esc(p.agency_name ?? '')}</strong><br>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Review in admin')}<p style="color:#777;font-size:13px">You will get a second email once they have finished their agency details.</p>`,
+        `<p>A new agency has signed up and is waiting for your approval.</p><p><strong>${esc(p.agency_name ?? '')}</strong><br>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Review in admin')}<p style="color:#6E6760;font-size:13px">You will get a second email once they have finished their agency details.</p>`,
         `New agency waiting for approval: ${p.agency_name ?? ''} (${p.website ?? ''}). Review at ${url}/admin/agencies?id=${p.agency_id}`);
     case 'agency_ready':
       return msg(`Agency ready to approve: ${esc(p.agency_name ?? '')}`,
@@ -164,18 +170,54 @@ function render(row: Row): { subject: string; body: string; text: string } {
 
 const msg = (subject: string, body: string, text: string) => ({ subject, body, text });
 
-/** Brand wrapper (Linen & Sky: warm off-white, gentle brown, pale blue). */
+/**
+ * Brand wrapper, identical to the login emails (auth-email): logo and wordmark
+ * on the linen background, a white card, and a quiet footer. Table-based so
+ * it renders the same in Gmail, Apple Mail and Outlook.
+ */
 function layout(title: string, body: string): string {
   const url = siteUrl();
-  return `<!doctype html><html><body style="margin:0;background:#F7F3EE;font-family:Georgia,'Times New Roman',serif;color:#2B2622">
-<div style="max-width:560px;margin:0 auto;padding:32px 20px">
-  <p style="font-size:20px;margin:0 0 20px;color:#7A5C44;letter-spacing:.2px">${SITE_NAME}</p>
-  <div style="background:#fff;border:1px solid #E6DED5;border-radius:14px;padding:28px 28px 20px;font-size:16px;line-height:1.55">
-    <h1 style="font-size:22px;margin:0 0 16px;font-weight:600">${title}</h1>
-    ${body}
-  </div>
-  <p style="font-size:12px;color:#8A817A;line-height:1.5;margin-top:20px">You are receiving this because you have an account at <a href="${url}" style="color:#8A817A">independentjourney.com</a>. Change which emails you get under <a href="${url}/settings" style="color:#8A817A">Settings</a>. Independent Journey is an introduction platform, not an agency, and does not give medical or legal advice.</p>
-</div></body></html>`;
+  const serif = "font-family:Georgia,'Times New Roman',serif";
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <title>${title}</title>
+  <style>
+    body { margin:0; padding:0; -webkit-text-size-adjust:100%; }
+    table { border-collapse:collapse; }
+    a { color:#8C6E57; }
+    p { margin:0 0 16px; }
+    @media only screen and (max-width:620px) { .wrap { width:100% !important; } .pad { padding:24px 20px !important; } }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#F8F5EF">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F8F5EF" style="background:#F8F5EF">
+    <tr><td align="center" style="padding:32px 12px">
+      <table role="presentation" class="wrap" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px">
+        <tr><td align="left" style="padding:0 4px 18px">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+            <td valign="middle" style="padding-right:12px"><a href="${url}" target="_blank"><img src="${url}/logo-192.png" width="40" height="40" alt="" style="display:block;border:0;border-radius:10px"></a></td>
+            <td valign="middle" style="${serif};font-size:22px;color:#8C6E57;letter-spacing:.2px">${SITE_NAME}</td>
+          </tr></table>
+        </td></tr>
+        <tr><td class="pad" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #E8E1D6;border-radius:16px;padding:32px 36px;${serif};font-size:16px;line-height:24px;color:#2E2A26">
+          <div style="font-size:24px;line-height:32px;margin:0 0 16px">${title}</div>
+          ${body}
+        </td></tr>
+        <tr><td style="padding:20px 8px 0;${serif};font-size:12px;line-height:18px;color:#6E6760">
+          You are receiving this because you have an account at <a href="${url}" style="color:#6E6760">independentjourney.com</a>. Change which emails you get under <a href="${url}/settings" style="color:#6E6760">Settings</a>.<br>
+          ${SITE_NAME} &middot; <a href="${url}" style="color:#6E6760">independentjourney.com</a> &middot; <a href="${url}/privacy" style="color:#6E6760">Privacy</a><br>
+          An introduction platform for intended parents and gestational surrogates. Not an agency; no medical or legal advice.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 function esc(s: unknown): string {
