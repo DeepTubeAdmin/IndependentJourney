@@ -82,7 +82,10 @@ export function card(row: Row | null, id: string, origin: string): string {
   const role = row.role === 'surrogate' ? 'Surrogate' : 'Intended parents';
   const roleLong = row.role === 'surrogate' ? 'Gestational surrogate' : 'Intended parents';
   const agency = row.profile_type === 'agency';
-  const title = `${row.display_name} · ${place(row)} · ${role}`;
+  // The highlights go in the title: iMessage shows only image + title + domain, and
+  // Facebook often drops the description on phones. Same wording as the homepage cards.
+  const highlights = (row.headline_tags ?? []).filter(Boolean).join(' · ');
+  const title = `${row.display_name} · ${place(row)} · ${role}${highlights ? ` · ${highlights}` : ''}`;
   const bits: string[] = [roleLong];
   bits.push(agency ? (row.agency_name ? `Agency: ${row.agency_name}` : 'Agency') : 'Independent');
   if (row.is_verified && !agency) bits.push('Identity verified');
