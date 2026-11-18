@@ -70,7 +70,9 @@ Deno.serve(async (req) => {
   const role = view.role === 'surrogate' ? 'Surrogate' : 'Intended parents';
   const roleLong = view.role === 'surrogate' ? 'Gestational surrogate' : 'Intended parents';
   const place = view.country && view.country !== 'US' ? (new Intl.DisplayNames(['en'], { type: 'region' }).of(view.country) ?? view.country) : view.state;
-  const title = `${view.display_name} · ${place} · ${role}`;
+  // Highlights in the title too: iMessage shows only image + title + domain.
+  const highlights = ((view.headline_tags ?? []) as string[]).filter(Boolean).join(' · ');
+  const title = `${view.display_name} · ${place} · ${role}${highlights ? ` · ${highlights}` : ''}`;
   const bits: string[] = [roleLong];
   if (view.is_verified) bits.push('Identity verified');
   for (const t of (view.headline_tags ?? []) as string[]) bits.push(t);
