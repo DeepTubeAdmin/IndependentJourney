@@ -260,5 +260,43 @@ do $$ declare r record; begin
   assert (select count(*) from public.featured_profiles(12) f where f.id = '00000000-0000-0000-0000-000000000023' and f.country = 'DE') = 1, 'homepage cards carry the country';
 end $$;
 
+-- Migration 31: guest pass. A visitor may read guest_full_profiles (3) full profiles.
+reset role;
+select pg_temp.anon();
+do $$ declare g uuid := gen_random_uuid(); r jsonb; begin
+  r := public.guest_profile_view(g, '00000000-0000-0000-0000-000000000011');
+  assert (r ->> 'allowed')::boolean and (r ->> 'used')::int = 1 and (r ->> 'limit')::int = 3, 'first guest view allowed: ' || r::text;
+  assert r -> 'profile' ->> 'bio' = 'Hello there' and jsonb_array_length(r -> 'profile' -> 'photos') = 3, 'guest view carries story and photos';
+  assert r -> 'profile' -> 'surrogate' ->> 'relationship_status' = 'married', 'guest view carries public answers';
+  assert not (r -> 'profile' ? 'phone') and not (r -> 'profile' ? 'health'), 'guest view never carries private details';
+  r := public.guest_profile_view(g, '00000000-0000-0000-0000-000000000011');
+  assert (r ->> 'used')::int = 1, 'reopening the same profile is free';
+  perform public.guest_profile_view(g, '00000000-0000-0000-0000-000000000021');
+  r := public.guest_profile_view(g, '00000000-0000-0000-0000-000000000023');
+  assert (r ->> 'allowed')::boolean and (r ->> 'used')::int = 3, 'third profile allowed';
+  r := public.guest_profile_view(g, '00000000-0000-0000-0000-000000000012');
+  assert not (r ->> 'allowed')::boolean and (r ->> 'used')::int = 3 and not (r ? 'profile'), 'fourth profile refused';
+  r := public.guest_profile_view(gen_random_uuid(), '00000000-0000-0000-0000-000000000013');
+  assert not (r ->> 'allowed')::boolean, 'a suspended profile is never shown to guests';
+  begin
+    perform * from public.guest_views;
+    raise exception 'anon could read guest_views';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+update public.app_settings set value = '0' where key = 'guest_full_profiles';
+select pg_temp.anon();
+do $$ declare r jsonb; begin
+  r := public.guest_profile_view(gen_random_uuid(), '00000000-0000-0000-0000-000000000011');
+  assert not (r ->> 'allowed')::boolean and (r ->> 'limit')::int = 0, 'setting 0 turns the pass off';
+end $$;
+reset role;
+update public.app_settings set value = '3' where key = 'guest_full_profiles';
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ declare r jsonb; begin
+  r := public.guest_profile_view(gen_random_uuid(), '00000000-0000-0000-0000-000000000011');
+  assert not (r ->> 'allowed')::boolean, 'signed-in members do not use the guest pass';
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;

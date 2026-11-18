@@ -14,6 +14,7 @@ import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFullProfile, myAccessTo, placeLabel, prettyAnswers, profileTypeLabel, saveProfile, unsaveProfile, verifiedLabel, type Access, type PreviewRow } from '@/lib/browse';
 import { myAgency } from '@/lib/agency';
+import { guestProfileView, type GuestView } from '@/lib/guest';
 import { blockMember, canMessage, canMessageAs, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessageAs, unblockMember, type CanMessage } from '@/lib/messages';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -34,6 +35,8 @@ export default function ProfilePage() {
   const [access, setAccess] = useState<Access | null>(null);
   const [preview, setPreview] = useState<PreviewRow | null>(null);
   const [full, setFull] = useState<Awaited<ReturnType<typeof loadFullProfile>>>(null);
+  // Visitors: the guest pass (a few full profiles before the join wall).
+  const [guest, setGuest] = useState<GuestView | null>(null);
   const [saved, setSaved] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
@@ -52,6 +55,11 @@ export default function ProfilePage() {
       setPreview(rows[0] ?? null);
       setAccess(rows[0] ? a : 'none');
       if (rows[0] && a === 'full') setFull(await loadFullProfile(id));
+      if (rows[0] && !session && a === 'preview') {
+        const g = await guestProfileView(id);
+        setGuest(g);
+        if (g.allowed && g.full) setFull(g.full as any);
+      }
       if (session) setSaved((await listSavedIds(session.user.id)).includes(id));
       if (session && !isAgencyViewer) setBlocked(await haveBlocked(session.user.id, id));
       if (isAgencyViewer && rows[0]) {
@@ -176,16 +184,18 @@ export default function ProfilePage() {
       ) : null}
       {isOwnClient ? <FormMessage kind="info" text="This is one of your client profiles, as members see it." /> : null}
 
-      {access === 'preview' ? (
+      {access === 'preview' && !(guest?.allowed && full) ? (
         <>
           <View style={styles.previewWrap}>
             <ProfileCard name={preview.display_name} state={placeLabel(preview)} role={preview.role} verified={verifiedLabel(preview)} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
-            <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : 'Join to see more'}</Text>
+            <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : guest && guest.limit > 0 ? `You have read your ${guest.limit} free full profiles` : 'Join to see more'}</Text>
             <Text style={styles.wallText}>
               {!session
-                ? 'Members see more than previews. Surrogates join free and read full intended-parent profiles right away.'
+                ? guest && guest.limit > 0
+                  ? 'Join free in a minute to keep reading full profiles. Surrogates always join free, and intended parents browse free before choosing a membership.'
+                  : 'Members see more than previews. Surrogates join free and read full intended-parent profiles right away.'
                 : isIpViewer
                   ? 'A membership unlocks full surrogate profiles, photos and messaging.'
                   : 'Full profiles are shown once your account is active.'}
@@ -196,6 +206,16 @@ export default function ProfilePage() {
         </>
       ) : full ? (
         <>
+          {guest?.allowed && !session ? (
+            <View style={styles.guestBar}>
+              <Text style={styles.guestText}>
+                {guest.limit - guest.used > 0
+                  ? `Guest pass: you can read ${guest.limit - guest.used} more full ${guest.limit - guest.used === 1 ? 'profile' : 'profiles'} before joining. Members read every profile.`
+                  : 'This is the last full profile on your guest pass. Join free to keep reading.'}
+              </Text>
+              <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
+            </View>
+          ) : null}
           <View style={styles.photos}>
             {full.photoUrls.map((u, i) => (
               <Image key={i} source={{ uri: u }} style={styles.photo} accessibilityLabel={`Photo ${i + 1} of ${preview.display_name}`} />
@@ -300,6 +320,8 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   previewWrap: { alignItems: 'center' },
+  guestBar: { backgroundColor: colors.surfaceSoft, borderRadius: radius.lg, padding: space.md, gap: space.sm, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  guestText: { fontFamily: fonts.body, fontSize: 15, color: colors.text, lineHeight: 22, flex: 1, minWidth: 220 },
   wall: { backgroundColor: colors.surfaceSoft, borderRadius: radius.lg, padding: space.lg, gap: space.sm, alignItems: 'center' },
   wallTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text },
   wallText: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
