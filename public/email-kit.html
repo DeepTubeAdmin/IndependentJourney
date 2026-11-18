@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Email kit · Independent Journey</title>
+<!--
+  Internal page for the team: a Gmail signature and email templates in the
+  site's "Linen & Sky" look. Open it, fill in your details, click Copy, and
+  paste into Gmail (Settings → Signature, or a Template). Nothing here is
+  linked from the site and search engines are told to skip it.
+-->
+<style>
+  body { margin:0; background:#F8F5EF; color:#2E2A26; font-family: Georgia, 'Times New Roman', serif; }
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 8px; color:#8C6E57; font-weight: 600; }
+  h2 { font-size: 20px; margin: 40px 0 8px; font-weight: 600; }
+  p, li { line-height: 1.55; }
+  .muted { color:#6E6760; font-size: 14px; }
+  .card { background:#fff; border:1px solid #E8E1D6; border-radius:16px; padding: 20px; margin: 12px 0; }
+  .form { display:grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .form label { font-size: 13px; color:#4F4A44; display:block; }
+  .form input { width:100%; box-sizing:border-box; margin-top:4px; padding:8px 10px; border:1px solid #E8E1D6; border-radius:8px; font: 15px Georgia, serif; background:#F8F5EF; }
+  .preview { border:1px dashed #CFDDE6; border-radius:12px; padding: 20px; background:#fff; overflow:auto; }
+  .btn { display:inline-block; background:#8C6E57; color:#fff; border:0; border-radius:10px; padding:10px 18px; font: 600 15px Georgia, serif; cursor:pointer; margin: 12px 8px 0 0; }
+  .btn.alt { background:#fff; color:#3F5F73; border:1px solid #CFDDE6; }
+  .ok { color:#3C7A5A; font-size:14px; margin-left: 6px; }
+  ol li { margin-bottom: 6px; }
+  code { background:#EEF3F6; padding: 1px 5px; border-radius: 5px; font-size: 14px; }
+  @media (max-width: 560px) { .form { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Independent Journey email kit</h1>
+  <p class="muted">A signature and ready-made messages in the website's colors, for the @independentjourney.com Gmail account. Fill in your details, click <b>Copy</b>, then paste into Gmail.</p>
+
+  <h2>1. Your details</h2>
+  <div class="card form">
+    <label>Full name<input id="f-name" value="Seth Glass"></label>
+    <label>Title<input id="f-title" value="Founder"></label>
+    <label>Email address<input id="f-email" value="support@independentjourney.com"></label>
+    <label>Phone (optional)<input id="f-phone" value="" placeholder="(555) 555-5555"></label>
+  </div>
+
+  <h2>2. Signature</h2>
+  <p class="muted">Goes under every email you send. Logo, name, title, and links in the brand colors.</p>
+  <div class="card">
+    <div class="preview" id="sig-preview"></div>
+    <button class="btn" onclick="copyBlock('sig-preview', this)">Copy signature</button>
+    <span class="muted">Then: Gmail → Settings (gear) → <b>See all settings</b> → General → <b>Signature</b> → Create new → paste → scroll down → Save changes.</span>
+  </div>
+
+  <h2>3. Email templates</h2>
+  <p class="muted">Full messages with the brand header and your signature. Change the wording in Gmail after pasting.</p>
+
+  <div class="card">
+    <b>General reply</b>
+    <div class="preview" id="tpl-general" style="margin-top:10px"></div>
+    <button class="btn" onclick="copyBlock('tpl-general', this)">Copy template</button>
+  </div>
+
+  <div class="card">
+    <b>Welcome / thanks for joining</b>
+    <div class="preview" id="tpl-welcome" style="margin-top:10px"></div>
+    <button class="btn" onclick="copyBlock('tpl-welcome', this)">Copy template</button>
+  </div>
+
+  <div class="card">
+    <b>Verification or profile help</b>
+    <div class="preview" id="tpl-help" style="margin-top:10px"></div>
+    <button class="btn" onclick="copyBlock('tpl-help', this)">Copy template</button>
+  </div>
+
+  <h2>Saving a template in Gmail (one time)</h2>
+  <ol>
+    <li>Gmail → Settings (gear) → <b>See all settings</b> → <b>Advanced</b> tab → Templates: <b>Enable</b> → Save changes.</li>
+    <li>Click <b>Compose</b>, click into the message body, and paste what you copied above.</li>
+    <li>In the compose window click the three dots (bottom right) → <b>Templates</b> → <b>Save draft as template</b> → <b>Save as new template</b>, and give it a name.</li>
+    <li>To use it later: Compose → three dots → Templates → pick the name. Templates do not add your signature twice; delete the duplicate if Gmail shows one.</li>
+  </ol>
+  <p class="muted">Tip: paste with normal Ctrl+V / Cmd+V, not "paste without formatting". If a logo looks like a broken image, you are offline or on a draft preview; it loads from independentjourney.com.</p>
+</div>
+
+<script>
+  // Everything below builds the HTML blocks from the four fields and keeps
+  // them in sync. Styles are inline because Gmail ignores stylesheets.
+  const SITE = 'https://independentjourney.com';
+  const LOGO = SITE + '/logo-192.png';
+  const SERIF = "font-family:Georgia,'Times New Roman',serif";
+
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function val(id) { return esc(document.getElementById(id).value.trim()); }
+
+  function signature() {
+    const name = val('f-name'), title = val('f-title'), email = val('f-email'), phone = val('f-phone');
+    const contact = [
+      email ? `<a href="mailto:${email}" style="color:#8C6E57;text-decoration:none">${email}</a>` : '',
+      phone ? `<span style="color:#4F4A44">${phone}</span>` : '',
+    ].filter(Boolean).join('<span style="color:#A9C4D4"> &nbsp;·&nbsp; </span>');
+    return `
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="${SERIF};font-size:14px;line-height:20px;color:#2E2A26">
+  <tr>
+    <td valign="top" style="padding:0 14px 0 0">
+      <a href="${SITE}" target="_blank"><img src="${LOGO}" width="56" height="56" alt="Independent Journey" style="display:block;border:0;border-radius:12px"></a>
+    </td>
+    <td valign="top" style="border-left:2px solid #A9C4D4;padding:0 0 0 14px">
+      <div style="font-size:16px;font-weight:bold;color:#2E2A26">${name}</div>
+      <div style="color:#6E6760">${title}${title ? ', ' : ''}<a href="${SITE}" style="color:#8C6E57;text-decoration:none;font-weight:bold">Independent Journey</a></div>
+      <div style="padding-top:6px">${contact}</div>
+      <div><a href="${SITE}" style="color:#3F5F73;text-decoration:none">independentjourney.com</a></div>
+      <div style="padding-top:6px;font-size:13px;color:#6E6760;font-style:italic">Every match starts here.</div>
+    </td>
+  </tr>
+</table>`;
+  }
+
+  function header() {
+    return `
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 16px">
+  <tr>
+    <td valign="middle" style="padding:0 10px 0 0"><a href="${SITE}" target="_blank"><img src="${LOGO}" width="36" height="36" alt="" style="display:block;border:0;border-radius:9px"></a></td>
+    <td valign="middle" style="${SERIF};font-size:20px;color:#8C6E57">Independent Journey</td>
+  </tr>
+</table>`;
+  }
+
+  function footer() {
+    return `
+<div style="${SERIF};font-size:12px;line-height:18px;color:#6E6760;border-top:1px solid #E8E1D6;margin-top:20px;padding-top:12px">
+  Independent Journey &middot; <a href="${SITE}" style="color:#6E6760">independentjourney.com</a> &middot; <a href="${SITE}/privacy" style="color:#6E6760">Privacy</a><br>
+  A place for intended parents and surrogates to find each other. Not an agency, and not medical or legal advice.
+</div>`;
+  }
+
+  function template(paragraphs) {
+    const body = paragraphs.map(p => `<p style="${SERIF};font-size:16px;line-height:24px;color:#2E2A26;margin:0 0 14px">${p}</p>`).join('');
+    const first = val('f-name').split(' ')[0];
+    return `<div style="${SERIF};color:#2E2A26">${header()}${body}
+<p style="${SERIF};font-size:16px;line-height:24px;color:#2E2A26;margin:0 0 18px">Warmly,<br>${first}</p>
+${signature()}${footer()}</div>`;
+  }
+
+  const TEMPLATES = {
+    'tpl-general': () => template([
+      'Hi [first name],',
+      'Thanks for reaching out. [Your reply here.]',
+      'If there is anything else I can help with, just reply to this email.',
+    ]),
+    'tpl-welcome': () => template([
+      'Hi [first name],',
+      'Welcome to Independent Journey, and thank you for joining during our beta. We built this as a simple place for intended parents and surrogates to find each other directly, without an agency in the middle.',
+      `A good next step is to finish your profile and add a few photos, so the right people can find you. You can do that any time at <a href="${SITE}/profile" style="color:#8C6E57">independentjourney.com/profile</a>.`,
+      'If anything is unclear or does not work the way you expect, reply to this email. We read every message.',
+    ]),
+    'tpl-help': () => template([
+      'Hi [first name],',
+      'Thanks for your note about [verification / your profile]. Here is what I found: [short explanation].',
+      '[What to do next, in one or two sentences.]',
+      'Reply here if it still does not work and I will take another look.',
+    ]),
+  };
+
+  function renderAll() {
+    document.getElementById('sig-preview').innerHTML = signature();
+    for (const id in TEMPLATES) document.getElementById(id).innerHTML = TEMPLATES[id]();
+  }
+  document.querySelectorAll('.form input').forEach(i => i.addEventListener('input', renderAll));
+  renderAll();
+
+  // Copies the rendered block as rich text so Gmail keeps the formatting.
+  // Falls back to selecting the block so the person can press Ctrl+C.
+  async function copyBlock(id, btn) {
+    const el = document.getElementById(id);
+    const html = el.innerHTML;
+    let done = false;
+    try {
+      if (window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([el.innerText], { type: 'text/plain' }),
+        })]);
+        done = true;
+      }
+    } catch (e) { /* fall through to selection */ }
+    if (!done) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      try { done = document.execCommand('copy'); } catch (e) {}
+    }
+    let note = btn.nextElementSibling && btn.nextElementSibling.classList.contains('ok') ? btn.nextElementSibling : null;
+    if (!note) { note = document.createElement('span'); note.className = 'ok'; btn.after(note); }
+    note.textContent = done ? 'Copied. Now paste into Gmail.' : 'Selected. Press Ctrl+C (Cmd+C on Mac) to copy.';
+  }
+</script>
+</body>
+</html>
