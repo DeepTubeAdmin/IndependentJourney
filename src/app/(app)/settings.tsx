@@ -1,7 +1,7 @@
 /** Account settings: email, password reset, email preferences, saved searches, sign out, and how to delete the account. */
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Checkbox, FormMessage, TextField } from '@/components/form';
@@ -13,6 +13,7 @@ import {
   deleteSearch, describeFilters, listSavedSearches, myNotificationSettings, saveNotificationSettings, setSearchAlerts,
 } from '@/lib/notifications';
 import { myBlockedMembers, unblockMember, type BlockedMember } from '@/lib/messages';
+import { pushPermission, registerForPush, type PushPermission } from '@/lib/push';
 import { deleteMyAccount, exportMyData } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -35,6 +36,17 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false);
   // null = the list could not be loaded (older database); [] = nobody blocked.
   const [blockedList, setBlockedList] = useState<BlockedMember[] | null>(null);
+
+  // Phone apps: whether the phone itself allows our notifications.
+  const [pushState, setPushState] = useState<PushPermission | null>(null);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const check = () => pushPermission().then(setPushState);
+    check();
+    // Re-check when they come back from the phone's Settings app.
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && check());
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (!session) return;
@@ -144,6 +156,28 @@ export default function Settings() {
           <Button label={`Email ${SITE.supportEmail}`} variant="secondary" size="sm" onPress={() => Linking.openURL(`mailto:${SITE.supportEmail}`)} />
         </View>
       </View>
+      {Platform.OS !== 'web' ? (
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Phone notifications</Text>
+        <Text style={styles.text}>A notification on this phone when someone writes to you. It shows who wrote, never the message itself.</Text>
+        {prefs
+          ? <Checkbox label={<Text style={styles.v}>New messages</Text>} checked={prefs.push_messages} onChange={(v) => togglePref('push_messages', v)} />
+          : <Text style={styles.text}>Loading…</Text>}
+        {prefs?.push_messages && pushState === 'undetermined' ? (
+          <View style={styles.row}>
+            <Button label="Allow notifications" variant="secondary" size="sm" onPress={() => registerForPush().then(setPushState)} />
+          </View>
+        ) : null}
+        {prefs?.push_messages && pushState === 'denied' ? (
+          <>
+            <Text style={styles.text}>Notifications for Independent Journey are switched off in this phone’s settings, so nothing will arrive until you allow them there.</Text>
+            <View style={styles.row}>
+              <Button label="Open phone settings" variant="secondary" size="sm" onPress={() => Linking.openSettings()} />
+            </View>
+          </>
+        ) : null}
+      </View>
+      ) : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Email me about</Text>
         <Text style={styles.text}>{profile ? 'Account and security emails (password resets, ID-check results) are always sent.' : 'Account emails (password resets, approval decisions) are always sent.'}</Text>

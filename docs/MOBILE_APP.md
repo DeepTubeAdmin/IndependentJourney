@@ -33,7 +33,15 @@ To look at the phone layout in a browser without a build:
    one-tap Report/Block, Blocked members list, support email.
 2. Apple and Google sign-in in the apps (`src/lib/socialNative.ts`); set-up in
    [SOCIAL_LOGIN_SETUP.md](SOCIAL_LOGIN_SETUP.md) Part E.
-3. Next: push notifications, native map, links that open the app, then store prep. Payments come before the beta ends.
+3. Push notifications for new messages (migration 33, `20261210000000_push_notifications.sql`). The app asks to allow notifications once a member is signed in with an account, saves the phone in `push_devices`, and the database sends the push through Expo's push service the moment a message is saved. The notification names the sender and never shows the message. Tapping it opens the conversation; the app icon shows the unread count. Members switch it off under Settings, "Phone notifications" (app only). Signing out removes the phone. Code: `src/lib/push.ts`, `src/components/PushManager.tsx`.
+4. Next: native map, links that open the app, then store prep. Payments come before the beta ends.
+
+### Push notifications: what needs setting up
+
+- **Supabase:** run migration 33. It switches on the `pg_net` extension, which lets the database call Expo.
+- **iPhone:** the first build from a computer asks "Set up Push Notifications?" Answer yes; Expo creates and stores the Apple push key.
+- **Android (later):** needs a free Firebase project and its `google-services.json` before pushes arrive. Covered when we do the Android build.
+- Pushes cannot be tested in a simulator or the browser preview; they need a real phone with a TestFlight build.
 
 ## One-time Expo setup (Seth)
 

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppTabBar } from '@/components/AppTabBar';
 import { BetaWelcome } from '@/components/BetaWelcome';
+import { PushManager } from '@/components/PushManager';
 import { SessionProvider } from '@/lib/auth';
 import { colors, fonts, space } from '@/lib/theme';
 import { isApp } from '@/lib/platform';
@@ -44,6 +45,8 @@ export default function RootLayout() {
         />
       </View>
       <AppTabBar />
+      {/* Phone apps: push notifications for new messages. */}
+      <PushManager />
       {/* One-time "we just launched" note for visitors (admin setting beta_banner_enabled). */}
       <BetaWelcome />
     </SessionProvider>
