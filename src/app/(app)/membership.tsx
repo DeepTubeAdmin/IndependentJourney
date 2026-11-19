@@ -12,6 +12,7 @@ import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { formatDate, formatUsd, myMembership, startCheckout, type Membership } from '@/lib/membership';
+import { isApp } from '@/lib/platform';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
 
@@ -61,6 +62,31 @@ export default function MembershipPage() {
       setMsg({ kind: 'error', text: r.error });
       setBusy(false);
     }
+  }
+
+  // Phone apps: no card checkout (store rules). Until in-app purchase is
+  // added, the app shows the membership status and what it includes, with no
+  // price and no way to pay.
+  if (isApp) {
+    return (
+      <Screen width={640} title="Membership">
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{m?.active ? 'Your membership is active' : 'No active membership'}</Text>
+          <Text style={styles.text}>
+            {!m ? 'Checking…' : m.active
+              ? `It runs until ${formatDate(m.current_period_end)}.`
+              : 'Buying a membership in the app is coming soon. Your account, profile and conversations stay saved in the meantime.'}
+          </Text>
+          {m?.active ? <View style={styles.row}><Button label="Browse surrogates" onPress={() => router.push('/browse')} /></View> : null}
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>What membership includes</Text>
+          <Text style={styles.item}>• Full surrogate profiles with every photo and answer</Text>
+          <Text style={styles.item}>• Send and read messages</Text>
+          <Text style={styles.item}>• Priority safety review of anyone you report</Text>
+        </View>
+      </Screen>
+    );
   }
 
   return (
