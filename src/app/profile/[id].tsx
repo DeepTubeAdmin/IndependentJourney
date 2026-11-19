@@ -16,6 +16,7 @@ import { browseProfiles, compensationLine, listSavedIds, loadAgencyCard, loadFul
 import { myAgency } from '@/lib/agency';
 import { guestProfileView, type GuestView } from '@/lib/guest';
 import { blockMember, canMessage, canMessageAs, CAN_MESSAGE_TEXT, clearDraft, haveBlocked, loadDraft, saveDraft, sendMessageAs, unblockMember, type CanMessage } from '@/lib/messages';
+import { SITE } from '@/config/settings';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
@@ -119,10 +120,12 @@ export default function ProfilePage() {
     if (blocked) {
       await unblockMember(fromId, id);
       setBlocked(false);
+      setMsg({ kind: 'info', text: 'Unblocked.' });
     } else {
       await blockMember(fromId, id);
       setBlocked(true);
       setComposing(false);
+      setMsg({ kind: 'info', text: 'Blocked. Neither of you can message the other, and they are not told. You can undo this here or in Settings.' });
     }
     setCan(isAgencyViewer ? await canMessageAs(fromId, id) : await canMessage(id));
   }
@@ -165,12 +168,30 @@ export default function ProfilePage() {
     if (!session) return router.push('/log-in');
     const err = await reportMember(session.user.id, id, reason, details);
     setReporting(false);
-    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Thank you. Our safety team will review this report.' });
+    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Thank you. Our safety team reviews every report within 24 hours.' });
   }
 
   return (
     <Screen width={880} title={`${preview.display_name} · ${placeLabel(preview)}`} intro={preview.profile_type === 'agency' ? profileTypeLabel(preview) : `${preview.is_verified ? 'Identity verified' : 'Identity not verified'} · ${profileTypeLabel(preview)}`}>
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
+      {/* Safety controls sit at the top of every profile so they are always one tap away. */}
+      {!isMine ? (
+        <View style={styles.safetyRow}>
+          <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
+          {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
+        </View>
+      ) : null}
+      {reporting ? (
+        <View style={styles.reportBox}>
+          <ChoiceField label="What's wrong?" options={REPORT_OPTIONS} value={reason} onChange={(v) => setReason(v as ReportReason)} />
+          <TextField label="Details" value={details} onChangeText={setDetails} multiline placeholder="Anything that helps our safety team" />
+          <Text style={styles.note}>{session ? 'Reports are private. The member is not told who reported them.' : `You need to be signed in to send a report from here. You can also email ${SITE.supportEmail}.`}</Text>
+          <View style={styles.actions}>
+            <Button label="Send report" onPress={sendReport} />
+            <Button label="Cancel" variant="secondary" onPress={() => setReporting(false)} />
+          </View>
+        </View>
+      ) : null}
       {isMine && !isAgencyViewer ? (
         <FormMessage
           kind="info"
@@ -270,8 +291,6 @@ export default function ProfilePage() {
         <View style={styles.actions}>
           {can !== 'same_role' ? <Button label="Message" disabled={can !== null && can !== 'ok' && can !== 'sign_in'} onPress={startMessage} /> : null}
           <Button label={saved ? 'Saved ✓ (tap to remove)' : 'Save profile'} variant="secondary" onPress={toggleSave} />
-          <Button label="Report" variant="secondary" size="sm" onPress={() => setReporting((v) => !v)} />
-          {session ? <Button label={blocked ? 'Unblock' : 'Block'} variant="secondary" size="sm" onPress={toggleBlock} /> : null}
         </View>
       ) : null}
       {!isMine && can && can !== 'ok' ? <Text style={styles.note}>{CAN_MESSAGE_TEXT[can]}</Text> : null}
@@ -286,17 +305,6 @@ export default function ProfilePage() {
         </View>
       ) : null}
       {!isMine ? <Text style={styles.note}>Saved profiles are private to you. Never send money to anyone you meet here.</Text> : null}
-
-      {reporting ? (
-        <View style={styles.reportBox}>
-          <ChoiceField label="What's wrong?" options={REPORT_OPTIONS} value={reason} onChange={(v) => setReason(v as ReportReason)} />
-          <TextField label="Details" value={details} onChangeText={setDetails} multiline placeholder="Anything that helps our safety team" />
-          <View style={styles.actions}>
-            <Button label="Send report" onPress={sendReport} />
-            <Button label="Cancel" variant="secondary" onPress={() => setReporting(false)} />
-          </View>
-        </View>
-      ) : null}
     </Screen>
   );
 }
@@ -335,6 +343,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', paddingVertical: 4 },
   rowLabel: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSubtle, minWidth: 220 },
   rowValue: { fontFamily: fonts.body, fontSize: 15, color: colors.text, flex: 1, minWidth: 160 },
+  safetyRow: { flexDirection: 'row', gap: space.sm, justifyContent: 'flex-end', flexWrap: 'wrap' },
   actions: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', alignItems: 'center' },
   reportBox: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle },

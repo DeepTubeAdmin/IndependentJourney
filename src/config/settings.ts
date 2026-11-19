@@ -27,6 +27,8 @@ export const SITE = {
   name: 'Independent Journey',
   domain: 'IndependentJourney.com',
   url: 'https://independentjourney.com',
+  // Where members, visitors and the app stores' reviewers can reach us.
+  supportEmail: 'support@independentjourney.com',
   tagline: 'One place to find your match: independent or with an agency.',
 } as const;
 

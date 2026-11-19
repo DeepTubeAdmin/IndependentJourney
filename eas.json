@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "environment": "production",
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -96,7 +96,7 @@ export default function Conversation() {
     if (!conv) return;
     const err = await reportMember(session!.user.id, conv.other_id, reason, `${details}\n\n[conversation ${conv.conversation_id}]`);
     setReporting(false);
-    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Thank you. Our safety team will review this conversation.' });
+    setMsg(err ? { kind: 'error', text: err } : { kind: 'info', text: 'Thank you. Our safety team reviews every report within 24 hours.' });
   }
 
   return (

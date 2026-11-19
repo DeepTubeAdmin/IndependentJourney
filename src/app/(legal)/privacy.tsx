@@ -25,7 +25,7 @@ export default function Privacy() {
         { heading: 'Members outside the United States', body: 'Intended parents may use Independent Journey from outside the United States. Our servers and service providers are in the United States, so your information is transferred to and processed there, and this policy and US law apply to it. If your country gives you additional rights over your personal data, email us and we will honour reasonable requests to access, correct or delete it.' },
         { heading: 'Analytics', body: 'We use Google Analytics to understand which pages are visited and how people find the site. It sets a cookie and records the pages you view and general device and location information; it never receives your name, email, profile answers or messages. You can block it with a browser setting or extension and the site works the same.' },
         { heading: 'Deleting your account', body: `You can delete your account at any time under Settings → Delete your account, or by emailing us. Your profile, photos, answers, saved profiles, conversations and membership are removed immediately. We keep an anonymous record that an account of your type was deleted, payment records our payment provider requires, and anything the law requires us to keep.` },
-        { heading: 'Contact', body: `Questions: privacy@${SITE.domain}` },
+        { heading: 'Contact', body: `Questions: ${SITE.supportEmail}` },
       ]}
     />
   );

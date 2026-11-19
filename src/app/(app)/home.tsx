@@ -4,7 +4,7 @@
  */
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { FormMessage } from '@/components/form';
@@ -131,7 +131,8 @@ export default function Home() {
         )}
       </View>
 
-      {isAdminCandidate ? <Button label="Admin dashboard" variant="secondary" onPress={() => router.push('/admin')} /> : null}
+      {/* The admin dashboard is on the website only. */}
+      {isAdminCandidate && Platform.OS === 'web' ? <Button label="Admin dashboard" variant="secondary" onPress={() => router.push('/admin')} /> : null}
       <Button label="Sign out" variant="secondary" onPress={async () => { await signOut(); router.replace('/'); }} />
     </Screen>
   );

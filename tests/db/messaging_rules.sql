@@ -146,9 +146,11 @@ insert into public.blocks (blocker_id, blocked_id) values ('00000000-0000-0000-0
 do $$ begin
   assert public.can_message('00000000-0000-0000-0000-000000000012') = 'blocked', 'blocker cannot message';
   assert (select blocked from public.my_conversations() where other_id = '00000000-0000-0000-0000-000000000012'), 'inbox shows blocked';
+  assert (select count(*) from public.my_blocked_members() where blocked_id = '00000000-0000-0000-0000-000000000012') = 1, 'Settings list shows who I blocked';
 end $$;
 select pg_temp.login('00000000-0000-0000-0000-000000000012');
 do $$ begin
+  assert (select count(*) from public.my_blocked_members()) = 0, 'the blocked member cannot see who blocked them';
   assert public.can_message('00000000-0000-0000-0000-000000000022') = 'blocked', 'blocked member cannot message either';
   begin
     perform public.send_message('00000000-0000-0000-0000-000000000022', 'Still there?');

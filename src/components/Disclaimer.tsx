@@ -1,8 +1,8 @@
 /**
- * The platform disclaimer. Shown in the footer of public pages.
+ * The platform disclaimer. Shown in the footer of public pages, with the support email address.
  * PLACEHOLDER WORDING: must be reviewed by a reproductive-law attorney.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { SITE } from '@/config/settings';
 import { colors, fonts, space } from '@/lib/theme';
@@ -14,6 +14,13 @@ export function Disclaimer() {
         {SITE.name} is an introduction platform. We are not a surrogacy agency, law firm, or medical
         provider, and we do not give legal, medical, or surrogacy advice or recommendations. Members
         are responsible for verifying everything themselves.
+      </Text>
+      <Text style={styles.small}>
+        Questions, or something to report? Email{' '}
+        <Text style={styles.link} accessibilityRole="link" onPress={() => Linking.openURL(`mailto:${SITE.supportEmail}`)}>
+          {SITE.supportEmail}
+        </Text>
+        .
       </Text>
       <Text style={styles.small}>
         © {new Date().getFullYear()} {SITE.name}
@@ -31,5 +38,6 @@ const styles = StyleSheet.create({
     gap: space.sm,
   },
   text: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, color: colors.textMuted },
+  link: { color: colors.primary, textDecorationLine: 'underline' },
   small: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
 });
