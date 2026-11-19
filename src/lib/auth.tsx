@@ -7,6 +7,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
+import { unregisterPush } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 export type Role = 'surrogate' | 'intended_parent';
@@ -126,6 +127,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       profileChecked,
       refreshProfile: () => loadProfile(session?.user.id),
       signOut: async () => {
+        // Phone apps: stop this phone getting the member's notifications.
+        await unregisterPush();
         await supabase?.auth.signOut();
       },
     }),

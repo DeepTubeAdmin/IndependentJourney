@@ -6,9 +6,11 @@ import { supabase } from '@/lib/supabase';
 
 import type { BrowseFilters } from '@/lib/browse';
 
-export type NotificationSettings = { new_messages: boolean; membership: boolean; saved_searches: boolean; nudges: boolean };
+/** The first four are emails; push_messages is the phone-app notification for new messages. */
+export type NotificationSettings = { new_messages: boolean; membership: boolean; saved_searches: boolean; nudges: boolean; push_messages: boolean };
+type EmailKey = Exclude<keyof NotificationSettings, 'push_messages'>;
 
-export const NOTIFICATION_LABELS: { key: keyof NotificationSettings; label: string; help: string }[] = [
+export const NOTIFICATION_LABELS: { key: EmailKey; label: string; help: string }[] = [
   { key: 'new_messages', label: 'New messages', help: 'When someone writes to you. At most one email per conversation per hour.' },
   { key: 'membership', label: 'Membership', help: 'Receipts, a reminder a week before your membership ends, and when it ends.' },
   { key: 'saved_searches', label: 'Saved-search alerts', help: 'A daily email when new profiles match a search you saved.' },
@@ -16,7 +18,7 @@ export const NOTIFICATION_LABELS: { key: keyof NotificationSettings; label: stri
 ];
 
 export async function myNotificationSettings(): Promise<NotificationSettings> {
-  const all = { new_messages: true, membership: true, saved_searches: true, nudges: true };
+  const all = { new_messages: true, membership: true, saved_searches: true, nudges: true, push_messages: true };
   if (!supabase) return all;
   const { data } = await supabase.rpc('my_notification_settings');
   return { ...all, ...((data as Partial<NotificationSettings>) ?? {}) };
