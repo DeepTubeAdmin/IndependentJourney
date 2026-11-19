@@ -349,7 +349,8 @@ const styles = StyleSheet.create({
   },
   boxChecked: { backgroundColor: colors.primary },
   tick: { color: colors.primaryText, fontSize: 16, fontFamily: fonts.bodyBold, lineHeight: 18 },
-  checkLabel: { flex: 1, fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.text },
+  // flexShrink (not flex: 1): the label keeps its natural width inside a wrapping row on phones, and still wraps when space runs out.
+  checkLabel: { flexShrink: 1, fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.text },
   message: { borderRadius: radius.md, padding: 12 },
   messageError: { backgroundColor: '#FBEAE8' },
   messageInfo: { backgroundColor: colors.surfaceSoft },
