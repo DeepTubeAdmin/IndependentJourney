@@ -172,6 +172,48 @@ that works fine, our emails are forwarded through Apple's relay. (If a member
 hides their email, Resend emails still arrive, but you will see a
 `@privaterelay.appleid.com` address in the admin dashboard.)
 
+## Part E: The phone apps (5 minutes, once)
+
+The apps use the same Google and Apple set-up as the website, plus two small
+settings in Supabase. Nothing new is needed in Google Cloud.
+
+### E1. Let Supabase send people back to the app
+
+Supabase → **Authentication** → **URL Configuration** → **Redirect URLs** →
+**Add URL** → paste exactly:
+
+```
+independentjourney://**
+```
+
+→ **Save**. Leave the website addresses that are already listed.
+
+This is what lets "Continue with Google" in the app return to the app after
+Google's sign-in page.
+
+### E2. Add the app to the Apple provider
+
+Supabase → **Authentication** → **Sign In / Providers** → **Apple** →
+**Client IDs**. Change it so it lists both, separated by a comma, no spaces:
+
+```
+com.independentjourney.web,com.independentjourney.app
+```
+
+→ **Save**. (The first is the website, the second is the app.) Part C must be
+done first. The 6-month secret is only used by the website; the iPhone's own
+Sign in with Apple sheet keeps working even if that secret expires.
+
+### E3. How it behaves
+
+- **iPhone and iPad, Apple:** Apple's own sheet slides up (Face ID or Touch ID).
+- **Google (and Apple on Android):** a secure sign-in window opens inside the
+  app, then closes itself. The Google page says it is signing in to your
+  Supabase address rather than "Independent Journey"; that is normal for this
+  method. A later upgrade can swap in Google's native account picker, which
+  needs two extra IDs from Google Cloud.
+- New members finish with the same "role and agreement" step as the website.
+
 ## Part D: Things to know
 
 - **Two Google paths.** With `EXPO_PUBLIC_GOOGLE_CLIENT_ID` set, the site uses
