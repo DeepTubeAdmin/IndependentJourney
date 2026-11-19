@@ -1,5 +1,5 @@
 /**
- * Google and Apple sign-in (web). The browser is sent to the provider, comes
+ * Google and Apple sign-in. On the website the browser is sent to the provider, comes
  * back to /welcome with a session, and the app then checks whether a profile
  * exists. A brand-new social member has none, so they finish sign-up on the
  * "Finish your account" screen (role + agreement), which calls complete_signup.
@@ -13,14 +13,16 @@
  * token, which we hand to Supabase with signInWithIdToken (nonce-checked).
  * Without that setting we fall back to the Supabase redirect.
  *
- * Phone apps (Phase 8b) will use the native sheets with the same
- * signInWithIdToken call; this file is web-only for now.
+ * Phone apps: Apple's own sheet on iPhone/iPad and a secure in-app browser
+ * window for everything else (see socialNative.ts). The app is signed in on
+ * the spot, with no page reload, and then goes to /welcome like the website.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import type { Role } from '@/lib/auth';
+import { nativeSocialSignIn } from '@/lib/socialNative';
 
 export type SocialProvider = 'google' | 'apple';
 
@@ -38,12 +40,12 @@ export type PendingSignup = {
 };
 const KEY = 'ij_pending_signup';
 
-/** Social buttons only work in a browser until the phone apps add native sign-in. */
-export const socialAvailable = Platform.OS === 'web';
+/** Google and Apple buttons are shown everywhere: website and phone apps. */
+export const socialAvailable = true;
 
 /** Google OAuth "Web application" client ID (public, safe to ship). */
 export const googleClientId = (process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '').trim();
-export const googlePopupAvailable = socialAvailable && googleClientId.length > 0;
+export const googlePopupAvailable = Platform.OS === 'web' && googleClientId.length > 0;
 
 /**
  * A nonce ties Google's ID token to this one sign-in attempt. Google gets the
@@ -84,15 +86,28 @@ export async function clearPendingSignup() {
   try { await AsyncStorage.removeItem(KEY); } catch { /* ignore */ }
 }
 
-/** Sends the browser to Google or Apple. Returns an error message, or null when the redirect started. */
-export async function startSocialSignIn(provider: SocialProvider): Promise<string | null> {
-  if (!supabase) return 'The app is not connected to a database yet.';
-  if (!socialAvailable) return 'Google and Apple sign-in are coming to the apps soon. Please use email for now.';
+export type SocialStart = {
+  /** Something went wrong: show this. */
+  error?: string;
+  /** Phone apps only: the member is now signed in, go to /welcome. */
+  signedIn?: true;
+  /** Phone apps only: the member closed the sign-in window. */
+  cancelled?: true;
+};
+
+/**
+ * Starts Google or Apple sign-in. On the website the browser leaves for the
+ * provider (nothing more to do here); in the phone apps the result comes
+ * straight back.
+ */
+export async function startSocialSignIn(provider: SocialProvider): Promise<SocialStart> {
+  if (!supabase) return { error: 'The app is not connected to a database yet.' };
+  if (Platform.OS !== 'web') return nativeSocialSignIn(provider);
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: `${window.location.origin}/welcome` },
   });
-  return error ? error.message : null;
+  return error ? { error: error.message } : {};
 }
 
 /** Creates the profile for a social sign-up. Returns an error message or null. */

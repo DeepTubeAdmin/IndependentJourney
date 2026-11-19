@@ -31,8 +31,9 @@ To look at the phone layout in a browser without a build:
 
 1. Phone layout (this file's first version): tab bar, Me tab, phone storage,
    one-tap Report/Block, Blocked members list, support email.
-2. Next: Apple and Google sign-in sheets, push notifications, native map,
-   links that open the app, then store prep. Payments come before the beta ends.
+2. Apple and Google sign-in in the apps (`src/lib/socialNative.ts`); set-up in
+   [SOCIAL_LOGIN_SETUP.md](SOCIAL_LOGIN_SETUP.md) Part E.
+3. Next: push notifications, native map, links that open the app, then store prep. Payments come before the beta ends.
 
 ## One-time Expo setup (Seth)
 

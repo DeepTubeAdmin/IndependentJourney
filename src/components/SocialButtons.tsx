@@ -1,5 +1,6 @@
 /**
- * "Continue with Google" and "Continue with Apple" buttons. Web only for now.
+ * "Continue with Google" and "Continue with Apple" buttons, on the website and
+ * in the phone apps (where Apple uses its own sheet on iPhone and iPad).
  * The parent decides what must be true before a press is allowed (on the
  * sign-up page: the agreement boxes), via `ready` and onBeforeStart.
  *
@@ -55,12 +56,18 @@ export function SocialButtons({ onBeforeStart, ready = true, caption = 'Or conti
     setError('');
     if (onBeforeStart && !(await onBeforeStart(provider))) return;
     setBusy(provider);
-    const err = await startSocialSignIn(provider);
-    if (err) {
+    const result = await startSocialSignIn(provider);
+    if (result.error) {
       setBusy(null);
-      setError(err);
+      setError(result.error);
+    } else if (result.cancelled) {
+      setBusy(null);
+    } else if (result.signedIn) {
+      // Phone apps: signed in on the spot. /welcome finishes the account or opens Home.
+      setBusy(null);
+      router.replace('/welcome');
     }
-    // On success the browser is leaving this page; nothing more to do.
+    // Website: the browser is leaving this page; nothing more to do.
   }
 
   return (
@@ -183,7 +190,7 @@ function SocialButton({ provider, busy, onPress }: { provider: SocialProvider; b
       style={({ pressed }) => [styles.btn, pressed && styles.pressed, disabled && styles.disabled]}
     >
       {provider === 'google' ? <GoogleMark /> : <AppleMark />}
-      <Text style={styles.label}>{busy === provider ? 'Opening…' : SOCIAL_LABEL[provider]}</Text>
+      <Text style={styles.label}>{busy === provider ? 'Signing in…' : SOCIAL_LABEL[provider]}</Text>
     </Pressable>
   );
 }
