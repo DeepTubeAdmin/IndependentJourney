@@ -34,7 +34,8 @@ To look at the phone layout in a browser without a build:
 2. Apple and Google sign-in in the apps (`src/lib/socialNative.ts`); set-up in
    [SOCIAL_LOGIN_SETUP.md](SOCIAL_LOGIN_SETUP.md) Part E.
 3. Push notifications for new messages (migration 33, `20261210000000_push_notifications.sql`). The app asks to allow notifications once a member is signed in with an account, saves the phone in `push_devices`, and the database sends the push through Expo's push service the moment a message is saved. The notification names the sender and never shows the message. Tapping it opens the conversation; the app icon shows the unread count. Members switch it off under Settings, "Phone notifications" (app only). Signing out removes the phone. Code: `src/lib/push.ts`, `src/components/PushManager.tsx`.
-4. Next: native map, links that open the app, then store prep. Payments come before the beta ends.
+4. Map view in the app (`src/components/BrowseMap.tsx`, `react-native-maps`). iPhone and iPad use Apple Maps, which needs no key. Tapping a pin shows a small card with a View profile button. Android shows a "coming soon" note until a Google Maps key is added to the Android build and `EXPO_PUBLIC_ANDROID_MAPS=1` is set; that is part of the Android set-up later.
+5. Next: links that open the app, then store prep. Payments come before the beta ends.
 
 ### Push notifications: what needs setting up
 
