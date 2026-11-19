@@ -12,7 +12,10 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:independentjourney.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +25,79 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.independentjourney.app"
+      "package": "com.independentjourney.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/confirm"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/welcome"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/reset-password"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/profile"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/s"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/share"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/messages"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/browse"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/membership"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/settings"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/home"
+            },
+            {
+              "scheme": "https",
+              "host": "independentjourney.com",
+              "pathPrefix": "/saved"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",

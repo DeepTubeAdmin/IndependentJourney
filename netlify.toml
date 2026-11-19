@@ -42,3 +42,11 @@
   path = "/photos/*"
   function = "photo"
   cache = "manual"
+
+# Tells iPhones and Android phones which independentjourney.com links the app
+# may open (see docs/MOBILE_APP.md, "Links that open the app").
+[[headers]]
+  for = "/.well-known/*"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=3600"

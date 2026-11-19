@@ -35,7 +35,16 @@ To look at the phone layout in a browser without a build:
    [SOCIAL_LOGIN_SETUP.md](SOCIAL_LOGIN_SETUP.md) Part E.
 3. Push notifications for new messages (migration 33, `20261210000000_push_notifications.sql`). The app asks to allow notifications once a member is signed in with an account, saves the phone in `push_devices`, and the database sends the push through Expo's push service the moment a message is saved. The notification names the sender and never shows the message. Tapping it opens the conversation; the app icon shows the unread count. Members switch it off under Settings, "Phone notifications" (app only). Signing out removes the phone. Code: `src/lib/push.ts`, `src/components/PushManager.tsx`.
 4. Map view in the app (`src/components/BrowseMap.tsx`, `react-native-maps`). iPhone and iPad use Apple Maps, which needs no key. Tapping a pin shows a small card with a View profile button. Android shows a "coming soon" note until a Google Maps key is added to the Android build and `EXPO_PUBLIC_ANDROID_MAPS=1` is set; that is part of the Android set-up later.
-5. Next: links that open the app, then store prep. Payments come before the beta ends.
+5. Links that open the app. When the app is installed, tapping an independentjourney.com link in an email or text opens the app instead of the browser: confirmation and password-reset links (`/confirm`), shared profiles (`/s/...`, `/share/...`, `/profile/...`), "Read and reply" message links, and Browse, Membership and Settings links from emails. Everything else (homepage, legal pages, admin) stays in the browser. Without the app, links behave exactly as before.
+6. Next: store prep. Payments come before the beta ends.
+
+### Links that open the app: how it is wired
+
+- `public/.well-known/apple-app-site-association` on the website lists the app (Apple team `6R88QQYM98`, bundle `com.independentjourney.app`) and the paths above. iPhones download it when the app is installed.
+- `app.json` has `ios.associatedDomains` and Android `intentFilters` for the same paths. To add a path, change it in both places.
+- Adding this permission changes the app's signing profile, so the first build after it must be run from Seth's computer again (the same build command, logging in to Apple), not from GitHub.
+- Android also needs `public/.well-known/assetlinks.json` with the app's signing fingerprint. That file is added with the first Android build.
+- Apple caches the file for up to a day, and a link typed into Safari or tapped inside the app itself never jumps to the app; test from Mail, Messages or Notes.
 
 ### Push notifications: what needs setting up
 
