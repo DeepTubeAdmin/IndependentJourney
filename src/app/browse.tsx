@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
+import { isApp } from '@/lib/platform';
 import { browseProfiles, placeLabel, profileTypeLabel, verifiedLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
@@ -81,6 +82,25 @@ export default function Browse() {
 
   const set = (k: keyof BrowseFilters, v: unknown) => setFilters((f) => ({ ...f, [k]: v }));
 
+  // The tick-box filters. On the website they sit in the bar next to the
+  // buttons; in the phone apps they live inside the Filters panel, where
+  // there is room for their labels.
+  const quickChecks = (
+    <>
+          <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
+          {profile?.journey_types === 'independent_only' ? (
+            <Text style={styles.small}>Agency profiles are hidden (your journey choice, editable on your profile).</Text>
+          ) : (
+            <>
+              <Checkbox label="Independent only" checked={filters.profile_type === 'independent'} onChange={(v) => set('profile_type', v ? 'independent' : undefined)} />
+              <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
+            </>
+          )}
+          {lookingFor === 'intended_parent' ? <Checkbox label="US-based parents only" checked={Boolean(filters.us_only)} onChange={(v) => set('us_only', v || undefined)} /> : null}
+          {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
+    </>
+  );
+
   return (
     <Screen
       width={1200}
@@ -102,17 +122,7 @@ export default function Browse() {
           <Button label="Surrogates" variant={lookingFor === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('surrogate')} />
           <Button label="Intended parents" variant={lookingFor === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('intended_parent')} />
           <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
-          <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
-          {profile?.journey_types === 'independent_only' ? (
-            <Text style={styles.small}>Agency profiles are hidden (your journey choice, editable on your profile).</Text>
-          ) : (
-            <>
-              <Checkbox label="Independent only" checked={filters.profile_type === 'independent'} onChange={(v) => set('profile_type', v ? 'independent' : undefined)} />
-              <Checkbox label="Agency profiles only" checked={filters.profile_type === 'agency'} onChange={(v) => set('profile_type', v ? 'agency' : undefined)} />
-            </>
-          )}
-          {lookingFor === 'intended_parent' ? <Checkbox label="US-based parents only" checked={Boolean(filters.us_only)} onChange={(v) => set('us_only', v || undefined)} /> : null}
-          {myPoint ? <Checkbox label="Closest first" checked={filters.sort === 'distance'} onChange={(v) => set('sort', v ? 'distance' : undefined)} /> : null}
+          {isApp ? null : quickChecks}
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
           {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
           {canSave ? <Button label="Save this search" variant="secondary" size="sm" onPress={() => { setSaving((v) => !v); setSaveMsg(null); }} /> : null}
@@ -132,6 +142,7 @@ export default function Browse() {
 
       {showFilters && !anon ? (
         <View style={styles.filters}>
+          {isApp ? quickChecks : null}
           <SelectField label="State" options={US_STATES} value={filters.state ?? null} onChange={(v) => set('state', v)} />
           {myPoint ? (
             <ChoiceField
