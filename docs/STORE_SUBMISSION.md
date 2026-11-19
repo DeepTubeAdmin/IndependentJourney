@@ -1,7 +1,13 @@
 # App Store and Google Play submission guide
 
-Use this once the phone apps are built (Phase 8b: Expo EAS builds plus
-RevenueCat). Nothing here applies to the website, which is already live.
+Updated 2026-11-19 for the app as built (see MOBILE_APP.md). The first
+iPhone build exists and goes to TestFlight; this guide covers what is left
+before pressing "Submit for Review". Nothing here applies to the website.
+
+**How the first version is submitted:** during the free beta the app has no
+way to pay and shows no prices. Intended parents get the free beta
+membership, exactly as on the website. In-app purchase (through RevenueCat)
+is added in a later update, before the beta ends.
 
 Costs: Apple Developer Program $99/year, Google Play developer account $25
 once. Create both as **individual** accounts (no LLC yet). You can switch
@@ -18,6 +24,14 @@ to an organization account later.
       intended parent with complete profiles, a conversation between them,
       and an active membership on the IP. Reviewers must be able to see every
       screen without paying. Put the logins in the review notes (below).
+      How to make them: sign up twice on the website with email + password
+      (not Google or Apple), using addresses like
+      `support+reviewer-ip@independentjourney.com` and
+      `support+reviewer-gc@independentjourney.com` (both arrive in the
+      support inbox). Fill in both profiles with obviously fictional details
+      and stock or illustrated photos, send a message each way, then in
+      Admin → Members mark both as demo accounts in your notes. Leave them
+      unverified, or verify by hand in Admin, so no real ID is involved.
 - [ ] App icon 1024×1024 with no transparency and no rounded corners (Apple
       rounds it). The Expo project already has `assets/icon.png`; check it.
 
@@ -27,9 +41,11 @@ to an organization account later.
    **+** → New App. Platform iOS, name "Independent Journey", primary
    language English (US), bundle ID `com.independentjourney.app` (registered
    automatically by the EAS build), SKU `independentjourney`.
-2. Build and upload: `eas build --platform ios --profile production` then
-   `eas submit --platform ios`. Claude will give you the exact commands and
-   the `eas.json` file in Phase 8b.
+2. Build and upload, from the project folder in Command Prompt:
+   `set EAS_NO_VCS=1`, then
+   `npx eas-cli@latest build --platform ios --profile production`, then
+   `npx eas-cli@latest submit --platform ios --latest`. The submit step
+   creates the App Store Connect app for you if step 1 was skipped.
 3. App Store Connect → your app → **TestFlight**. The build appears after
    processing (10 to 30 minutes). Fill **Test Information** (what to test,
    your email) and answer the export-compliance question: the app uses only
@@ -73,11 +89,10 @@ to an organization account later.
 **Description (both):**
 
 > Independent Journey is a calm, trust-focused place for intended parents
-> and gestational surrogates who want to find each other and plan an
-> independent (non-agency) surrogacy journey.
+> and gestational surrogates to find each other: independently, or with an
+> agency.
 >
-> • Surrogates always join free. Intended parents pay a simple membership
->   to read full profiles and message.
+> • Surrogates always join free.
 > • Every profile is clearly labelled Verified or Not verified. Optional
 >   photo-ID verification is free.
 > • Browse by state and preferences, see who is active, save profiles and
@@ -124,8 +139,9 @@ screenshots (they change in settings).
 
 Answer from what the app actually stores. Everything below is linked to the
 user's identity (it is their account) and used for app functionality only:
-no analytics, no advertising, no tracking, no data sold or shared with
-third parties for their own purposes.
+no advertising, no tracking, no data sold or shared with third parties for
+their own purposes. (The website uses Google Analytics; the apps do not
+include it.)
 
 | Data | Apple "App Privacy" type | Google "Data safety" category | Notes |
 | --- | --- | --- | --- |
@@ -137,9 +153,10 @@ third parties for their own purposes.
 | Bio and journey answers | User Content → Other | Personal info → Other | |
 | Self-reported health yes/no answers (surrogates) | Health & Fitness → Health | Health and fitness → Health info | Declare it. Never shown to other members. |
 | Family structure, reason for surrogacy | Sensitive Info | Personal info → Sexual orientation / other | Optional questions with "prefer not to say". |
-| Membership purchase | Purchases → Purchase History | Financial info → Purchase history | Processed by Stripe / Apple / Google; no card numbers stored. |
+| Membership purchase | Purchases → Purchase History | Financial info → Purchase history | Declare once in-app purchase is added; the first version sells nothing. |
 | Identity verification | Identifiers / Sensitive Info | Personal info → Other | Done by Stripe Identity; the app stores only the result (verified or not). |
 | User ID | Identifiers → User ID | Device or other IDs | The Supabase account id. |
+| Push notification address | Identifiers → Device ID | Device or other IDs | Used only to deliver "new message" notifications; removed at sign-out. |
 | Crash data / analytics | None | None | The app sends none. |
 
 Also tick on Google: data is encrypted in transit, users can request
@@ -167,10 +184,18 @@ field, which Google requires for apps with accounts.
 > Account deletion is available in-app under Settings → Delete my account,
 > and a copy of all personal data can be downloaded from the same screen.
 >
-> Membership (intended parents only) is a one-time purchase for a fixed
-> period, not an auto-renewing subscription. On iOS it is sold through
-> in-app purchase [and, in the US, through an external purchase link as
-> permitted]. Surrogates never pay.
+> Nothing is sold in this version of the app: there are no purchases, no
+> prices and no links to pay elsewhere. Surrogates are always free, and
+> intended parents currently receive full access free of charge. In-app
+> purchase will be added in a later update.
+>
+> Agencies can also hold accounts and post profiles for their clients;
+> those profiles are labelled with the agency's name.
+>
+> Push notifications are used only for new private messages and show the
+> sender's name, never the message. They can be switched off in Settings.
+>
+> Sign in with Apple is offered alongside Google and email sign-in.
 >
 > Identity verification is optional and performed by Stripe Identity; the
 > app never stores ID documents.
@@ -181,10 +206,11 @@ field, which Google requires for apps with accounts.
 | --- | --- | --- |
 | Apple 1.2 / Google UGC policy | Filtering, report, block, a way to contact you, timely action | Report and block everywhere, scam filter, safety team, 24-hour promise in the notes |
 | Apple 5.1.1(v) / Google account deletion | In-app account deletion | Settings → Delete my account |
-| Apple 3.1.1 | Digital content must use in-app purchase | Membership through IAP (RevenueCat); the US external-link option is a separate entitlement to request |
+| Apple 3.1.1 | Digital content must use in-app purchase | First version sells nothing and shows no prices in the app (Membership screen shows status only). IAP through RevenueCat comes before the beta ends; no external purchase link |
+| Apple 4.8 | Sign in with Apple when other social logins exist | Offered, with Apple's own sheet on iPhone and iPad |
 | Apple 5.1.1 | Only collect data the app needs; privacy policy link | Privacy page, minimal questionnaire, "prefer not to say" options |
-| Apple 4.2 | Not "just a website" | Native navigation, push-ready, in-app purchase; still, make sure the app feels native in Phase 8b |
-| Apple 5.1.2 | Health data must not be used for advertising | No ads, no analytics |
+| Apple 4.2 | Not "just a website" | Tab bar, push notifications, Apple Maps, Apple sign-in sheet, links that open the app |
+| Apple 5.1.2 | Health data must not be used for advertising | No ads; no analytics in the apps |
 | Both | Demo account that actually works | Test the demo logins the morning you submit |
 | Both | Age rating matches content | 18+ |
 
@@ -193,5 +219,5 @@ field, which Google requires for apps with accounts.
 - Apple: release manually (not automatically) the first time so you can
   check the listing, then **Phased release** is unnecessary at this size.
 - Add the App Store and Play Store badges to the homepage (ask Claude).
-- Universal links / app links so `independentjourney.com/profile/…` opens
-  the app when installed: part of Phase 8b.
+- A "Open in the app" banner on the website for iPhone visitors needs the
+  App Store ID, which exists once the app is created (ask Claude).

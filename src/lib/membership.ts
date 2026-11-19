@@ -4,7 +4,8 @@
  * Edge Functions for a Stripe page URL and sends the member there. Stripe
  * then tells our server the result, and these helpers read it back.
  */
-import { Linking, Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
@@ -41,7 +42,10 @@ export async function myIdentityCheck(): Promise<IdentityCheck | null> {
 }
 
 /** Asks an Edge Function for a Stripe URL and opens it. */
-async function openStripePage(fn: 'create-checkout' | 'create-verification'): Promise<{ error?: string }> {
+async function openStripePage(fn: 'create-checkout' | 'create-verification'): Promise<{ error?: string; closed?: true }> {
+  // Apple and Google require in-app purchases for memberships bought inside
+  // the apps, so card checkout is never opened from there.
+  if (fn === 'create-checkout' && Platform.OS !== 'web') return { error: 'Memberships cannot be bought in the app yet.' };
   if (!supabase) return { error: 'Not connected to the database.' };
   const { data, error } = await supabase.functions.invoke(fn);
   if (error) {
@@ -57,9 +61,14 @@ async function openStripePage(fn: 'create-checkout' | 'create-verification'): Pr
   }
   const url = (data as { url?: string; error?: string } | null)?.url;
   if (!url) return { error: (data as { error?: string } | null)?.error ?? 'No checkout link was returned.' };
-  if (Platform.OS === 'web') window.location.assign(url);
-  else await Linking.openURL(url);
-  return {};
+  if (Platform.OS === 'web') {
+    window.location.assign(url);
+    return {};
+  }
+  // Phone apps: a secure browser sheet slides up over the app. `closed` tells
+  // the caller the member is back, so it can re-check the result.
+  await WebBrowser.openBrowserAsync(url);
+  return { closed: true };
 }
 
 export const startCheckout = () => openStripePage('create-checkout');

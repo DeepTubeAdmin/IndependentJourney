@@ -13,6 +13,7 @@ import { admin } from '@/lib/admin';
 import { createShareLink, getShareLink, revokeShareLink } from '@/lib/browse';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
+import { isApp } from '@/lib/platform';
 import { formatDate, formatUsd, identityLine, myIdentityCheck, myMembership, startVerification, type IdentityCheck, type Membership } from '@/lib/membership';
 import { dismissNotice, draftProfileIds, myNotices, unreadCount, type Notice } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -23,7 +24,7 @@ export function generateMetadata() {
 }
 
 export default function Home() {
-  const { profile, agency, signOut } = useSession();
+  const { profile, agency, signOut, refreshProfile } = useSession();
   // Only people on the admin list see the Admin button.
   const [isAdminCandidate, setIsAdminCandidate] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -43,6 +44,26 @@ export default function Home() {
     myMembership().then(setMembership);
     myIdentityCheck().then(setIdCheck);
   }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function onVerify() {
+    setVerifying(true);
+    const r = await startVerification();
+    if (r.error) setVerifyMsg(r.error);
+    if (r.error || r.closed) setVerifying(false);
+    // Phone apps: the member just closed the verification sheet. Stripe takes
+    // a little while to report back, so look a few times.
+    if (r.closed) {
+      for (let i = 0; i < 6; i++) {
+        const check = await myIdentityCheck();
+        setIdCheck(check);
+        if (check?.status === 'verified') {
+          await refreshProfile();
+          break;
+        }
+        await new Promise((done) => setTimeout(done, 4000));
+      }
+    }
+  }
+
   if (!profile && agency) return <Redirect href="/agency" />;
   if (!profile) return null;
   const isSurrogate = profile.role === 'surrogate';
@@ -78,7 +99,7 @@ export default function Home() {
         <Text style={styles.status}>{identityLine(profile.is_verified, idCheck)}</Text>
         {verifyMsg ? <FormMessage kind="error" text={verifyMsg} /> : null}
         {!profile.is_verified && idCheck?.status !== 'processing' ? (
-          <Button label={verifying ? 'Opening secure verification…' : 'Verify my identity (free)'} variant="secondary" disabled={verifying} onPress={async () => { setVerifying(true); const r = await startVerification(); if (r.error) { setVerifyMsg(r.error); setVerifying(false); } }} />
+          <Button label={verifying ? 'Opening secure verification…' : 'Verify my identity (free)'} variant="secondary" disabled={verifying} onPress={onVerify} />
         ) : null}
         {profile.is_complete && profile.approx_lat == null ? (
           <Text style={styles.status}>New: add your ZIP code (in “About you”) to appear on the map and sort by distance. Only your approximate area is shown.</Text>
@@ -93,12 +114,14 @@ export default function Home() {
             ? 'Read full intended-parent profiles any time. Complete your own profile to start conversations.'
             : membership?.active
               ? `Your membership is active until ${formatDate(membership.current_period_end)}. Browse full surrogate profiles and message anyone.`
-              : `Browse limited previews for free. A membership (${membership ? formatUsd(membership.price_usd) : '$199'} for ${membership?.term_months ?? 3} months) unlocks full profiles and messaging.`}
+              : isApp
+                ? 'Browse limited previews for free. A membership unlocks full profiles and messaging.'
+                : `Browse limited previews for free. A membership (${membership ? formatUsd(membership.price_usd) : '$199'} for ${membership?.term_months ?? 3} months) unlocks full profiles and messaging.`}
         </Text>
         <View style={styles.row}>
           <Button label="Browse" onPress={() => router.push('/browse')} />
           <Button label="Saved profiles" variant="secondary" onPress={() => router.push('/saved')} />
-          {!isSurrogate ? <Button label={membership?.active ? 'Membership' : 'Get a membership'} variant={membership?.active ? 'secondary' : 'primary'} onPress={() => router.push('/membership')} /> : null}
+          {!isSurrogate ? <Button label={membership?.active || isApp ? 'Membership' : 'Get a membership'} variant={membership?.active || isApp ? 'secondary' : 'primary'} onPress={() => router.push('/membership')} /> : null}
         </View>
       </View>
 
