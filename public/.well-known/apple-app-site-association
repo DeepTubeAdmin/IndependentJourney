@@ -1,0 +1,57 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "6R88QQYM98.com.independentjourney.app"
+        ],
+        "components": [
+          {
+            "/": "/s/*/photo",
+            "exclude": true,
+            "comment": "share-card image, not a page"
+          },
+          {
+            "/": "/confirm"
+          },
+          {
+            "/": "/welcome"
+          },
+          {
+            "/": "/reset-password"
+          },
+          {
+            "/": "/profile/*"
+          },
+          {
+            "/": "/s/*"
+          },
+          {
+            "/": "/share/*"
+          },
+          {
+            "/": "/messages"
+          },
+          {
+            "/": "/messages/*"
+          },
+          {
+            "/": "/browse"
+          },
+          {
+            "/": "/membership"
+          },
+          {
+            "/": "/settings"
+          },
+          {
+            "/": "/home"
+          },
+          {
+            "/": "/saved"
+          }
+        ]
+      }
+    ]
+  }
+}
