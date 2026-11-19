@@ -2,16 +2,18 @@
  * Top bar on every public and member page: wordmark, main links, and either
  * Log in / Join free (visitors) or an Account menu (members).
  */
-import { Link, router, usePathname } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Link, router, useNavigation, usePathname } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
-import { subscribeUnread, unreadCount } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
+import { useUnread } from '@/lib/useUnread';
+import { isApp } from '@/lib/platform';
 
 const NAV = [
   { href: '/browse', label: 'Browse' },
@@ -19,36 +21,39 @@ const NAV = [
   { href: '/resources', label: 'Resources' },
 ] as const;
 
-/** How often the header re-checks for unread messages while the site is open. */
-const UNREAD_POLL_MS = 60_000;
+/** The app's tab screens: no Back arrow on these, the tab bar is how you move between them. */
+const TAB_ROOTS = ['/', '/home', '/browse', '/saved', '/messages', '/me', '/agency', '/how-it-works'];
 
 export function SiteHeader() {
   const { session, profile, agency, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const path = usePathname();
   // Unread messages: a dot on the account button and a count next to "Messages".
-  // Re-checked on every page change, when the menu opens, when a conversation is
-  // read, when the tab comes back into focus, and once a minute.
-  const [unread, setUnread] = useState(0);
-  const userId = session?.user.id;
-  useEffect(() => {
-    if (!userId) {
-      setUnread(0);
-      return;
-    }
-    let alive = true;
-    const check = () => unreadCount().then((n) => alive && setUnread(n)).catch(() => undefined);
-    check();
-    const timer = setInterval(check, UNREAD_POLL_MS);
-    const sub = AppState.addEventListener('change', (state) => state === 'active' && check());
-    const unsubscribe = subscribeUnread(check);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-      sub.remove();
-      unsubscribe();
-    };
-  }, [userId, path, open]);
+  const unread = useUnread(open);
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  // In the phone apps the bottom bar does the navigating, so the top bar is
+  // just a Back arrow and the name.
+  if (isApp) {
+    return (
+      <View style={[styles.header, styles.appHeader]}>
+        {navigation.canGoBack() && !TAB_ROOTS.includes(path) ? (
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+            <Text style={styles.backText}>‹</Text>
+          </Pressable>
+        ) : null}
+        <View style={styles.brandRow}>
+          <Logo size={26} accessibilityLabel="" />
+          <Text style={styles.wordmark}>{SITE.name}</Text>
+        </View>
+        {!session && !path.startsWith('/log-in') && !path.startsWith('/join') && !path.startsWith('/sign-up') ? (
+          <View style={[styles.right, { marginLeft: 'auto', paddingRight: insets.right }]}>
+            <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
+          </View>
+        ) : null}
+      </View>
+    );
+  }
   const isAgency = Boolean(agency) && !profile;
   const name = profile?.display_name || agency?.name || 'Account';
   const menu = isAgency
@@ -122,6 +127,9 @@ export function SiteHeader() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingVertical: space.md, flexWrap: 'wrap', zIndex: 10 },
+  appHeader: { justifyContent: 'flex-start', flexWrap: 'nowrap', paddingVertical: space.xs },
+  back: { paddingRight: 4 },
+  backText: { fontSize: 34, lineHeight: 36, color: colors.primary },
   brand: { flexShrink: 0 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { fontFamily: fonts.heading, fontSize: 20, color: colors.primary },

@@ -7,13 +7,16 @@ import { Figtree_700Bold } from '@expo-google-fonts/figtree/700Bold';
 import { Lora_500Medium_Italic } from '@expo-google-fonts/lora/500Medium_Italic';
 import { Lora_600SemiBold } from '@expo-google-fonts/lora/600SemiBold';
 import { useFonts } from 'expo-font';
-import { Stack, type ErrorBoundaryProps } from 'expo-router';
+import { router, Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppTabBar } from '@/components/AppTabBar';
 import { BetaWelcome } from '@/components/BetaWelcome';
 import { SessionProvider } from '@/lib/auth';
 import { colors, fonts, space } from '@/lib/theme';
+import { isApp } from '@/lib/platform';
 
 export default function RootLayout() {
   // Fonts load in the background; text uses system fonts until they arrive.
@@ -25,16 +28,22 @@ export default function RootLayout() {
     Lora_600SemiBold,
   });
 
+  const insets = useSafeAreaInsets();
+
   return (
     // SessionProvider keeps track of who is signed in for every screen.
     <SessionProvider>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      />
+      {/* In the phone apps: keep content clear of the notch and camera, and put the tab bar underneath. */}
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: isApp ? insets.top : 0 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+      </View>
+      <AppTabBar />
       {/* One-time "we just launched" note for visitors (admin setting beta_banner_enabled). */}
       <BetaWelcome />
     </SessionProvider>
@@ -50,7 +59,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       <Text style={eb.text}>Sorry about that. Nothing you did caused it. Try again, or go back to the homepage.</Text>
       <View style={eb.row}>
         <Pressable onPress={retry} accessibilityRole="button" style={eb.btn}><Text style={eb.btnText}>Try again</Text></Pressable>
-        <Pressable onPress={() => { if (typeof window !== 'undefined') window.location.assign('/'); }} accessibilityRole="button" style={[eb.btn, eb.btnSecondary]}><Text style={[eb.btnText, { color: colors.primary }]}>Homepage</Text></Pressable>
+        <Pressable onPress={() => { if (Platform.OS === 'web') window.location.assign('/'); else router.replace('/'); }} accessibilityRole="button" style={[eb.btn, eb.btnSecondary]}><Text style={[eb.btnText, { color: colors.primary }]}>Homepage</Text></Pressable>
       </View>
     </View>
   );

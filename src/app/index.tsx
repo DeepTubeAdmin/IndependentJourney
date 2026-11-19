@@ -4,7 +4,7 @@
  * The profile row shows real members (both roles). While they load it shows
  * blank placeholder cards, never sample content.
  */
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -14,8 +14,10 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ProfileCard } from "@/components/ProfileCard";
 import { featuredProfiles, placeLabel, profileTypeLabel, verifiedLabel, type PreviewRow } from "@/lib/browse";
 import { SITE } from "@/config/settings";
+import { useSession } from "@/lib/auth";
 import { pageMeta } from "@/lib/seo";
 import { colors, fonts, radius, space } from "@/lib/theme";
+import { isApp } from '@/lib/platform';
 
 export function generateMetadata() {
   return pageMeta({
@@ -100,6 +102,11 @@ export default function Home() {
       .catch(() => setFeatured([]))
       .finally(() => setLoadingFeatured(false));
   }, []);
+  // In the phone apps a signed-in member starts on their own Home tab, not the public homepage.
+  const { session, profile, agency, loading } = useSession();
+  if (isApp && !loading && session && !deleted) {
+    return <Redirect href={agency && !profile ? '/agency' : '/home'} />;
+  }
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.inner}>

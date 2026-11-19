@@ -1,7 +1,7 @@
 /** Account settings: email, password reset, email preferences, saved searches, sign out, and how to delete the account. */
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Checkbox, FormMessage, TextField } from '@/components/form';
@@ -12,6 +12,7 @@ import {
   NOTIFICATION_LABELS, type NotificationSettings, type SavedSearch,
   deleteSearch, describeFilters, listSavedSearches, myNotificationSettings, saveNotificationSettings, setSearchAlerts,
 } from '@/lib/notifications';
+import { myBlockedMembers, unblockMember, type BlockedMember } from '@/lib/messages';
 import { deleteMyAccount, exportMyData } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -32,11 +33,14 @@ export default function Settings() {
   const [deleteReason, setDeleteReason] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // null = the list could not be loaded (older database); [] = nobody blocked.
+  const [blockedList, setBlockedList] = useState<BlockedMember[] | null>(null);
 
   useEffect(() => {
     if (!session) return;
     myNotificationSettings().then(setPrefs);
     listSavedSearches().then(setSearches);
+    myBlockedMembers().then(setBlockedList);
   }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!session || (!profile && !agency)) return null;
@@ -110,13 +114,36 @@ export default function Settings() {
       {profile ? (<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>
-        <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile. Blocked members are managed from inside a conversation.</Text>
+        <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile.</Text>
         <Text style={styles.text}>You can download everything we hold about you (your answers, photos list, saved profiles and messages) as one file.</Text>
         <View style={styles.row}>
           <Button label={exporting ? 'Preparing…' : 'Download a copy of my data'} variant="secondary" size="sm" onPress={onExport} disabled={exporting} />
         </View>
       </View>
       </>) : null}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Blocked members</Text>
+        <Text style={styles.text}>Someone you block cannot message you, and you cannot message them. They are not told. To block or report someone, use the Block and Report buttons at the top of their profile or of your conversation.</Text>
+        {blockedList === null ? null : blockedList.length === 0 ? (
+          <Text style={styles.help}>You have not blocked anyone.</Text>
+        ) : (
+          blockedList.map((b) => (
+            <View key={`${b.blocker_id}-${b.blocked_id}`} style={styles.search}>
+              <View style={{ flex: 1, minWidth: 180 }}>
+                <Text style={styles.v}>{b.display_name}</Text>
+              </View>
+              <Button label="Unblock" variant="secondary" size="sm" onPress={async () => { await unblockMember(b.blocker_id, b.blocked_id); setBlockedList((all) => (all ?? []).filter((x) => !(x.blocker_id === b.blocker_id && x.blocked_id === b.blocked_id))); }} />
+            </View>
+          ))
+        )}
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Help and contact</Text>
+        <Text style={styles.text}>Questions, a problem with your account, or something to report? Our team reads every message.</Text>
+        <View style={styles.row}>
+          <Button label={`Email ${SITE.supportEmail}`} variant="secondary" size="sm" onPress={() => Linking.openURL(`mailto:${SITE.supportEmail}`)} />
+        </View>
+      </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Email me about</Text>
         <Text style={styles.text}>{profile ? 'Account and security emails (password resets, ID-check results) are always sent.' : 'Account emails (password resets, approval decisions) are always sent.'}</Text>
@@ -163,7 +190,7 @@ export default function Settings() {
             </View>
           </>
         )}
-        <Text style={styles.help}>Prefer to write to us? Email privacy@{SITE.domain.toLowerCase()} from your account email.</Text>
+        <Text style={styles.help}>Prefer to write to us? Email {SITE.supportEmail} from your account email.</Text>
       </View>
       </>) : null}
       <Button label="Sign out" variant="secondary" onPress={async () => { await signOut(); router.replace('/'); }} />

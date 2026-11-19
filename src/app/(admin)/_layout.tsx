@@ -7,7 +7,7 @@
  */
 import { Redirect, router, Stack, usePathname } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { TwoFactorGate } from '@/components/admin/TwoFactorGate';
 import { Button } from '@/components/Button';
@@ -35,6 +35,14 @@ export default function AdminLayout() {
     return () => sub?.data.subscription.unsubscribe();
   }, [check]);
 
+  // The admin dashboard is website-only: it needs a wide screen and 2FA.
+  if (Platform.OS !== 'web') {
+    return (
+      <Screen title="Admin is on the website" intro="Open independentjourney.com/admin in a browser on a computer to use the admin dashboard.">
+        <Button label="Back to the app" onPress={() => router.replace('/home')} />
+      </Screen>
+    );
+  }
   if (loading || (session && !state.checked)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>

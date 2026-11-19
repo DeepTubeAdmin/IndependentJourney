@@ -3,6 +3,7 @@
  * can_message, RLS); this file only calls it and turns codes into words.
  */
 import { supabase } from '@/lib/supabase';
+import { getItem, keysWithPrefix, removeItem, setItem } from '@/lib/storage';
 
 export type CanMessage =
   | 'ok' | 'sign_in' | 'same_role' | 'not_available' | 'account_restricted'
@@ -158,6 +159,14 @@ export async function haveBlocked(myId: string, targetId: string): Promise<boole
   return Boolean(data);
 }
 
+/** Everyone the signed-in member (or an agency's client profiles) has blocked. Null if the list is not available yet. */
+export type BlockedMember = { blocker_id: string; blocked_id: string; display_name: string; blocked_at: string };
+export async function myBlockedMembers(): Promise<BlockedMember[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('my_blocked_members');
+  return error ? null : ((data ?? []) as BlockedMember[]);
+}
+
 // Notices from the safety team.
 export type Notice = { id: number; body: string; created_at: string; seen_at: string | null };
 export async function myNotices(): Promise<Notice[]> {
@@ -169,25 +178,20 @@ export async function dismissNotice(id: number) {
   await supabase?.from('member_notices').update({ seen_at: new Date().toISOString() }).eq('id', id);
 }
 
-/** A visitor's unsent first message, kept in the browser until they have joined. */
+/** A visitor's unsent first message, kept on the device until they have joined. */
 const DRAFT_KEY = (profileId: string) => `ij_draft_${profileId}`;
 export function saveDraft(profileId: string, text: string) {
-  try { globalThis.localStorage?.setItem(DRAFT_KEY(profileId), text); } catch { /* storage unavailable */ }
+  setItem(DRAFT_KEY(profileId), text);
 }
 export function loadDraft(profileId: string): string {
-  try { return globalThis.localStorage?.getItem(DRAFT_KEY(profileId)) ?? ''; } catch { return ''; }
+  return getItem(DRAFT_KEY(profileId)) ?? '';
 }
 /** Profile ids with an unsent draft (so the home page can point back to them). */
 export function draftProfileIds(): string[] {
-  try {
-    const ls = globalThis.localStorage; if (!ls) return [];
-    const out: string[] = [];
-    for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k?.startsWith('ij_draft_') && ls.getItem(k)) out.push(k.slice('ij_draft_'.length)); }
-    return out;
-  } catch { return []; }
+  return keysWithPrefix('ij_draft_').filter((k) => getItem(k)).map((k) => k.slice('ij_draft_'.length));
 }
 export function clearDraft(profileId: string) {
-  try { globalThis.localStorage?.removeItem(DRAFT_KEY(profileId)); } catch { /* ignore */ }
+  removeItem(DRAFT_KEY(profileId));
 }
 
 export function timeAgo(iso: string): string {

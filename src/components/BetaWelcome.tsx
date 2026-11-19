@@ -9,35 +9,28 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { useSession } from '@/lib/auth';
+import { getItem, setItem, storageReady } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 const SEEN_KEY = 'ij_beta_welcome_seen';
 
-function alreadySeen(): boolean {
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(SEEN_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-function remember() {
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(SEEN_KEY, '1');
-  } catch {
-    /* private browsing: it just shows again next time */
-  }
-}
+const alreadySeen = () => getItem(SEEN_KEY) === '1';
+const remember = () => setItem(SEEN_KEY, '1');
 
 export function BetaWelcome() {
   const { session, loading } = useSession();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (loading || session || alreadySeen() || !supabase) return;
+    if (loading || session || !supabase) return;
     let cancelled = false;
-    supabase.from('app_settings').select('value').eq('key', 'beta_banner_enabled').maybeSingle().then(({ data }) => {
-      if (!cancelled && data && data.value === true) setOpen(true);
+    // Wait for saved values first (matters on phones), so the note shows only once.
+    storageReady.then(() => {
+      if (cancelled || alreadySeen() || !supabase) return;
+      supabase.from('app_settings').select('value').eq('key', 'beta_banner_enabled').maybeSingle().then(({ data }) => {
+        if (!cancelled && data && data.value === true) setOpen(true);
+      });
     });
     return () => { cancelled = true; };
   }, [loading, session]);
