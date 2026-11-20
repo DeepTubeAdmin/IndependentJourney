@@ -96,8 +96,8 @@ function render(row: Row): { subject: string; body: string; text: string } {
       const via = p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : '';
       const forWhom = p.for_name ? `<p>This message is for your client <strong>${esc(p.for_name)}</strong>.</p>` : '';
       return msg(`${who} sent you a message`,
-        `<p>Hi ${first},</p>${forWhom}<p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''}${via} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #A9C4D4;color:#4F4A44">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}<p style="color:#6E6760;font-size:13px">We send at most one email per conversation per hour.</p>`,
-        `${who} sent you a message on ${SITE_NAME}. Read it at ${url}/messages/${p.conversation_id}`);
+        `<p>Hi ${first},</p>${forWhom}<p><strong>${who}</strong>${p.sender_state ? ` (${esc(p.sender_state)})` : ''}${p.sender_verified ? ', Verified,' : ''}${via} wrote to you:</p><blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #A9C4D4;color:#4F4A44">${esc(p.preview ?? '')}${(p.preview ?? '').length >= 140 ? '…' : ''}</blockquote>${btn(`${url}/messages/${p.conversation_id}`, 'Read and reply')}${p.sender_id ? `<p><a href="${url}/profile/${p.sender_id}" style="color:#8C6E57">View ${who}&#39;s profile</a></p>` : ''}<p style="color:#6E6760;font-size:13px">We send at most one email per conversation per hour.</p>`,
+        `${who} sent you a message on ${SITE_NAME}. Read it at ${url}/messages/${p.conversation_id}${p.sender_id ? ` . Their profile: ${url}/profile/${p.sender_id}` : ''}`);
     }
     case 'locked_message': {
       const who = esc(p.sender_name ?? 'A surrogate');

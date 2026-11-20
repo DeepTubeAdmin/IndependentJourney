@@ -3,9 +3,11 @@
 -- =============================================================================
 begin;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-000000000081', 'mailip@test', '{"role":"intended_parent"}'),
-  ('00000000-0000-0000-0000-000000000082', 'mailsur@test', '{"role":"surrogate"}');
+insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
+  -- Joined with Google: gets the welcome email (there is no confirmation email to carry it).
+  ('00000000-0000-0000-0000-000000000081', 'mailip@test', '{"role":"intended_parent"}', '{"provider":"google"}'),
+  -- Joined with email and password: welcomed in the confirmation email instead (migration 36).
+  ('00000000-0000-0000-0000-000000000082', 'mailsur@test', '{"role":"surrogate"}', '{"provider":"email"}');
 
 create or replace function pg_temp.login(uid text) returns void language plpgsql as $$
 begin
@@ -29,6 +31,7 @@ begin
   perform pg_temp.admin_mode();
   -- Signing up queues a welcome email, once.
   assert (select count(*) from public.email_outbox where user_id = ip::uuid and template = 'welcome') = 1, 'welcome email should be queued';
+  assert (select count(*) from public.email_outbox where user_id = sur::uuid and template = 'welcome') = 0, 'email sign-ups get no separate welcome email';
 
   -- Preferences: default all on; member can switch a category off.
   perform pg_temp.login(ip);

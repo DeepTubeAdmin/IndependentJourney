@@ -5,7 +5,7 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChoiceField, FormMessage, TextField } from '@/components/form';
@@ -17,6 +17,7 @@ import {
   NEVER_SEND_MONEY, SCAM_WARNING, sendMessageAs, unblockMember, UNVERIFIED_WARNING,
   type ConversationRow, type Message,
 } from '@/lib/messages';
+import { cachedPhotoUrl } from '@/lib/photos';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
@@ -70,6 +71,12 @@ export default function Conversation() {
       </Screen>
     );
   }
+
+  // The other member's small photo, shown beside each of their messages. Tapping it opens their profile.
+  const otherPhoto = conv.other_photo_path ? cachedPhotoUrl(conv.other_photo_path) : null;
+  const openOther = () => router.push(`/profile/${conv.other_id}`);
+  // Members (not agencies, whose client profiles are checked by the server) must finish their own profile before writing.
+  const mustFinish = Boolean(profile) && !profile?.is_complete && conv.mine_id === profile?.id;
 
   async function send() {
     if (!text.trim() || !conv) return;
@@ -139,8 +146,19 @@ export default function Conversation() {
             const mine = m.sender_id === conv.mine_id;
             return (
               <View key={m.id} style={[styles.bubbleWrap, mine ? styles.mineWrap : styles.theirsWrap]}>
-                <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-                  <Text style={[styles.bubbleText, mine && styles.mineText]}>{m.body}</Text>
+                <View style={styles.bubbleRow}>
+                  {!mine ? (
+                    <Pressable onPress={openOther} accessibilityRole="link" accessibilityLabel={`View ${conv.other_name}'s profile`} hitSlop={6} style={({ pressed }) => pressed && styles.pressed}>
+                      {otherPhoto ? (
+                        <Image source={{ uri: otherPhoto }} style={styles.avatar} />
+                      ) : (
+                        <View style={[styles.avatar, styles.avatarBlank]}><Text style={styles.avatarLetter}>{(conv.other_name || '?').slice(0, 1).toUpperCase()}</Text></View>
+                      )}
+                    </Pressable>
+                  ) : null}
+                  <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+                    <Text style={[styles.bubbleText, mine && styles.mineText]}>{m.body}</Text>
+                  </View>
                 </View>
                 <Text style={styles.stamp}>{new Date(m.created_at).toLocaleString()}{mine && m.read_at ? ' · Read' : ''}</Text>
                 {!mine && m.scam_flags.length > 0 ? (
@@ -153,7 +171,15 @@ export default function Conversation() {
         </ScrollView>
       )}
 
-      {!conv.locked && !blocked ? (
+      {!conv.locked && !blocked && mustFinish ? (
+        <View style={styles.box}>
+          <Text style={styles.boxTitle}>Finish your profile to reply</Text>
+          <Text style={styles.boxText}>Everyone completes their own profile before sending messages, so {conv.other_name} can see who is writing.</Text>
+          <Button label="Finish my profile" size="sm" onPress={() => router.push('/home')} />
+        </View>
+      ) : null}
+
+      {!conv.locked && !blocked && !mustFinish ? (
         <View style={styles.compose}>
           <TextField label="Your message" value={text} onChangeText={setText} multiline maxLength={4000} placeholder="Keep it kind, specific and free of contact details until you are ready." />
           <Button label={busy ? 'Sending…' : 'Send'} onPress={send} disabled={busy || !text.trim()} />
@@ -173,9 +199,14 @@ const styles = StyleSheet.create({
   thread: { maxHeight: 520, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg },
   threadInner: { padding: space.md, gap: space.sm },
   bubbleWrap: { maxWidth: '85%', gap: 2 },
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceSoft },
+  avatarBlank: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  avatarLetter: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textMuted },
+  pressed: { opacity: 0.7 },
   mineWrap: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirsWrap: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  bubble: { borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10 },
+  bubble: { flexShrink: 1, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10 },
   mine: { backgroundColor: colors.primary },
   theirs: { backgroundColor: colors.surfaceSoft },
   bubbleText: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.text },

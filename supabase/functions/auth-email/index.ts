@@ -117,15 +117,16 @@ function build(user: HookPayload['user'], d: HookPayload['email_data']): Mail[] 
     case 'invite':
       return [
         render(user.email, {
-          subject: `Confirm your email for ${BRAND}`,
+          subject: `Welcome to ${BRAND}: confirm your email`,
           preheader: `Your code is ${d.token}. Confirm your email to finish setting up your account.`,
           heading: `Welcome to ${BRAND}`,
-          intro: 'Thanks for joining. Please confirm this email address so we know it is yours, then you can build your profile and start meeting people.',
+          // This is also the welcome email (there is no separate one any more).
+          intro: `Thanks for joining. ${welcomeLine(user)} First, please confirm this email address so we know it is yours.`,
           button: 'Confirm my email',
           link: link(d.token_hash, d.email_action_type),
           codeIntro: 'Or type this code on the page you just left:',
           code: d.token,
-          closing: 'The button and code work once and expire in one hour.',
+          closing: `The button and code work once and expire in one hour. After that, the best next step is to finish your profile so other members can get to know you. ${BRAND} is an introduction platform, not an agency. We never handle money between members or give medical or legal advice.`,
           why: 'You received this email because someone signed up at independentjourney.com with this address. If it was not you, you can ignore it and no account will be activated.',
         }),
       ];
@@ -252,6 +253,15 @@ function build(user: HookPayload['user'], d: HookPayload['email_data']): Mail[] 
 // One layout for every login email: table-based so it renders in Outlook and
 // Gmail, a bulletproof button, a preview line, and a plain-text version.
 // ---------------------------------------------------------------------------
+/** One sentence of welcome that fits the kind of account being created. */
+function welcomeLine(user: HookPayload['user']): string {
+  const role = String(user.user_metadata?.role ?? '');
+  if (role === 'surrogate') return 'Surrogates are always free here.';
+  if (role === 'intended_parent') return 'You can browse profiles for free.';
+  if (role === 'agency') return 'Once your agency details are filled in, you can post profiles for the clients you represent.';
+  return 'We are glad you are here.';
+}
+
 type Parts = {
   subject: string;
   preheader: string;

@@ -17,7 +17,7 @@ export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   not_available: 'This member is not available for messages right now.',
   account_restricted: 'Your account is currently restricted. Contact us if you think this is a mistake.',
   blocked: 'Messaging is not available between you and this member.',
-  profile_incomplete: 'Finish your profile to start conversations. Intended parents want to know who they are talking to.',
+  profile_incomplete: 'Finish your profile to send messages. Members want to know who they are talking to.',
   membership_required: 'A membership unlocks messaging and full surrogate profiles.',
   agency_messages_off: 'This member has asked to hear from independent members only. They can still write to your client first.',
   agency_access_required: 'Your agency account needs to be active (and, when pricing is on, paid up) before its profiles can message.',
