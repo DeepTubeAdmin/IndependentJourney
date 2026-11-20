@@ -189,5 +189,29 @@ do $$ begin
   assert (select count(*) from public.member_notices where seen_at is null) = 1, 'warned member sees the notice';
 end $$;
 
+-- Migration 36 ---------------------------------------------------------------
+-- An intended parent with a membership but an unfinished profile cannot write.
+reset role;
+update public.profiles set bio = '' where id = '00000000-0000-0000-0000-000000000022';
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$ begin
+  assert not (select is_complete from public.profiles where id = auth.uid()), 'test set-up: profile is now incomplete';
+  assert public.can_message('00000000-0000-0000-0000-000000000011') = 'profile_incomplete', 'a member with an unfinished profile cannot message, even with a membership';
+  begin
+    perform public.send_message('00000000-0000-0000-0000-000000000011', 'Hello');
+    raise exception 'incomplete profile sent a message';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+-- BMI: required only for surrogates who joined after the saved moment.
+do $$ declare s1 uuid := '00000000-0000-0000-0000-000000000011'; begin
+  assert public.compute_profile_complete(s1), 'joined before the rule: complete without BMI';
+  update public.app_settings set value = '"2000-01-01T00:00:00Z"' where key = 'bmi_required_from';
+  assert not public.compute_profile_complete(s1), 'joined after the rule: BMI is needed';
+  update public.health_self_reports set bmi_range = 'under_30' where id = s1;
+  assert public.compute_profile_complete(s1), 'with BMI answered the profile is complete';
+end $$;
+
 select 'MESSAGING RULES OK' as result;
 rollback;
