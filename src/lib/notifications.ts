@@ -40,7 +40,7 @@ export async function listSavedSearches(): Promise<SavedSearch[]> {
 
 /** Keeps only the filters that describe profiles (not sorting or paging). */
 export function alertableFilters(f: BrowseFilters): BrowseFilters {
-  const keep: (keyof BrowseFilters)[] = ['state', 'verified_only', 'open_to_twins', 'compensation_open', 'willing_to_travel', 'relationship_level', 'family_structure', 'embryos_status'];
+  const keep: (keyof BrowseFilters)[] = ['state', 'verified_only', 'open_to_twins', 'compensation_open', 'willing_to_travel', 'relationship_level', 'family_structure', 'embryos_status', 'experienced', 'termination_comfort', 'untested_embryos_ok', 'carry_donor_embryos', 'international_ips_ok', 'comp_max', 'open_to_ip_type', 'embryos_tested', 'consulted_attorney'];
   return Object.fromEntries(Object.entries(f).filter(([k, v]) => keep.includes(k as keyof BrowseFilters) && v !== undefined && v !== null && v !== '' && v !== false)) as BrowseFilters;
 }
 
@@ -71,5 +71,14 @@ export function describeFilters(f: BrowseFilters): string {
   if (f.relationship_level) parts.push(`Relationship: ${f.relationship_level.replace(/_/g, ' ')}`);
   if (f.family_structure) parts.push(f.family_structure === 'couple' ? 'Couples' : 'Single parents');
   if (f.embryos_status) parts.push(`Embryos: ${f.embryos_status.replace(/_/g, ' ')}`);
+  if (f.termination_comfort) parts.push(`Termination: ${f.termination_comfort.replace(/_/g, ' ')}`);
+  if (f.experienced) parts.push('Experienced');
+  if (f.comp_max) parts.push(`Compensation up to $${Math.round(f.comp_max / 1000)}k`);
+  if (f.untested_embryos_ok) parts.push('Untested embryos OK');
+  if (f.carry_donor_embryos) parts.push('Donor embryos OK');
+  if (f.international_ips_ok) parts.push('Open to international parents');
+  if (f.open_to_ip_type) parts.push(f.open_to_ip_type === 'single_parents' ? 'Open to single parents' : 'Open to LGBTQ+ families');
+  if (f.embryos_tested) parts.push('Embryos tested');
+  if (f.consulted_attorney) parts.push('Consulted an attorney');
   return parts.join(' · ') || 'Everyone';
 }

@@ -298,5 +298,39 @@ do $$ declare r jsonb; begin
   assert not (r ->> 'allowed')::boolean, 'signed-in members do not use the guest pass';
 end $$;
 
+-- Migration 35: filters on the key questionnaire answers.
+reset role;
+update public.surrogate_details set journeys_completed = 1, untested_embryos_ok = 'yes', international_ips_ok = 'yes',
+       open_to_ip_types = '{couples}' where id = '00000000-0000-0000-0000-000000000011';
+update public.surrogate_details set journeys_completed = 0, untested_embryos_ok = 'no', international_ips_ok = 'no', termination_comfort = 'not_comfortable',
+       carry_donor_embryos = 'no', compensation_open = false, compensation_min_usd = 65000 where id = '00000000-0000-0000-0000-000000000012';
+select pg_temp.login('00000000-0000-0000-0000-000000000022');
+do $$
+declare megan uuid := '00000000-0000-0000-0000-000000000011'; brooke uuid := '00000000-0000-0000-0000-000000000012';
+begin
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","experienced":true}')) = array[megan], 'experienced filter';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","termination_comfort":"not_comfortable"}')) = array[brooke], 'termination filter (surrogates)';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","untested_embryos_ok":"yes"}')) = array[megan], 'untested embryos filter';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","carry_donor_embryos":"yes"}')) = array[megan], 'donor embryos filter';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","international_ips_ok":"yes"}')) = array[megan], 'international filter';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","comp_max":60000}')) = array[megan], 'compensation cap keeps open-to-discuss, drops a higher range';
+  assert (select count(*) from public.browse_profiles('{"role":"surrogate","comp_max":75000}')) = 2, 'a higher cap includes both';
+  assert (select array_agg(id) from public.browse_profiles('{"role":"surrogate","open_to_ip_type":"single_parents"}')) = array[brooke], 'blank "open to" means everyone; a list without the type is left out';
+  assert (select count(*) from public.browse_profiles('{"role":"surrogate","experienced":true,"termination_comfort":"not_comfortable"}')) = 0, 'filters combine';
+  -- Intended parents (Daniel & Luis: tested embryos, attorney consulted, comfortable, open to twins).
+  assert (select count(*) from public.browse_profiles('{"role":"intended_parent","embryos_tested":"yes","consulted_attorney":true,"termination_comfort":"comfortable","open_to_twins":"comfortable"}') where id = '00000000-0000-0000-0000-000000000021') = 1, 'IP filters match';
+  assert (select count(*) from public.browse_profiles('{"role":"intended_parent","open_to_twins":"not_comfortable"}')) = 0, 'twins filter now applies to intended parents';
+  assert (select count(*) from public.browse_profiles('{"role":"intended_parent","termination_comfort":"not_comfortable"}')) = 0, 'termination filter (parents)';
+  -- Surrogate-only keys never hide intended parents, and the other way round.
+  assert (select count(*) from public.browse_profiles('{"role":"intended_parent","experienced":true}')) = (select count(*) from public.browse_profiles('{"role":"intended_parent"}')), 'surrogate-only filter ignored for parents';
+  assert (select count(*) from public.browse_profiles('{"role":"surrogate","embryos_tested":"yes"}')) = 2, 'parent-only filter ignored for surrogates';
+end $$;
+reset role;
+do $$ begin
+  assert public.profile_matches_filters((select p from public.profiles p where p.id = '00000000-0000-0000-0000-000000000011'), '{"experienced": true}'), 'saved searches use the key answers';
+  assert not public.profile_matches_filters((select p from public.profiles p where p.id = '00000000-0000-0000-0000-000000000012'), '{"experienced": true}'), 'saved searches leave out non-matches';
+  assert not has_function_privilege('authenticated', 'public.profile_matches_key_answers(uuid, public.user_role, jsonb)', 'execute'), 'helper is not callable directly';
+end $$;
+
 select 'BROWSE RULES OK' as result;
 rollback;

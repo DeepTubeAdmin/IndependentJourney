@@ -15,7 +15,6 @@ import { Screen } from '@/components/Screen';
 import { US_STATES } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import { BrowseMap } from '@/components/BrowseMap';
-import { isApp } from '@/lib/platform';
 import { browseProfiles, placeLabel, profileTypeLabel, verifiedLabel, type BrowseFilters, type PreviewRow } from '@/lib/browse';
 import { formatDistance } from '@/lib/geo';
 import { alertableFilters, saveSearch } from '@/lib/notifications';
@@ -32,6 +31,9 @@ export function generateMetadata() {
 }
 
 const PAGE = 24;
+/** Filters that mean the same thing for surrogates and intended parents. */
+const SHARED_FILTERS: (keyof BrowseFilters)[] = ['state', 'verified_only', 'profile_type', 'sort', 'radius_miles', 'relationship_level', 'termination_comfort', 'start_before'];
+const COMFORT = [{ value: 'comfortable', label: 'Comfortable' }, { value: 'to_discuss', label: 'To discuss' }, { value: 'not_comfortable', label: 'Not comfortable' }];
 
 export default function Browse() {
   const { session, profile, agency, loading } = useSession();
@@ -45,6 +47,7 @@ export default function Browse() {
   const sameSide = Boolean(profile) && lookingFor === profile?.role;
 
   const [filters, setFilters] = useState<BrowseFilters>({});
+  const [startMonths, setStartMonths] = useState<string | null>(null);
   const [rows, setRows] = useState<PreviewRow[]>([]);
   const [busy, setBusy] = useState(true);
   const [more, setMore] = useState(false);
@@ -80,11 +83,25 @@ export default function Browse() {
     if (!loading) load(0);
   }, [loading, filters, view, session?.user.id, lookingFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (k: keyof BrowseFilters, v: unknown) => setFilters((f) => ({ ...f, [k]: v }));
+  // Setting a filter back to "any" drops its key, so Clear and the count stay honest.
+  const set = (k: keyof BrowseFilters, v: unknown) =>
+    setFilters((f) => {
+      const empty = v === undefined || v === null || v === '' || v === false;
+      const rest = Object.entries(f).filter(([key]) => key !== k);
+      return Object.fromEntries(empty ? rest : [...rest, [k, v]]) as BrowseFilters;
+    });
+  const activeCount = Object.keys(filters).length;
+  // Each side has its own questions, so switching sides keeps only the filters that apply to both.
+  function switchSide(side: 'surrogate' | 'intended_parent') {
+    if (side === lookingFor) return;
+    setSideChoice(side);
+    setFilters((f) => Object.fromEntries(Object.entries(f).filter(([k]) => SHARED_FILTERS.includes(k as keyof BrowseFilters))) as BrowseFilters);
+  }
+  // "Ready to start within": turned into a date the database compares against.
+  const startWithin = (months: number) => { const d = new Date(); d.setMonth(d.getMonth() + months); return d.toISOString().slice(0, 10); };
 
-  // The tick-box filters. On the website they sit in the bar next to the
-  // buttons; in the phone apps they live inside the Filters panel, where
-  // there is room for their labels.
+  // The tick-box filters. They live at the top of the Filters panel, on the
+  // website and in the apps, so the bar holds only buttons.
   const quickChecks = (
     <>
           <Checkbox label="Verified only" checked={Boolean(filters.verified_only)} onChange={(v) => set('verified_only', v)} />
@@ -119,12 +136,11 @@ export default function Browse() {
     >
       {!anon ? (
         <View style={styles.filterBar}>
-          <Button label="Surrogates" variant={lookingFor === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('surrogate')} />
-          <Button label="Intended parents" variant={lookingFor === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => setSideChoice('intended_parent')} />
-          <Button label={showFilters ? 'Hide filters' : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
-          {isApp ? null : quickChecks}
+          <Button label="Surrogates" variant={lookingFor === 'surrogate' ? 'primary' : 'secondary'} size="sm" onPress={() => switchSide('surrogate')} />
+          <Button label="Intended parents" variant={lookingFor === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => switchSide('intended_parent')} />
+          <Button label={showFilters ? 'Hide filters' : activeCount > 0 ? `Filters (${activeCount})` : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
-          {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => setFilters({})} /> : null}
+          {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => { setFilters({}); setStartMonths(null); }} /> : null}
           {canSave ? <Button label="Save this search" variant="secondary" size="sm" onPress={() => { setSaving((v) => !v); setSaveMsg(null); }} /> : null}
         </View>
       ) : null}
@@ -142,7 +158,7 @@ export default function Browse() {
 
       {showFilters && !anon ? (
         <View style={styles.filters}>
-          {isApp ? quickChecks : null}
+          <View style={styles.checks}>{quickChecks}</View>
           <SelectField label="State" options={US_STATES} value={filters.state ?? null} onChange={(v) => set('state', v)} />
           {myPoint ? (
             <ChoiceField
@@ -155,25 +171,55 @@ export default function Browse() {
             !anon && (!profile?.country || profile.country === 'US') && <Text style={styles.note}>Add your ZIP code to your profile to filter and sort by distance and to appear on the map.</Text>
           )}
           <ChoiceField
+            label={lookingFor === 'surrogate' ? 'Ready to start within' : 'Hoping to start within'}
+            options={[{ value: '3', label: '3 months' }, { value: '6', label: '6 months' }, { value: '12', label: '12 months' }]}
+            value={filters.start_before ? startMonths : null}
+            onChange={(v) => { setStartMonths((v as string) ?? null); set('start_before', v ? startWithin(Number(v)) : undefined); }}
+          />
+          <ChoiceField
+            label={lookingFor === 'surrogate' ? 'Termination for medical reasons' : 'Views on termination for medical reasons'}
+            options={COMFORT}
+            value={filters.termination_comfort ?? null}
+            onChange={(v) => set('termination_comfort', v)}
+          />
+          <ChoiceField
             label="Relationship during the journey"
             options={[
-              { value: 'minimal', label: 'Minimal' },
+              { value: 'minimal', label: 'Minimal contact' },
               { value: 'regular_updates', label: 'Regular updates' },
-              { value: 'close', label: 'Close' },
+              { value: 'close', label: 'Close relationship' },
             ]}
             value={filters.relationship_level ?? null}
             onChange={(v) => set('relationship_level', v)}
           />
           {lookingFor === 'surrogate' ? (
             <>
+              <ChoiceField
+                label="Base compensation"
+                options={[{ value: '50000', label: 'Up to $50k' }, { value: '60000', label: 'Up to $60k' }, { value: '75000', label: 'Up to $75k' }]}
+                value={filters.comp_max ? String(filters.comp_max) : null}
+                onChange={(v) => set('comp_max', v ? Number(v) : undefined)}
+              />
+              <Text style={styles.small}>Includes surrogates who are open to discussing compensation.</Text>
               <ChoiceField label="Open to twins" options={[{ value: 'comfortable', label: 'Yes' }]} value={filters.open_to_twins ?? null} onChange={(v) => set('open_to_twins', v)} />
-              <ChoiceField label="Willing to travel" options={[{ value: 'yes', label: 'Yes' }, { value: 'discuss_later', label: 'Open to discuss' }]} value={filters.willing_to_travel ?? null} onChange={(v) => set('willing_to_travel', v)} />
-              <Checkbox label="Open to discussing compensation" checked={Boolean(filters.compensation_open)} onChange={(v) => set('compensation_open', v)} />
+              <ChoiceField label="Open to working with" options={[{ value: 'single_parents', label: 'Single parents' }, { value: 'lgbtq_families', label: 'LGBTQ+ families' }]} value={filters.open_to_ip_type ?? null} onChange={(v) => set('open_to_ip_type', v)} />
+              <View style={styles.checks}>
+                <Checkbox label="Experienced surrogate (completed a journey)" checked={Boolean(filters.experienced)} onChange={(v) => set('experienced', v)} />
+                <Checkbox label="OK with embryos that are not genetically tested" checked={filters.untested_embryos_ok === 'yes'} onChange={(v) => set('untested_embryos_ok', v ? 'yes' : undefined)} />
+                <Checkbox label="OK with donor egg or sperm embryos" checked={filters.carry_donor_embryos === 'yes'} onChange={(v) => set('carry_donor_embryos', v ? 'yes' : undefined)} />
+                <Checkbox label="Open to international parents" checked={filters.international_ips_ok === 'yes'} onChange={(v) => set('international_ips_ok', v ? 'yes' : undefined)} />
+                <Checkbox label="Willing to travel" checked={filters.willing_to_travel === 'yes'} onChange={(v) => set('willing_to_travel', v ? 'yes' : undefined)} />
+              </View>
             </>
           ) : (
             <>
               <ChoiceField label="Embryos" options={[{ value: 'created', label: 'Already created' }, { value: 'in_progress', label: 'In progress' }, { value: 'not_yet', label: 'Not yet' }]} value={filters.embryos_status ?? null} onChange={(v) => set('embryos_status', v)} />
+              <ChoiceField label="Twins" options={[{ value: 'comfortable', label: 'Open to twins' }, { value: 'not_comfortable', label: 'One baby only' }]} value={filters.open_to_twins ?? null} onChange={(v) => set('open_to_twins', v)} />
               <ChoiceField label="Family" options={[{ value: 'couple', label: 'Couple' }, { value: 'single', label: 'Single parent' }]} value={filters.family_structure ?? null} onChange={(v) => set('family_structure', v)} />
+              <View style={styles.checks}>
+                <Checkbox label="Embryos are genetically tested" checked={filters.embryos_tested === 'yes'} onChange={(v) => set('embryos_tested', v ? 'yes' : undefined)} />
+                <Checkbox label="Has consulted a reproductive attorney" checked={Boolean(filters.consulted_attorney)} onChange={(v) => set('consulted_attorney', v)} />
+              </View>
             </>
           )}
         </View>
@@ -226,6 +272,7 @@ const styles = StyleSheet.create({
   filters: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.md, gap: space.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   note: { fontFamily: fonts.body, fontSize: 15, color: colors.textSubtle, textAlign: 'center' },
+  checks: { flexDirection: 'row', flexWrap: 'wrap', columnGap: space.lg, rowGap: space.sm },
   small: { fontFamily: fonts.body, fontSize: 13, color: colors.textSubtle },
   wall: { backgroundColor: colors.surfaceSoft, borderRadius: radius.lg, padding: space.lg, gap: space.sm, alignItems: 'center' },
   wallTitle: { fontFamily: fonts.heading, fontSize: 22, color: colors.text },
