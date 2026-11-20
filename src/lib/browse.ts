@@ -60,6 +60,20 @@ export type BrowseFilters = {
   start_before?: string;
   family_structure?: string;
   embryos_status?: string;
+  // Migration 35: the key questionnaire answers.
+  /** Surrogates: has completed at least one journey. */
+  experienced?: boolean;
+  /** Both sides: 'comfortable' | 'to_discuss' | 'not_comfortable'. */
+  termination_comfort?: string;
+  untested_embryos_ok?: string;
+  carry_donor_embryos?: string;
+  international_ips_ok?: string;
+  /** Surrogates: base compensation starts at or under this many dollars (or is open to discuss). */
+  comp_max?: number;
+  /** Surrogates: 'single_parents' | 'lgbtq_families' (blank answers count as open to everyone). */
+  open_to_ip_type?: string;
+  embryos_tested?: string;
+  consulted_attorney?: boolean;
   id?: string;
   /** 'independent' (own profiles, with or without an agency) or 'agency' (posted by an agency). */
   profile_type?: 'independent' | 'agency';
