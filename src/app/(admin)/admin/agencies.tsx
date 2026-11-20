@@ -1,6 +1,7 @@
 /**
- * Admin: agencies waiting for approval, approved, rejected and suspended.
- * Tap a row to open it; approve, reject or suspend with a note the agency sees.
+ * Admin: every agency account. Agencies are active as soon as they sign up
+ * (no approval step). Tap a row to open it; suspend or reinstate with a note
+ * the agency sees.
  */
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState } from 'react';
@@ -23,7 +24,7 @@ const SKIP = new Set(['id', 'name', 'website', 'contact_name', 'email', 'status'
 
 export default function Agencies() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const [status, setStatus] = useState<string | null>('pending');
+  const [status, setStatus] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const { data, error, loading } = useAdminData(() => admin.listAgencies(status), [status, tick]);
   const { data: detail, error: detailError } = useAdminData(() => (id ? admin.agencyDetail(id) : Promise.resolve({ data: null, error: null })), [id, tick]);
@@ -37,15 +38,15 @@ export default function Agencies() {
     setBusy(true);
     const { error: e } = await admin.setAgencyStatus(id, next, note.trim());
     setBusy(false);
-    setMsg(e ? { kind: 'error', text: e } : { kind: 'info', text: `Agency marked ${next}. ${next === 'approved' || next === 'rejected' || next === 'suspended' ? 'They have been emailed.' : ''}` });
+    setMsg(e ? { kind: 'error', text: e } : { kind: 'info', text: next === 'suspended' ? 'Agency suspended. Its client profiles are hidden and it has been emailed.' : 'Agency reinstated. Its client profiles are showing again and it has been emailed.' });
     if (!e) { setNote(''); setTick((t) => t + 1); }
   }
 
   return (
-    <AdminShell title="Agencies" intro="Every agency is approved by hand. Check the website, then approve or reject. Suspending hides all of an agency’s client profiles.">
+    <AdminShell title="Agencies" intro="Agencies are active as soon as they sign up, the same as members. Nothing here needs approving. If an agency should not be on the site, suspend it: that hides all of its client profiles at once.">
       <ChoiceField
         label="Show"
-        options={[{ value: 'pending', label: 'Waiting for approval' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }, { value: 'suspended', label: 'Suspended' }, { value: 'all', label: 'All' }]}
+        options={[{ value: 'all', label: 'All' }, { value: 'approved', label: 'Active' }, { value: 'suspended', label: 'Suspended' }]}
         value={status ?? 'all'}
         onChange={(v) => setStatus(v === 'all' ? null : (v as string))}
       />
@@ -61,7 +62,7 @@ export default function Agencies() {
           { key: 'state', label: 'HQ', render: (a) => a.hq_state || '—' },
           { key: 'profiles', label: 'Profiles', render: (a) => String(a.profile_count) },
           { key: 'details', label: 'Details', render: (a) => (a.is_complete ? 'Complete' : 'Incomplete') },
-          { key: 'status', label: 'Status', render: (a) => <Pill text={a.status} tone={TONE[a.status]} /> },
+          { key: 'status', label: 'Status', render: (a) => <Pill text={a.status === 'approved' ? 'active' : a.status} tone={TONE[a.status]} /> },
           { key: 'joined', label: 'Signed up', render: (a) => new Date(a.created_at).toLocaleDateString('en-US') },
         ]}
         empty="No agencies here."
@@ -78,7 +79,7 @@ export default function Agencies() {
               <KV k="Details complete" v={detail.is_complete ? 'Yes' : 'No'} />
               <KV k="Consent attested" v={detail.attested_consent ? 'Yes' : 'No'} />
               <KV k="Signed up" v={new Date(detail.created_at).toLocaleString('en-US')} />
-              {detail.review_note ? <KV k="Last review note" v={detail.review_note} /> : null}
+              {detail.review_note ? <KV k="Last note" v={detail.review_note} /> : null}
               {Object.entries(detail)
                 .filter(([k, v]) => !SKIP.has(k) && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
                 .map(([k, v]) => <KV key={k} k={k.replace(/_/g, ' ')} v={Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)} />)}
@@ -90,10 +91,8 @@ export default function Agencies() {
               ))}
               <TextField label="Note to the agency (required for reject or suspend)" value={note} onChangeText={setNote} multiline placeholder="e.g. We could not find your agency at the website given." />
               <View style={styles.actions}>
-                {detail.status !== 'approved' ? <Button label="Approve" onPress={() => act('approved')} disabled={busy} /> : null}
-                {detail.status === 'pending' ? <Button label="Reject" variant="secondary" onPress={() => act('rejected')} disabled={busy} /> : null}
+                {detail.status !== 'approved' ? <Button label="Reinstate" onPress={() => act('approved')} disabled={busy} /> : null}
                 {detail.status === 'approved' ? <Button label="Suspend" variant="secondary" onPress={() => act('suspended')} disabled={busy} /> : null}
-                {detail.status === 'rejected' || detail.status === 'suspended' ? <Button label="Back to pending" variant="secondary" onPress={() => act('pending')} disabled={busy} /> : null}
                 <Button label="Close" variant="secondary" onPress={() => router.setParams({ id: undefined })} />
               </View>
             </>

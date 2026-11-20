@@ -180,7 +180,7 @@ export default function Settings() {
       ) : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Email me about</Text>
-        <Text style={styles.text}>{profile ? 'Account and security emails (password resets, ID-check results) are always sent.' : 'Account emails (password resets, approval decisions) are always sent.'}</Text>
+        <Text style={styles.text}>{profile ? 'Account and security emails (password resets, ID-check results) are always sent.' : 'Account emails (password resets, account status changes) are always sent.'}</Text>
         {prefs
           ? NOTIFICATION_LABELS.filter((n) => profile || n.key === 'new_messages').map((n) => (
               <Checkbox key={n.key} label={<Text><Text style={styles.v}>{n.label}</Text><Text style={styles.help}>{`  ${n.help}`}</Text></Text>} checked={prefs[n.key]} onChange={(v) => togglePref(n.key, v)} />

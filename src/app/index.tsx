@@ -53,7 +53,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Can agencies use Independent Journey?",
-    "Yes. Agencies apply for an account, we approve each one by hand, and they can then post profiles for the surrogates and intended parents they represent, using the same questionnaire as everyone else. Members choose whether agencies may message them.",
+    "Yes. Agencies can create an account and post profiles for the surrogates and intended parents they represent, using the same questionnaire as everyone else. Members choose whether agencies may message them.",
   ],
   [
     "How much does it cost?",

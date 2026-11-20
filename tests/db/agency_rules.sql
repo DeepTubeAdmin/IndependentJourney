@@ -41,25 +41,24 @@ select pg_temp.complete_ip('00000000-0000-0000-0000-0000000000d2', 'Quiet Quinn'
 update public.profiles set journey_types = 'independent_only' where id = '00000000-0000-0000-0000-0000000000d2';
 update public.profiles set display_name='Indy Ivy', last_initial='R', state='TX', bio='Hello', profile_type='with_agency', agency_name='Some Agency' where id='00000000-0000-0000-0000-0000000000d3';
 
--- 1. Sign-up created a pending agency, no profile, and an admin email.
+-- 1. Sign-up created an agency that is active straight away (migration 34), with no profile.
 do $$ begin
-  assert (select status from public.agencies where id = '00000000-0000-0000-0000-0000000000c1') = 'pending', 'agency starts pending';
+  assert (select status from public.agencies where id = '00000000-0000-0000-0000-0000000000c1') = 'approved', 'agency is active from sign-up';
   assert (select name from public.agencies where id = '00000000-0000-0000-0000-0000000000c1') = 'Bright Beginnings', 'name from sign-up metadata';
   assert not exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-0000000000c1'), 'an agency has no profile row';
-  assert exists (select 1 from public.email_outbox where template = 'agency_pending' and user_id = '00000000-0000-0000-0000-0000000000da'), 'admin is emailed about the pending agency';
+  assert not exists (select 1 from public.email_outbox where template = 'agency_pending'), 'no approval request is emailed to admins any more';
   assert exists (select 1 from public.email_outbox where template = 'agency_welcome' and user_id = '00000000-0000-0000-0000-0000000000c1'), 'agency gets a welcome email';
 end $$;
 
--- 2. Pending agency: can see itself, cannot add clients, cannot read members' full details.
+-- 2. New agency with unfinished details: can see itself, cannot add clients yet.
 select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
 do $$ begin
   assert (select count(*) from public.agencies) = 1, 'agency sees only itself';
   begin
     perform public.agency_create_profile('surrogate');
-    raise exception 'pending agency created a profile';
+    raise exception 'agency with unfinished details created a profile';
   exception when insufficient_privilege then null; end;
-  assert (select count(*) from public.profiles where id = '00000000-0000-0000-0000-0000000000d1') = 0, 'pending agency cannot read member profiles';
-  assert (select public.my_agency() ->> 'status') = 'pending', 'my_agency works while pending';
+  assert (select public.my_agency() ->> 'status') = 'approved', 'my_agency shows the agency as active';
 end $$;
 
 -- Fill in the agency details (owner update; status stays as it is).
@@ -68,26 +67,25 @@ update public.agencies set hq_state='CA', states_served='{CA,TX}', services='{ma
 do $$ begin
   assert (select is_complete from public.agencies where id = auth.uid()), 'details complete';
   begin
-    update public.agencies set status = 'approved' where id = auth.uid();
-    raise exception 'agency approved itself';
+    update public.agencies set status = 'suspended' where id = auth.uid();
+    raise exception 'agency changed its own status';
   exception when others then null; end;
 end $$;
 reset role;
 do $$ begin
-  assert (select status from public.agencies where id = '00000000-0000-0000-0000-0000000000c1') = 'pending', 'self-approval was rejected';
-  assert exists (select 1 from public.email_outbox where template = 'agency_ready' and user_id = '00000000-0000-0000-0000-0000000000da'), 'admin is told the details are ready to review';
+  assert (select status from public.agencies where id = '00000000-0000-0000-0000-0000000000c1') = 'approved', 'an agency cannot change its own status';
+  assert exists (select 1 from public.email_outbox where template = 'agency_ready' and user_id = '00000000-0000-0000-0000-0000000000da'), 'admins are told a new agency finished its details';
 end $$;
 
--- 3. Admin approves. Agency is emailed.
+-- 3. Nothing for an admin to approve; the agency shows in the admin list.
 select pg_temp.login('00000000-0000-0000-0000-0000000000da');
-select public.admin_set_agency_status('00000000-0000-0000-0000-0000000000c1', 'approved', 'Looks good');
 do $$ begin
-  assert (select count(*) from public.admin_list_agencies('approved')) = 1, 'admin list shows the approved agency';
-  assert (select (public.admin_overview() ->> 'agencies_pending')::int) = 1, 'one agency (the other) still pending';
+  assert (select count(*) from public.admin_list_agencies('approved')) = 2, 'admin list shows both agencies as active';
+  assert (select (public.admin_overview() ->> 'agencies_pending')::int) = 0, 'nobody waits for approval';
 end $$;
 reset role;
 do $$ begin
-  assert exists (select 1 from public.email_outbox where template = 'agency_approved' and user_id = '00000000-0000-0000-0000-0000000000c1'), 'agency emailed on approval';
+  assert not exists (select 1 from public.email_outbox where template = 'agency_approved' and user_id = '00000000-0000-0000-0000-0000000000c1'), 'no approval email for an agency that was never waiting';
 end $$;
 
 -- 4. Approved agency adds a surrogate client and fills her in (no phone, no health step).

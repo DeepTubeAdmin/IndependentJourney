@@ -83,7 +83,7 @@ export default function FinishSignUp() {
       <View style={styles.roles}>
         <RoleCard selected={role === 'surrogate'} title="I'm a surrogate" body="Always free. You must be 21 or older." onPress={() => setRole('surrogate')} />
         <RoleCard selected={role === 'intended_parent'} title="We're intended parents" body="Free to join and browse. You must be 18 or older." onPress={() => setRole('intended_parent')} />
-        <RoleCard selected={role === 'agency'} title="We're an agency" body="Post profiles for the clients you represent. Approved by hand." onPress={() => setRole('agency')} />
+        <RoleCard selected={role === 'agency'} title="We're an agency" body="Post profiles for the clients you represent." onPress={() => setRole('agency')} />
       </View>
       {errors.role ? <Text style={styles.error}>{errors.role}</Text> : null}
       <Text style={styles.note}>You can't change this later, so pick carefully.</Text>

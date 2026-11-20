@@ -111,7 +111,7 @@ export async function startSocialSignIn(provider: SocialProvider): Promise<Socia
 }
 
 /** Creates the profile for a social sign-up. Returns an error message or null. */
-/** After a Google or Apple sign-up as an agency: creates the pending agency row. */
+/** After a Google or Apple sign-up as an agency: creates the agency row. */
 export async function completeAgencySignup(name: string, website: string, contactName: string, legalVersion: string): Promise<string | null> {
   if (!supabase) return 'The app is not connected to a database yet.';
   const { error } = await supabase.rpc('complete_agency_signup', { p_name: name, p_website: website, p_contact_name: contactName, p_legal_version: legalVersion });

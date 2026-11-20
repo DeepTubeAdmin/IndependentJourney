@@ -1,5 +1,5 @@
 /**
- * Agency dashboard: approval status, agency details and logo, and the client
+ * Agency dashboard: account status, agency details and logo, and the client
  * profiles the agency has posted. Each client profile is edited through the
  * same onboarding screens members use, with ?for=<profile id>.
  */
@@ -77,7 +77,7 @@ export default function AgencyHome() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Agency details</Text>
-        <Text style={styles.note}>{data.is_complete ? 'Complete. Your name, website, location, services and fee ranges are shown on each client profile.' : 'Not finished yet. Members see these details on every profile you post, and we use them to review your account.'}</Text>
+        <Text style={styles.note}>{data.is_complete ? 'Complete. Your name, website, location, services and fee ranges are shown on each client profile.' : 'Not finished yet. Members see these details on every profile you post, so they are needed before you can add client profiles.'}</Text>
         <View style={styles.row}>
           <Button label={data.is_complete ? 'Edit agency details' : 'Finish agency details'} variant={data.is_complete ? 'secondary' : 'primary'} onPress={() => router.push('/agency/details/0')} />
         </View>
@@ -100,7 +100,7 @@ export default function AgencyHome() {
           <Button label="Add intended parents" onPress={() => add('intended_parent')} disabled={!canAdd || busy} />
           <Button label="Messages" variant="secondary" onPress={() => router.push('/messages')} />
         </View>
-        {!canAdd ? <Text style={styles.hint}>{!approved ? 'You can add profiles once your agency is approved.' : !data.is_complete ? 'Finish your agency details to add profiles.' : 'An agency subscription is needed to add profiles.'}</Text> : null}
+        {!canAdd ? <Text style={styles.hint}>{!approved ? 'Your agency account is not active, so profiles cannot be added.' : !data.is_complete ? 'Finish your agency details to add profiles.' : 'An agency subscription is needed to add profiles.'}</Text> : null}
         {data.profiles.length === 0 ? <Text style={styles.note}>No client profiles yet.</Text> : null}
         {data.profiles.map((c) => (
           <ClientRow key={c.id} c={c} busy={busy} confirming={confirmRemove === c.id} onConfirm={() => setConfirmRemove(confirmRemove === c.id ? null : c.id)} onRemove={() => remove(c.id)} />
@@ -115,9 +115,9 @@ export default function AgencyHome() {
 }
 
 function StatusBanner({ data }: { data: MyAgency }) {
-  if (data.status === 'approved') return <FormMessage kind="info" text={`Approved. ${data.pricing_mode === 'free' ? 'Agency accounts are free during our beta; we will give notice before any pricing starts.' : ''}`} />;
-  if (data.status === 'pending') return <FormMessage kind="info" text={data.is_complete ? 'Your agency is waiting for review. We check every agency by hand and email you when it is approved, usually within a few days.' : 'Welcome. Finish your agency details below so we can review your account. We approve every agency by hand.'} />;
-  if (data.status === 'rejected') return <FormMessage kind="error" text={`We were not able to approve your agency.${data.review_note ? ` Reason: ${data.review_note}` : ''} Reply to our email if you think this is a mistake.`} />;
+  if (data.status === 'approved') return <FormMessage kind="info" text={`${data.is_complete ? 'Your agency account is active.' : 'Welcome. Finish your agency details below, then you can start adding client profiles.'} ${data.pricing_mode === 'free' ? 'Agency accounts are free during our beta; we will give notice before any pricing starts.' : ''}`} />;
+  if (data.status === 'pending') return <FormMessage kind="info" text="Your agency account is being set up. Refresh this page in a moment." />;
+  if (data.status === 'rejected') return <FormMessage kind="error" text={`Your agency account is not active.${data.review_note ? ` Reason: ${data.review_note}` : ''} Reply to our email if you think this is a mistake.`} />;
   return <FormMessage kind="error" text={`Your agency account is suspended and your client profiles are hidden.${data.review_note ? ` Reason: ${data.review_note}` : ''}`} />;
 }
 

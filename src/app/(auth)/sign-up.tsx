@@ -120,7 +120,7 @@ export default function SignUp() {
   return (
     <Screen
       title={isAgency ? 'Create your agency account' : role === 'surrogate' ? 'Create your free surrogate account' : 'Create your intended parent account'}
-      intro={isAgency ? 'Free during our beta. We approve each agency by hand, usually within a day or two, and email you when you can start posting client profiles.' : "Your email and password are private. Next you'll build your profile."}
+      intro={isAgency ? 'Free during our beta. After you confirm your email, add your agency details and you can start posting client profiles right away.' : "Your email and password are private. Next you'll build your profile."}
     >
       {serverError ? <FormMessage kind="error" text={serverError} /> : null}
       {isAgency ? (

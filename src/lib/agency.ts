@@ -85,7 +85,7 @@ export function logoUrl(path: string | null | undefined): string | undefined {
 }
 
 function friendlyAgencyError(msg: string): string {
-  if (msg.includes('agency_not_approved')) return 'Your agency is not approved yet. We email you as soon as it is.';
+  if (msg.includes('agency_not_approved')) return 'Your agency account is not active, so profiles cannot be added. Contact support if you think this is a mistake.';
   if (msg.includes('agency_details_incomplete')) return 'Finish your agency details first.';
   if (msg.includes('agency_payment_required')) return 'An agency subscription is needed to add profiles.';
   return msg;
