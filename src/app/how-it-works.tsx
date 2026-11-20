@@ -39,7 +39,7 @@ export default function HowItWorks() {
       ))}
       <View style={styles.agencyBox}>
         <Text style={styles.stepTitle} accessibilityRole="header" aria-level={2}>For agencies</Text>
-        <Text style={styles.stepText}>Agencies can apply for an account, and we approve each one by hand. Once approved, an agency posts profiles for the surrogates and intended parents it represents, using the same questionnaire as everyone else, labelled with the agency’s name and a short agency card (states, services and typical fee ranges). Messages to those profiles go to the agency. Members choose in their own profile whether agencies may write to them. Agency accounts are free during our beta.</Text>
+        <Text style={styles.stepText}>Agencies can create an account too. An agency posts profiles for the surrogates and intended parents it represents, using the same questionnaire as everyone else, labelled with the agency’s name and a short agency card (states, services and typical fee ranges). Messages to those profiles go to the agency. Members choose in their own profile whether agencies may write to them. Agency accounts are free during our beta.</Text>
         <Button label="Apply as an agency" variant="secondary" onPress={() => router.push('/sign-up?role=agency')} />
       </View>
       <View style={styles.cta}>

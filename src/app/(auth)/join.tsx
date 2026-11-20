@@ -33,7 +33,7 @@ export default function Join() {
       />
       <RoleCard
         title="We're an agency"
-        body="Post and manage profiles for the surrogates and intended parents you represent, clearly labelled as your clients. Free during our beta. Accounts are approved by hand."
+        body="Post and manage profiles for the surrogates and intended parents you represent, clearly labelled as your clients. Free during our beta."
         onPress={() => router.push({ pathname: '/sign-up', params: { role: 'agency' } })}
       />
       <Text style={styles.footer}>

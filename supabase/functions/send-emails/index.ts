@@ -141,20 +141,20 @@ function render(row: Row): { subject: string; body: string; text: string } {
     // ----- Agency accounts (migration 23) -----
     case 'agency_welcome':
       return msg(`Welcome to ${SITE_NAME}`,
-        `<p>Hi ${first},</p><p>Thanks for applying for an agency account for <strong>${esc(p.agency_name ?? 'your agency')}</strong>. Next, finish your agency details (states, services, typical fee ranges). We review every agency by hand and email you when you are approved, usually within a few days. After that you can post profiles for the clients you represent.</p>${btn(`${url}/agency`, 'Finish agency details')}<p>Agency accounts are free during our beta. Independent Journey is an introduction platform: we do not match, screen or manage journeys.</p>`,
-        `Thanks for applying for an agency account. Finish your details at ${url}/agency and we will review it by hand.`);
+        `<p>Hi ${first},</p><p>Thanks for creating an agency account for <strong>${esc(p.agency_name ?? 'your agency')}</strong>. Next, finish your agency details (states, services, typical fee ranges). As soon as that is done you can post profiles for the clients you represent.</p>${btn(`${url}/agency`, 'Finish agency details')}<p>Agency accounts are free during our beta. Independent Journey is an introduction platform: we do not match, screen or manage journeys.</p>`,
+        `Thanks for creating an agency account. Finish your details at ${url}/agency and you can start posting client profiles.`);
     case 'agency_pending':
       return msg(`New agency to review: ${esc(p.agency_name ?? '')}`,
         `<p>A new agency has signed up and is waiting for your approval.</p><p><strong>${esc(p.agency_name ?? '')}</strong><br>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Review in admin')}<p style="color:#6E6760;font-size:13px">You will get a second email once they have finished their agency details.</p>`,
         `New agency waiting for approval: ${p.agency_name ?? ''} (${p.website ?? ''}). Review at ${url}/admin/agencies?id=${p.agency_id}`);
     case 'agency_ready':
-      return msg(`Agency ready to approve: ${esc(p.agency_name ?? '')}`,
-        `<p><strong>${esc(p.agency_name ?? '')}</strong> has finished its agency details and is ready for your review.</p><p>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'Approve or reject')}`,
-        `${p.agency_name ?? ''} finished its agency details. Approve or reject at ${url}/admin/agencies?id=${p.agency_id}`);
+      return msg(`New agency joined: ${esc(p.agency_name ?? '')}`,
+        `<p><strong>${esc(p.agency_name ?? '')}</strong> has joined and finished its agency details. It can post client profiles now. Nothing is needed from you; this is just so you know. If it should not be on the site, you can suspend it in the admin dashboard.</p><p>Website: ${esc(p.website ?? '')}<br>Contact: ${esc(p.contact_name ?? '')}</p>${btn(`${url}/admin/agencies?id=${p.agency_id}`, 'View in admin')}`,
+        `${p.agency_name ?? ''} joined and finished its agency details. View at ${url}/admin/agencies?id=${p.agency_id}`);
     case 'agency_approved':
-      return msg('Your agency is approved',
-        `<p>Hi ${first},</p><p><strong>${esc(p.agency_name ?? 'Your agency')}</strong> is approved. You can now post profiles for the surrogates and intended parents you represent. Each profile uses the same questionnaire as independent members, is labelled with your agency name, and messages to it come to you.</p>${btn(`${url}/agency`, 'Open agency dashboard')}<p>Please only list clients who have agreed in writing to be shown here, and keep their profiles current.</p>`,
-        `Your agency is approved. Post client profiles at ${url}/agency`);
+      return msg('Your agency account is active',
+        `<p>Hi ${first},</p><p><strong>${esc(p.agency_name ?? 'Your agency')}</strong> is active. You can post profiles for the surrogates and intended parents you represent. Each profile uses the same questionnaire as independent members, is labelled with your agency name, and messages to it come to you.</p>${btn(`${url}/agency`, 'Open agency dashboard')}<p>Please only list clients who have agreed in writing to be shown here, and keep their profiles current.</p>`,
+        `Your agency account is active. Post client profiles at ${url}/agency`);
     case 'agency_rejected':
       return msg('About your agency application',
         `<p>Hi ${first},</p><p>We were not able to approve <strong>${esc(p.agency_name ?? 'your agency')}</strong> at this time.${p.note ? ` Our note: <em>${esc(p.note)}</em>` : ''}</p><p>If you think this is a mistake, reply to this email and we will take another look.</p>`,

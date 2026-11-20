@@ -20,7 +20,7 @@ export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   profile_incomplete: 'Finish your profile to start conversations. Intended parents want to know who they are talking to.',
   membership_required: 'A membership unlocks messaging and full surrogate profiles.',
   agency_messages_off: 'This member has asked to hear from independent members only. They can still write to your client first.',
-  agency_access_required: 'Your agency account needs to be approved (and, when pricing is on, paid up) before its profiles can message.',
+  agency_access_required: 'Your agency account needs to be active (and, when pricing is on, paid up) before its profiles can message.',
 };
 
 export const NEVER_SEND_MONEY = 'Never send money to anyone you meet here. Surrogacy payments go through an attorney-managed escrow after a signed contract.';

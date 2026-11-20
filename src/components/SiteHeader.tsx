@@ -33,7 +33,8 @@ export function SiteHeader() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   // In the phone apps the bottom bar does the navigating, so the top bar is
-  // just a Back arrow and the name.
+  // just a Back arrow and the name. No buttons here: Join, Log in and the
+  // rest live on the bottom bar.
   if (isApp) {
     return (
       <View style={[styles.header, styles.appHeader]}>
@@ -42,15 +43,10 @@ export function SiteHeader() {
             <Text style={styles.backText}>‹</Text>
           </Pressable>
         ) : null}
-        <View style={styles.brandRow}>
+        <View style={[styles.brandRow, styles.appBrand]}>
           <Logo size={26} accessibilityLabel="" />
-          <Text style={styles.wordmark}>{SITE.name}</Text>
+          <Text style={[styles.wordmark, styles.appWordmark]} numberOfLines={1}>{SITE.name}</Text>
         </View>
-        {!session && !path.startsWith('/log-in') && !path.startsWith('/join') && !path.startsWith('/sign-up') ? (
-          <View style={[styles.right, { marginLeft: 'auto', paddingRight: insets.right }]}>
-            <Button label="Join free" size="sm" onPress={() => router.push('/join')} />
-          </View>
-        ) : null}
       </View>
     );
   }
@@ -128,6 +124,9 @@ export function SiteHeader() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingVertical: space.md, flexWrap: 'wrap', zIndex: 10 },
   appHeader: { justifyContent: 'flex-start', flexWrap: 'nowrap', paddingVertical: space.xs },
+  // The name never shrinks or clips; the explicit line height keeps the serif letters whole on iPhone.
+  appBrand: { flexShrink: 0 },
+  appWordmark: { lineHeight: 28 },
   back: { paddingRight: 4 },
   backText: { fontSize: 34, lineHeight: 36, color: colors.primary },
   brand: { flexShrink: 0 },

@@ -5,7 +5,7 @@ Added 2026-11-12 (migration 23, `supabase/migrations/20261130000000_agencies.sql
 ## What an agency account is
 
 - A third kind of login next to surrogate and intended parent. It has **no profile of its own**.
-- After you approve it, the agency posts **client profiles** (surrogates or intended parents) using the
+- Once it has filled in its agency details, the agency posts **client profiles** (surrogates or intended parents) using the
   same questionnaire members use. Each one is labelled **Agency: <name>** everywhere it appears and shows
   a short agency card (website, states, services, fee ranges) on the full profile.
 - Messages to a client profile go to the agency's inbox. The agency replies in the client's name and every
@@ -25,16 +25,18 @@ Added 2026-11-12 (migration 23, `supabase/migrations/20261130000000_agencies.sql
     the agency can then reply). Agency only and Both place no restriction.
 - Browse has **Independent only** and **Agency profiles only** checkboxes.
 
-## Your part: approving agencies (admin dashboard)
+## Your part: the Agencies section (admin dashboard)
 
-1. An agency signs up at `/sign-up?role=agency` (name, website, contact). You get an email
-   **"New agency to review"** at once, and **"Agency ready to approve"** once they finish their details.
-2. Open **Admin → Agencies**. Pending agencies are listed first. Tap one to see website, contact,
-   states, services, fee ranges and their consent attestation.
-3. Check the website is a real agency. Then **Approve**, or **Reject** with a short note (the agency
-   sees the note). Approved agencies are emailed and can start posting right away.
-4. **Suspend** (approved agencies) hides every client profile instantly and emails the agency.
-   **Back to pending** undoes a rejection or suspension so you can approve again.
+Since migration 34 (2026-11-19) agencies are **not approved by hand**. An agency account is active as
+soon as it signs up, the same as a surrogate or intended-parent account.
+
+1. An agency signs up at `/sign-up?role=agency` (name, website, contact) and fills in its agency
+   details. It can then post client profiles straight away. You get one email, **"New agency joined"**,
+   when it finishes its details. Nothing is needed from you.
+2. **Admin → Agencies** lists every agency. Tap one to see website, contact, states, services, fee
+   ranges, its consent attestation and its client profiles.
+3. **Suspend** (with a short note the agency sees) hides every client profile instantly and emails the
+   agency. **Reinstate** brings the agency and its profiles back and emails it.
 
 There is no verification badge for agencies. Client profiles show **Not verified** like any member
 who has not done the ID check (the agency cannot run Stripe Identity for a client).
@@ -53,8 +55,9 @@ subscription step; the database side (`paid_until`, `agency_access()`) is ready 
 
 ## Emails
 
-New templates in `supabase/functions/send-emails/index.ts`: `agency_welcome`, `agency_pending` (to you),
-`agency_ready` (to you), `agency_approved`, `agency_rejected`, `agency_suspended`. Message emails now say
+New templates in `supabase/functions/send-emails/index.ts`: `agency_welcome`, `agency_ready` (to you:
+"New agency joined"), `agency_approved` (sent when you reinstate), `agency_suspended`. (`agency_pending` and
+`agency_rejected` are no longer sent.) Message emails now say
 "(posted by <agency>)" for agency senders and "This message is for your client <name>" to agencies.
 After merging, re-deploy the function: copy the file's contents into the **send-emails** function in the
 Supabase dashboard and click Deploy.
