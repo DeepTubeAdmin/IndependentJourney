@@ -14,6 +14,7 @@ import { ChoiceField, FormMessage, TextField } from '@/components/form';
 import { admin, FLAG_KINDS, memberStatus, REPORT_REASONS, useAdminData } from '@/lib/admin';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
+import { profileMissing } from '@/lib/profile';
 
 export function generateMetadata() {
   return privateMeta('Admin member');
@@ -27,6 +28,11 @@ export default function MemberDetail() {
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  // Why a profile is not complete yet, straight from the database.
+  const [missing, setMissing] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (id) profileMissing(String(id)).then(setMissing);
+  }, [id, data]);
 
   useEffect(() => {
     const paths = (data?.photos ?? []).map((p: { storage_path: string }) => p.storage_path);
@@ -60,6 +66,9 @@ export default function MemberDetail() {
         <Pill text={p.is_verified ? 'Verified' : 'Not verified'} tone={p.is_verified ? 'good' : 'neutral'} />
         <Pill text={status} tone={status === 'Active' ? 'neutral' : 'bad'} />
       </View>
+      {!p.is_complete && missing && missing.length > 0 ? (
+        <Text style={styles.note}>Still needed before this profile is complete: {missing.map((k) => k.replace(/_/g, ' ')).join(', ')}.</Text>
+      ) : null}
 
       {msg ? <FormMessage kind={msg.kind} text={msg.text} /> : null}
 
