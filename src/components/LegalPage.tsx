@@ -1,10 +1,9 @@
 /**
  * Shared layout for Terms, Privacy and Disclaimer.
- * PLACEHOLDER WORDING: every legal page must be reviewed and replaced by the attorney before launch.
+ * The wording was reviewed and approved by the owner's attorney (November 2026).
  */
 import { Linking, StyleSheet, Text } from 'react-native';
 
-import { FormMessage } from '@/components/form';
 import { Screen } from '@/components/Screen';
 import { LEGAL_VERSION, SITE } from '@/config/settings';
 import { colors, fonts } from '@/lib/theme';
@@ -12,7 +11,6 @@ import { colors, fonts } from '@/lib/theme';
 export function LegalPage({ title, sections }: { title: string; sections: { heading: string; body: string }[] }) {
   return (
     <Screen title={title} intro={`Version ${LEGAL_VERSION}`} width={720} showWordmark>
-      <FormMessage kind="info" text="Draft for attorney review. This wording is a placeholder and is not yet legal advice or a final agreement." />
       {sections.map((s) => (
         <Text key={s.heading}>
           <Text style={styles.heading}>{s.heading}{'\n'}</Text>

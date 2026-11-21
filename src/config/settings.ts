@@ -37,4 +37,4 @@ export const SITE = {
  * message-review notice). Bump it when the attorney-approved text changes so
  * we know which version each member agreed to.
  */
-export const LEGAL_VERSION = '2026-11-draft';
+export const LEGAL_VERSION = '2026-11-21';
