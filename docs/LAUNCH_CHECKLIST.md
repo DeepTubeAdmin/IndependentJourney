@@ -150,7 +150,7 @@ Your own admin account (with 2FA) is the sixth.
 ### B5. Legal and content (attorney)
 
 - [ ] Attorney has reviewed Terms, Privacy Policy and Disclaimer, including: message review by admins, health self-reports under state consumer-health-data laws, the surrogate compensation and state-restriction notes, and the one-time (non-renewing) membership wording.
-- [ ] Remove the "Draft for attorney review" banner from the three legal pages (ask Claude; it is a one-line change) and bump the consent version so existing members re-accept.
+- [x] "Draft for attorney review" banner removed from the three legal pages (attorney approved 2026-11-21); legal version is now 2026-11-21. Existing members are not asked to re-accept.
 - [ ] Resources articles are marked "general information, not advice" and have been read once by a human.
 - [ ] Decide on a support email address (for example support@independentjourney.com, forwarded to your inbox). There is none in the site yet; ask Claude to add it to the footer, the legal pages and the "Contact us" wording, and use it in the store listings.
 
