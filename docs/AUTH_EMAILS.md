@@ -18,7 +18,7 @@ more reliable than the old SMTP route:
   pretending it went out.
 - **The templates live in code**, so there is nothing to paste into the
   dashboard and nothing can drift. Same look as before: button that works in
-  Outlook, a 6-digit code for people whose mail app blocks links, links that
+  Outlook, a code for people whose mail app blocks links, links that
   point at independentjourney.com (not supabase.co), plain-text version.
 
 ## Setup (about 15 minutes, in this order)
@@ -93,7 +93,7 @@ hook is enabled and the URL ends in `/auth-email`.
 2. **Resend → Emails**, search the address: Delivered means the mailbox
    provider took it, so it is in Spam, Junk, Promotions or Other. Bounced or
    Complained gives the reason.
-3. The person can always type the **6-digit code** instead of clicking, and
+3. The person can always type the **code** instead of clicking, and
    can request the email again from the verify-email page or the log-in page.
 4. To unblock someone by hand: Supabase → **Authentication → Users** → open
    the user → **Confirm email**.
