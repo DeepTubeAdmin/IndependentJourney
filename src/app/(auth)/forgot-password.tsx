@@ -21,10 +21,11 @@ export default function ForgotPassword() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
-  /** The reset email carries a 6-digit code as well as a link. */
+  /** The reset email carries a code as well as a link. */
   async function useCode() {
     const token = code.replace(/\D/g, '');
-    if (token.length !== 6) return setError('The code is 6 digits.');
+    // Supabase lets the code length be set anywhere from 6 to 10 digits, so accept them all.
+    if (token.length < 6 || token.length > 10) return setError('Type the whole code from the email (numbers only).');
     if (!supabase) return;
     setBusy(true);
     setError('');
@@ -46,13 +47,13 @@ export default function ForgotPassword() {
   }
 
   return (
-    <Screen title="Reset your password" intro="Enter your email and we'll send you a link and a 6-digit code to choose a new password.">
+    <Screen title="Reset your password" intro="Enter your email and we'll send you a link and a code to choose a new password.">
       {error ? <FormMessage kind="error" text={error} /> : null}
-      {done ? <FormMessage kind="info" text="If there's an account for that email, a reset email is on its way. Click the button in it, or type the 6-digit code below. Check your spam folder too." /> : null}
+      {done ? <FormMessage kind="info" text="If there's an account for that email, a reset email is on its way. Click the button in it, or type the code below. Check your spam folder too." /> : null}
       <TextField label="Email" required value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" editable={!done} />
       {done ? (
         <>
-          <TextField label="6-digit code from the email" value={code} onChangeText={setCode} keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" maxLength={6} onSubmitEditing={useCode} />
+          <TextField label="Code from the email" value={code} onChangeText={setCode} keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" maxLength={12} onSubmitEditing={useCode} />
           <Button label={busy ? 'Checking…' : 'Continue with code'} onPress={useCode} disabled={busy} />
         </>
       ) : (

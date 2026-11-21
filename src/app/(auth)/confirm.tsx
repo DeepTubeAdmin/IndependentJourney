@@ -59,7 +59,7 @@ export default function Confirm() {
   if (error) {
     const recovery = type === 'recovery';
     return (
-      <Screen title={recovery ? 'This reset link did not work' : 'This link did not work'} intro={`${error} Links work once and expire after an hour. You can also type the 6-digit code from the same email instead.`}>
+      <Screen title={recovery ? 'This reset link did not work' : 'This link did not work'} intro={`${error} Links work once and expire after an hour. You can also type the code from the same email instead.`}>
         <Button label={recovery ? 'Request a new reset email' : 'Get a new confirmation email'} onPress={() => router.replace(recovery ? '/forgot-password' : '/verify-email')} />
         <Button label="Go to log in" variant="secondary" onPress={() => router.replace('/log-in')} />
       </Screen>
