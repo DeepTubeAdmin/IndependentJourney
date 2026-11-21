@@ -12,28 +12,45 @@ import { Screen } from '@/components/Screen';
 import { FINAL_STEPS, stepsFor } from '@/config/questionnaire';
 import { useSession } from '@/lib/auth';
 import type { StepProps } from '@/components/onboarding/stepProps';
-import { loadAnswers, loadPhotos, type Answers } from '@/lib/profile';
+import { loadAnswers, loadPhotos, profileMissing, type Answers } from '@/lib/profile';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
 export function ReviewStep({ profile, profileId, managed, refresh, href, header, onBack }: StepProps) {
   const { session } = useSession();
   const [answers, setAnswers] = useState<Answers | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
+  // The database's own list of what is missing (null until loaded, or when unavailable).
+  const [serverMissing, setServerMissing] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (!session) return;
     refresh();
     loadAnswers(profileId, stepsFor(profile.role, managed)).then(setAnswers);
     loadPhotos(profileId).then((p) => setPhotoCount(p.length));
+    profileMissing(profileId).then(setServerMissing);
   }, [session, profileId, profile.role, managed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!session) return null;
   const steps = stepsFor(profile.role, managed);
   const who = managed ? profile.display_name || 'This profile' : 'Your profile';
 
-  // Which required questions are still blank?
+  // What is still needed. The database decides whether a profile is complete,
+  // so its list is the one shown. Each key is a question in the form; a few
+  // are special (a "No" to the lifestyle statement, the private last name).
   const missing: { step: number; label: string }[] = [];
-  if (answers) {
+  const SPECIAL: Record<string, { field: string; label: string }> = {
+    lifestyle_attestation_no: { field: 'lifestyle_attestation', label: 'The lifestyle statement in the health section is answered "No". A surrogate profile can only go live when it is "Yes".' },
+    last_name: { field: 'last_name', label: 'Last name' },
+  };
+  if (serverMissing) {
+    serverMissing.forEach((key) => {
+      if (key === 'photos' || key === 'bio') return; // shown as their own rows below
+      const fieldKey = SPECIAL[key]?.field ?? key;
+      const step = steps.findIndex((s) => s.fields.some((f) => f.key === fieldKey));
+      const field = step >= 0 ? steps[step].fields.find((f) => f.key === fieldKey) : undefined;
+      missing.push({ step: Math.max(step, 0), label: SPECIAL[key]?.label ?? field?.label ?? key.replace(/_/g, ' ') });
+    });
+  } else if (answers) {
     steps.forEach((s, i) =>
       s.fields.forEach((f) => {
         if (!f.required) return;
@@ -44,7 +61,7 @@ export function ReviewStep({ profile, profileId, managed, refresh, href, header,
     );
   }
   const photosMissing = Math.max(0, 3 - photoCount);
-  const bioMissing = !profile.bio;
+  const bioMissing = serverMissing ? serverMissing.includes('bio') : !profile.bio;
 
   return (
     <Screen title={profile.is_complete ? `${who} is live` : 'Almost there'} intro={profile.is_complete ? (managed ? 'Members on the other side of the journey can now find this profile, labelled with your agency name.' : 'Members on the other side of the journey can now find you.') : 'A profile becomes visible once every required question is answered and 3 photos are uploaded.'}>
@@ -72,7 +89,7 @@ export function ReviewStep({ profile, profileId, managed, refresh, href, header,
             <Row key={m.label} text={m.label} onPress={() => router.push(href(`/onboarding/${m.step}`, 'from=review'))} />
           ))}
           {answers && missing.length === 0 && photosMissing === 0 && !bioMissing ? (
-            <Text style={styles.note}>Everything looks filled in. Go back and press Save on any section to refresh; if this message stays, email us.</Text>
+            <Text style={styles.note}>Everything is filled in. Press Save on any section to refresh this page. If it still says this, email support@independentjourney.com and we will sort it out.</Text>
           ) : null}
         </View>
       ) : null}

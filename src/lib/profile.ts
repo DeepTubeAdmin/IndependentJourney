@@ -173,6 +173,19 @@ export async function recordConsents(userId: string, version: string) {
 // ---------------------------------------------------------------------------
 // Photos
 // ---------------------------------------------------------------------------
+/**
+ * What the database says this profile still needs, as question keys (plus
+ * 'photos', 'bio' and 'lifestyle_attestation_no'). The database is the only
+ * judge of completeness, so the review page lists exactly this. Returns null
+ * when the list is not available (older database), so callers can fall back.
+ */
+export async function profileMissing(profileId: string): Promise<string[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('my_profile_missing', { p_id: profileId });
+  if (error || !Array.isArray(data)) return null;
+  return data as string[];
+}
+
 export type Photo = { id: number; storage_path: string; position: number; url?: string };
 
 export async function loadPhotos(userId: string): Promise<Photo[]> {

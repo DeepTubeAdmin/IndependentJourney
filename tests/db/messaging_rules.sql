@@ -213,5 +213,32 @@ do $$ declare s1 uuid := '00000000-0000-0000-0000-000000000011'; begin
   assert public.compute_profile_complete(s1), 'with BMI answered the profile is complete';
 end $$;
 
+-- Migration 37: the database lists what is missing, and the list drives completeness.
+reset role;
+do $$ declare s1 uuid := '00000000-0000-0000-0000-000000000011'; begin
+  assert public.profile_missing(s1) = '{}', 'complete profile: nothing missing, got ' || public.profile_missing(s1)::text;
+  -- "I have a range in mind" with the optional amounts left blank is still complete.
+  update public.surrogate_details set compensation_open = false, compensation_min_usd = null, compensation_max_usd = null where id = s1;
+  assert (select is_complete from public.profiles where id = s1), 'a compensation range without amounts no longer blocks a profile';
+  -- A "No" to the lifestyle statement is reported as its own reason.
+  update public.health_self_reports set lifestyle_attestation = false where id = s1;
+  assert public.profile_missing(s1) = array['lifestyle_attestation_no'], 'lifestyle "No" is named, got ' || public.profile_missing(s1)::text;
+  assert not (select is_complete from public.profiles where id = s1), 'and the profile is not complete';
+  update public.health_self_reports set lifestyle_attestation = true, bmi_range = '' where id = s1;
+  assert public.profile_missing(s1) = array['bmi_range'], 'missing BMI is named for a new surrogate';
+  update public.health_self_reports set bmi_range = 'under_30' where id = s1;
+  delete from public.photos where profile_id = s1 and position = 2;
+  assert public.profile_missing(s1) = array['photos'], 'fewer than three photos is named';
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-000000000011');
+do $$ begin
+  assert public.my_profile_missing() = array['photos'], 'a member can read their own list';
+  begin
+    perform public.my_profile_missing('00000000-0000-0000-0000-000000000021');
+    raise exception 'read someone else''s list';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+
 select 'MESSAGING RULES OK' as result;
 rollback;
