@@ -20,8 +20,11 @@ import { colors, fonts, space } from '@/lib/theme';
 import { isApp } from '@/lib/platform';
 
 export default function RootLayout() {
-  // Fonts load in the background; text uses system fonts until they arrive.
-  useFonts({
+  // On the website, fonts load in the background and text uses system fonts
+  // until they arrive. In the phone apps we wait for them (a few milliseconds,
+  // they ship inside the app): iOS sizes each label once, so a label measured
+  // in the system font and then drawn in ours gets its last letters cut off.
+  const [fontsLoaded, fontsError] = useFonts({
     Figtree_400Regular,
     Figtree_500Medium,
     Figtree_700Bold,
@@ -30,6 +33,8 @@ export default function RootLayout() {
   });
 
   const insets = useSafeAreaInsets();
+
+  if (isApp && !fontsLoaded && !fontsError) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 
   return (
     // SessionProvider keeps track of who is signed in for every screen.
