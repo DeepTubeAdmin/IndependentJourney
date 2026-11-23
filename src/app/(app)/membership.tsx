@@ -46,14 +46,29 @@ export default function MembershipPage() {
   if (!profile) return null;
   if (profile.role === 'surrogate') {
     return (
-      <Screen width={640} title="Membership" intro="Surrogates never pay. Your account is free, always.">
+      <Screen width={640} title="Your access" intro="Independent Journey is free for everyone. There is nothing to pay.">
         <Button label="Back to home" variant="secondary" onPress={() => router.replace('/home')} />
       </Screen>
     );
   }
 
-  const price = m ? formatUsd(m.price_usd) : '…';
-  const term = m?.term_months ?? 3;
+  // Everything is free (migration 38): no price, no checkout, nothing to renew.
+  if (!m || m.free) {
+    return (
+      <Screen width={640} title="Your access" intro="Independent Journey is free for everyone. There is nothing to pay.">
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{m ? 'You have full access' : 'Checking…'}</Text>
+          <Text style={styles.item}>• Full surrogate profiles with every photo and answer</Text>
+          <Text style={styles.item}>• Send and read messages once your own profile is complete</Text>
+          <Text style={styles.item}>• Free identity verification</Text>
+          <View style={styles.row}><Button label="Browse surrogates" onPress={() => router.push('/browse')} /></View>
+        </View>
+      </Screen>
+    );
+  }
+
+  const price = formatUsd(m.price_usd);
+  const term = m.term_months ?? 3;
 
   async function buy() {
     setBusy(true);

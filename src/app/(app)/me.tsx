@@ -32,7 +32,6 @@ export default function Me() {
     : [
         { label: 'My profile', help: 'See your profile as others see it, and share it', onPress: go('/my-profile') },
         { label: 'Edit profile', help: 'Change your answers, story and photos', onPress: go('/onboarding/review') },
-        ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', onPress: go('/membership') }] : []),
         { label: 'Settings', help: 'Email, password, notifications, blocked members, delete account', onPress: go('/settings') },
       ];
   const help: Item[] = [

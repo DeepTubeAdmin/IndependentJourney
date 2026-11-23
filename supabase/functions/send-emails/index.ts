@@ -87,7 +87,7 @@ function render(row: Row): { subject: string; body: string; text: string } {
     case 'welcome': {
       const sur = p.role === 'surrogate';
       return msg(`Welcome to ${SITE_NAME}`,
-        `<p>Hi ${first},</p><p>Thanks for joining. ${sur ? 'Surrogates are always free here.' : 'You can browse previews for free and read full profiles with a membership.'} The best next step is to finish your profile so other members can get to know you, then verify your identity (free, about two minutes).</p>${btn(`${url}/home`, 'Finish my profile')}<p>Independent Journey is an introduction platform, not an agency. We never handle money between members or give medical or legal advice.</p>`,
+        `<p>Hi ${first},</p><p>Thanks for joining. Independent Journey is free for everyone. The best next step is to finish your profile so other members can get to know you, then verify your identity (free, about two minutes).</p>${btn(`${url}/home`, 'Finish my profile')}<p>Independent Journey is an introduction platform, not an agency. We never handle money between members or give medical or legal advice.</p>`,
         `Hi ${first}, thanks for joining ${SITE_NAME}. Finish your profile at ${url}/home`);
     }
     case 'new_message': {
@@ -102,8 +102,8 @@ function render(row: Row): { subject: string; body: string; text: string } {
     case 'locked_message': {
       const who = esc(p.sender_name ?? 'A surrogate');
       return msg(`${who} sent you a message`,
-        `<p>Hi ${first},</p><p><strong>${who}</strong>${p.sender_state ? ` from ${esc(p.sender_state)}` : ''}${p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : ''} has written to you. A membership lets you read it and reply.</p>${btn(`${url}/membership`, 'See membership options')}`,
-        `${who} sent you a message on ${SITE_NAME}. A membership lets you read and reply: ${url}/membership`);
+        `<p>Hi ${first},</p><p><strong>${who}</strong>${p.sender_state ? ` from ${esc(p.sender_state)}` : ''}${p.sender_agency ? ` (posted by ${esc(p.sender_agency)})` : ''} has written to you. Log in to read it and reply.</p>${btn(`${url}/messages`, 'Open my messages')}`,
+        `${who} sent you a message on ${SITE_NAME}. Log in to read and reply: ${url}/messages`);
     }
     case 'membership_receipt':
       return msg(`Your ${SITE_NAME} membership receipt`,
@@ -141,7 +141,7 @@ function render(row: Row): { subject: string; body: string; text: string } {
     // ----- Agency accounts (migration 23) -----
     case 'agency_welcome':
       return msg(`Welcome to ${SITE_NAME}`,
-        `<p>Hi ${first},</p><p>Thanks for creating an agency account for <strong>${esc(p.agency_name ?? 'your agency')}</strong>. Next, finish your agency details (states, services, typical fee ranges). As soon as that is done you can post profiles for the clients you represent.</p>${btn(`${url}/agency`, 'Finish agency details')}<p>Agency accounts are free during our beta. Independent Journey is an introduction platform: we do not match, screen or manage journeys.</p>`,
+        `<p>Hi ${first},</p><p>Thanks for creating an agency account for <strong>${esc(p.agency_name ?? 'your agency')}</strong>. Next, finish your agency details (states, services, typical fee ranges). As soon as that is done you can post profiles for the clients you represent.</p>${btn(`${url}/agency`, 'Finish agency details')}<p>Agency accounts are free. Independent Journey is an introduction platform: we do not match, screen or manage journeys.</p>`,
         `Thanks for creating an agency account. Finish your details at ${url}/agency and you can start posting client profiles.`);
     case 'agency_pending':
       return msg(`New agency to review: ${esc(p.agency_name ?? '')}`,

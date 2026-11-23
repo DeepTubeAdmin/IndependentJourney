@@ -256,8 +256,7 @@ function build(user: HookPayload['user'], d: HookPayload['email_data']): Mail[] 
 /** One sentence of welcome that fits the kind of account being created. */
 function welcomeLine(user: HookPayload['user']): string {
   const role = String(user.user_metadata?.role ?? '');
-  if (role === 'surrogate') return 'Surrogates are always free here.';
-  if (role === 'intended_parent') return 'You can browse profiles for free.';
+  if (role === 'surrogate' || role === 'intended_parent') return 'Independent Journey is free for everyone.';
   if (role === 'agency') return 'Once your agency details are filled in, you can post profiles for the clients you represent.';
   return 'We are glad you are here.';
 }

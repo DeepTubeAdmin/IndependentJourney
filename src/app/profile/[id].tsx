@@ -160,7 +160,7 @@ export default function ProfilePage() {
     setSending(false);
     if (r.error) return setMsg({ kind: 'error', text: r.error });
     clearDraft(id);
-    if (r.status === 'locked') setMsg({ kind: 'info', text: `Delivered. ${preview!.display_name} will see your message once they have an active membership.` });
+    if (r.status === 'locked') setMsg({ kind: 'info', text: `Delivered. ${preview!.display_name} will see your message the next time they have access to their messages.` });
     router.push(`/messages/${r.conversationId}`);
   }
 
@@ -211,18 +211,18 @@ export default function ProfilePage() {
             <ProfileCard name={preview.display_name} state={placeLabel(preview)} role={preview.role} verified={verifiedLabel(preview)} headline={preview.headline_tags.join(' · ') || 'Profile complete'} typeLabel={profileTypeLabel(preview)} photoUrl={preview.photo_url} photoUrls={preview.photo_urls} />
           </View>
           <View style={styles.wall}>
-            <Text style={styles.wallTitle}>{session ? 'This is a limited preview' : guest && guest.limit > 0 ? `You have read your ${guest.limit} free full profiles` : 'Join to see more'}</Text>
+            <Text style={styles.wallTitle}>{session ? 'This is a short preview' : guest && guest.limit > 0 ? `You have read ${guest.limit} full profiles as a guest` : 'Join to see more'}</Text>
             <Text style={styles.wallText}>
               {!session
                 ? guest && guest.limit > 0
-                  ? 'Join free in a minute to keep reading full profiles. Surrogates always join free, and intended parents browse free before choosing a membership.'
-                  : 'Members see more than previews. Surrogates join free and read full intended-parent profiles right away.'
+                  ? 'Join free in a minute to keep reading full profiles. Independent Journey is free for everyone.'
+                  : 'Members read full profiles. Joining is free for everyone and takes a minute.'
                 : isIpViewer
-                  ? 'A membership unlocks full surrogate profiles, photos and messaging.'
+                  ? 'Full surrogate profiles are not open on your account right now. Open your access page to see why.'
                   : 'Full profiles are shown once your account is active.'}
             </Text>
             {!session ? <Button label="Join free" onPress={() => router.push('/join')} /> : null}
-            {session && isIpViewer ? <Button label="See membership options" onPress={() => router.push('/membership')} /> : null}
+            {session && isIpViewer ? <Button label="Check my access" onPress={() => router.push('/membership')} /> : null}
           </View>
         </>
       ) : full ? (

@@ -18,9 +18,9 @@ export function generateMetadata() {
 }
 
 const STEPS = [
-  { n: '1', title: 'Create a free profile', body: 'Surrogates join free, always. Intended parents browse limited previews for free and unlock full profiles and messaging with a membership. Everyone answers the same thoughtful questions about their journey, timeline and preferences.' },
+  { n: '1', title: 'Create a free profile', body: 'Independent Journey is free for everyone: surrogates, intended parents and agencies. Everyone answers the same thoughtful questions about their journey, timeline and preferences.' },
   { n: '2', title: 'Browse, save and compare', body: 'Browse by state or distance, see who is recently active, and save profiles to come back to. Verified members are clearly labelled; so are those who have not verified yet. Every profile also says whether it is Independent (posted by the member) or Agency (posted by an agency for a client, with the agency named), and you can filter to either.' },
-  { n: '3', title: 'Send a message', body: 'When a profile feels right, write to them here. Surrogates can message any intended parent once their profile is complete. Messages are scanned for scam patterns, and you can block or report anyone at any time.' },
+  { n: '3', title: 'Send a message', body: 'When a profile feels right, write to them here. Anyone can message once their own profile is complete. Messages are scanned for scam patterns, and you can block or report anyone at any time.' },
   { n: '4', title: 'Get to know each other', body: 'Talk about expectations, timeline, relationship level and compensation. When you are both comfortable, verify each other the old-fashioned way: a video call with photo ID, and a conversation with each other’s clinic or attorney.' },
   { n: '5', title: 'Take the next step off the platform', body: 'We make introductions, nothing more. Your clinic handles medical screening, and reproductive attorneys for both sides draw up the agreement and manage any payments through escrow. Never send money to anyone you meet here.' },
 ];
@@ -39,7 +39,7 @@ export default function HowItWorks() {
       ))}
       <View style={styles.agencyBox}>
         <Text style={styles.stepTitle} accessibilityRole="header" aria-level={2}>For agencies</Text>
-        <Text style={styles.stepText}>Agencies can create an account too. An agency posts profiles for the surrogates and intended parents it represents, using the same questionnaire as everyone else, labelled with the agency’s name and a short agency card (states, services and typical fee ranges). Messages to those profiles go to the agency. Members choose in their own profile whether agencies may write to them. Agency accounts are free during our beta.</Text>
+        <Text style={styles.stepText}>Agencies can create an account too. An agency posts profiles for the surrogates and intended parents it represents, using the same questionnaire as everyone else, labelled with the agency’s name and a short agency card (states, services and typical fee ranges). Messages to those profiles go to the agency. Members choose in their own profile whether agencies may write to them. Agency accounts are free.</Text>
         <Button label="Apply as an agency" variant="secondary" onPress={() => router.push('/sign-up?role=agency')} />
       </View>
       <View style={styles.cta}>

@@ -64,10 +64,10 @@ export function BioStep({ profile, profileId, managed, refresh, header, onBack, 
 
       <Text style={styles.note}>
         {managed
-          ? 'This profile is shown publicly as a limited preview (first name, state, photos, headline tags) with your agency’s name on it. The story and full answers are shown to members on the other side of the journey.'
+          ? 'This profile is shown publicly as a short preview (first name, state, photos, headline tags) with your agency’s name on it. The story and full answers are shown to members on the other side of the journey.'
           : isSurrogate
-          ? 'Your limited preview (first name, state, photos, a few headline preferences and your verification label) is shown publicly so intended parents can find you. Your story and full answers are only shown to intended parents with an active membership.'
-          : 'Your limited preview (first names, state, photos, a few headline preferences and your verification label) is shown publicly so surrogates can find you. Your story and full answers are only shown to surrogates who have joined.'}
+          ? 'A short preview (first name, age, state, photos, a few headline preferences and your verification label) is shown publicly so intended parents can find you. Your story and full answers are shown to intended parents who have joined.'
+          : 'A short preview (first names, state, photos, a few headline preferences and your verification label) is shown publicly so surrogates can find you. Your story and full answers are only shown to surrogates who have joined.'}
       </Text>
 
       <View style={styles.nav}>

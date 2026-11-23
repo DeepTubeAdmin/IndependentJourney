@@ -13,8 +13,7 @@ import { admin } from '@/lib/admin';
 import { createShareLink, getShareLink, revokeShareLink } from '@/lib/browse';
 import { SITE } from '@/config/settings';
 import { useSession } from '@/lib/auth';
-import { isApp } from '@/lib/platform';
-import { formatDate, formatUsd, identityLine, myIdentityCheck, myMembership, startVerification, type IdentityCheck, type Membership } from '@/lib/membership';
+import { identityLine, myIdentityCheck, myMembership, startVerification, type IdentityCheck, type Membership } from '@/lib/membership';
 import { dismissNotice, draftProfileIds, myNotices, unreadCount, type Notice } from '@/lib/messages';
 import { colors, fonts, radius, space } from '@/lib/theme';
 import { privateMeta } from '@/lib/seo';
@@ -70,7 +69,7 @@ export default function Home() {
   const name = profile.display_name || (isSurrogate ? 'there' : 'intended parents');
 
   return (
-    <Screen title={`Welcome, ${name}`} intro={isSurrogate ? 'Thank you for being here. Your profile is free, always.' : 'Your account is ready. Browse surrogate previews and save the ones you like.'}>
+    <Screen title={`Welcome, ${name}`} intro={isSurrogate ? 'Thank you for being here.' : 'Your account is ready. Browse surrogate profiles and save the ones you like.'}>
       {notices.map((n) => (
         <View key={n.id} style={[styles.card, styles.noticeCard]}>
           <Text style={styles.cardTitle}>A note from our safety team</Text>
@@ -112,16 +111,14 @@ export default function Home() {
         <Text style={styles.status}>
           {isSurrogate
             ? 'Read full intended-parent profiles any time. Complete your own profile to start conversations.'
-            : membership?.active
-              ? `Your membership is active until ${formatDate(membership.current_period_end)}. Browse full surrogate profiles and message anyone.`
-              : isApp
-                ? 'Browse limited previews for free. A membership unlocks full profiles and messaging.'
-                : `Browse limited previews for free. A membership (${membership ? formatUsd(membership.price_usd) : '$199'} for ${membership?.term_months ?? 3} months) unlocks full profiles and messaging.`}
+            : !membership || membership.free || membership.active
+              ? 'Read full surrogate profiles any time. Complete your own profile to start conversations.'
+              : 'Full surrogate profiles and messages are not open on your account right now.'}
         </Text>
         <View style={styles.row}>
           <Button label="Browse" onPress={() => router.push('/browse')} />
           <Button label="Saved profiles" variant="secondary" onPress={() => router.push('/saved')} />
-          {!isSurrogate ? <Button label={membership?.active || isApp ? 'Membership' : 'Get a membership'} variant={membership?.active || isApp ? 'secondary' : 'primary'} onPress={() => router.push('/membership')} /> : null}
+          {!isSurrogate && membership && !membership.free && !membership.active ? <Button label="Check my access" variant="secondary" onPress={() => router.push('/membership')} /> : null}
         </View>
       </View>
 

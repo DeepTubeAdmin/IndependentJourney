@@ -14,6 +14,8 @@ export type MembershipStatus = 'none' | 'active' | 'lapsed' | 'cancelled';
 export type Membership = {
   status: MembershipStatus;
   active: boolean;
+  /** Migration 38: everything is free, so nobody needs a membership. */
+  free?: boolean;
   current_period_end: string | null;
   source: 'manual' | 'stripe' | 'revenuecat' | null;
   price_usd: number;

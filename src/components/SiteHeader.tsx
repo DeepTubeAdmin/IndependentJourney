@@ -64,7 +64,6 @@ export function SiteHeader() {
         { label: 'Edit profile', go: '/home' },
         { label: 'Messages', go: '/messages' },
         { label: 'Saved profiles', go: '/saved' },
-        ...(profile?.role === 'intended_parent' ? [{ label: 'Membership', go: '/membership' }] : []),
         { label: 'Settings', go: '/settings' },
       ];
 

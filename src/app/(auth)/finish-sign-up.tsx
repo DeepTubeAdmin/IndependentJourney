@@ -81,8 +81,8 @@ export default function FinishSignUp() {
     <Screen title="One more step" intro={`You're signed in as ${session?.user.email ?? 'your account'}. Tell us who you are and agree to the terms, and your profile is ready to build.`}>
       {serverError ? <FormMessage kind="error" text={serverError} /> : null}
       <View style={styles.roles}>
-        <RoleCard selected={role === 'surrogate'} title="I'm a surrogate" body="Always free. You must be 21 or older." onPress={() => setRole('surrogate')} />
-        <RoleCard selected={role === 'intended_parent'} title="We're intended parents" body="Free to join and browse. You must be 18 or older." onPress={() => setRole('intended_parent')} />
+        <RoleCard selected={role === 'surrogate'} title="I'm a surrogate" body="Free. You must be 21 or older." onPress={() => setRole('surrogate')} />
+        <RoleCard selected={role === 'intended_parent'} title="We're intended parents" body="Free. You must be 18 or older." onPress={() => setRole('intended_parent')} />
         <RoleCard selected={role === 'agency'} title="We're an agency" body="Post profiles for the clients you represent." onPress={() => setRole('agency')} />
       </View>
       {errors.role ? <Text style={styles.error}>{errors.role}</Text> : null}

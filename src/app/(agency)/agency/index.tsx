@@ -115,7 +115,7 @@ export default function AgencyHome() {
 }
 
 function StatusBanner({ data }: { data: MyAgency }) {
-  if (data.status === 'approved') return <FormMessage kind="info" text={`${data.is_complete ? 'Your agency account is active.' : 'Welcome. Finish your agency details below, then you can start adding client profiles.'} ${data.pricing_mode === 'free' ? 'Agency accounts are free during our beta; we will give notice before any pricing starts.' : ''}`} />;
+  if (data.status === 'approved') return <FormMessage kind="info" text={`${data.is_complete ? 'Your agency account is active.' : 'Welcome. Finish your agency details below, then you can start adding client profiles.'} ${data.pricing_mode === 'free' ? 'Agency accounts are free.' : ''}`} />;
   if (data.status === 'pending') return <FormMessage kind="info" text="Your agency account is being set up. Refresh this page in a moment." />;
   if (data.status === 'rejected') return <FormMessage kind="error" text={`Your agency account is not active.${data.review_note ? ` Reason: ${data.review_note}` : ''} Reply to our email if you think this is a mistake.`} />;
   return <FormMessage kind="error" text={`Your agency account is suspended and your client profiles are hidden.${data.review_note ? ` Reason: ${data.review_note}` : ''}`} />;

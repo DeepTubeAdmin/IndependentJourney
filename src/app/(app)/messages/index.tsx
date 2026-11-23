@@ -31,8 +31,8 @@ export default function Inbox() {
       {isIp && anyLocked ? (
         <View style={styles.lockedBox}>
           <Text style={styles.lockedTitle}>You have messages waiting</Text>
-          <Text style={styles.lockedText}>Surrogates have written to you. A membership lets you read and reply, and unlocks full surrogate profiles.</Text>
-          <Button label="See membership options" size="sm" onPress={() => router.push('/membership')} />
+          <Text style={styles.lockedText}>Surrogates have written to you, but messages are not open on your account right now. Open your access page to see why.</Text>
+          <Button label="Check my access" size="sm" onPress={() => router.push('/membership')} />
         </View>
       ) : null}
       {rows === null ? <Text style={styles.note}>Loading…</Text> : null}
@@ -51,7 +51,7 @@ export default function Inbox() {
             </Text>
             {isAgency ? <Text style={styles.forLine}>For {r.mine_name}</Text> : null}
             <Text style={styles.preview} numberOfLines={1}>
-              {r.locked ? `${r.unread > 0 ? `${r.unread} new message${r.unread === 1 ? '' : 's'}` : 'Messages'} · locked until you have a membership` : r.last_preview ?? ''}
+              {r.locked ? `${r.unread > 0 ? `${r.unread} new message${r.unread === 1 ? '' : 's'}` : 'Messages'} · locked` : r.last_preview ?? ''}
             </Text>
           </View>
           <View style={styles.rowSide}>
