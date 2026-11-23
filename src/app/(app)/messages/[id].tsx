@@ -86,7 +86,7 @@ export default function Conversation() {
     setBusy(false);
     if (r.error) return setMsg({ kind: 'error', text: r.error });
     setText('');
-    if (r.status === 'locked') setMsg({ kind: 'info', text: `Delivered. ${conv.other_name} will see your message once they have an active membership.` });
+    if (r.status === 'locked') setMsg({ kind: 'info', text: `Delivered. ${conv.other_name} will see your message the next time they have access to their messages.` });
     await refresh();
     scroller.current?.scrollToEnd({ animated: true });
   }
@@ -137,8 +137,8 @@ export default function Conversation() {
       {conv.locked ? (
         <View style={styles.box}>
           <Text style={styles.boxTitle}>{conv.unread > 0 ? `${conv.other_name} has written to you` : 'Messages are locked'}</Text>
-          <Text style={styles.boxText}>A membership lets you read and reply, and unlocks full surrogate profiles. You can still view {conv.other_name}&apos;s limited preview.</Text>
-          <Button label="See membership options" size="sm" onPress={() => router.push('/membership')} />
+          <Text style={styles.boxText}>Messages are not open on your account right now. Open your access page to see why.</Text>
+          <Button label="Check my access" size="sm" onPress={() => router.push('/membership')} />
         </View>
       ) : (
         <ScrollView ref={scroller} style={styles.thread} contentContainerStyle={styles.threadInner} onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}>

@@ -95,7 +95,7 @@ export default function Settings() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
         <Row k="Email" v={session.user.email ?? ''} />
-        <Row k="Account type" v={!profile ? `Agency${agency ? `: ${agency.name}` : ''}` : profile.role === 'surrogate' ? 'Surrogate (free)' : 'Intended parent'} />
+        <Row k="Account type" v={!profile ? `Agency${agency ? `: ${agency.name}` : ''}` : profile.role === 'surrogate' ? 'Surrogate' : 'Intended parent'} />
         {profile ? <Row k="Identity" v={profile.is_verified ? 'Verified' : 'Not verified'} /> : null}
         <View style={styles.row}>
           <Button label="Change password" variant="secondary" size="sm" onPress={sendReset} />
@@ -126,7 +126,7 @@ export default function Settings() {
       {profile ? (<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>
-        <Text style={styles.text}>Who sees your limited preview is set on the “In your own words” step of your profile.</Text>
+        <Text style={styles.text}>Who sees your short preview is set on the “In your own words” step of your profile.</Text>
         <Text style={styles.text}>You can download everything we hold about you (your answers, photos list, saved profiles and messages) as one file.</Text>
         <View style={styles.row}>
           <Button label={exporting ? 'Preparing…' : 'Download a copy of my data'} variant="secondary" size="sm" onPress={onExport} disabled={exporting} />
@@ -209,7 +209,7 @@ export default function Settings() {
       {profile ? (<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Delete your account</Text>
-        <Text style={styles.text}>This removes your profile, photos, answers, saved profiles, conversations and any membership, right away and for good. It cannot be undone.</Text>
+        <Text style={styles.text}>This removes your profile, photos, answers, saved profiles, and conversations, right away and for good. It cannot be undone.</Text>
         {!confirmingDelete ? (
           <View style={styles.row}>
             <Button label="Delete my account…" variant="secondary" size="sm" onPress={() => setConfirmingDelete(true)} />

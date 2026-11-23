@@ -61,8 +61,13 @@ export type BrowseFilters = {
   family_structure?: string;
   embryos_status?: string;
   // Migration 35: the key questionnaire answers.
-  /** Surrogates: has completed at least one journey. */
+  /** Surrogates: has completed at least one journey (older saved searches; the form now uses `experience`). */
   experienced?: boolean;
+  /** Surrogates (migration 38): 'first_time' | 'experienced'. */
+  experience?: string;
+  /** Surrogates (migration 38): age in whole years, inclusive. */
+  age_min?: number;
+  age_max?: number;
   /** Both sides: 'comfortable' | 'to_discuss' | 'not_comfortable'. */
   termination_comfort?: string;
   untested_embryos_ok?: string;

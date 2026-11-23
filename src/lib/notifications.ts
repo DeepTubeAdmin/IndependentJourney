@@ -12,7 +12,6 @@ type EmailKey = Exclude<keyof NotificationSettings, 'push_messages'>;
 
 export const NOTIFICATION_LABELS: { key: EmailKey; label: string; help: string }[] = [
   { key: 'new_messages', label: 'New messages', help: 'When someone writes to you. At most one email per conversation per hour.' },
-  { key: 'membership', label: 'Membership', help: 'Receipts, a reminder a week before your membership ends, and when it ends.' },
   { key: 'saved_searches', label: 'Saved-search alerts', help: 'A daily email when new profiles match a search you saved.' },
   { key: 'nudges', label: 'Tips and reminders', help: 'An occasional nudge, such as a reminder to verify your identity.' },
 ];
@@ -40,7 +39,7 @@ export async function listSavedSearches(): Promise<SavedSearch[]> {
 
 /** Keeps only the filters that describe profiles (not sorting or paging). */
 export function alertableFilters(f: BrowseFilters): BrowseFilters {
-  const keep: (keyof BrowseFilters)[] = ['state', 'verified_only', 'open_to_twins', 'compensation_open', 'willing_to_travel', 'relationship_level', 'family_structure', 'embryos_status', 'experienced', 'termination_comfort', 'untested_embryos_ok', 'carry_donor_embryos', 'international_ips_ok', 'comp_max', 'open_to_ip_type', 'embryos_tested', 'consulted_attorney'];
+  const keep: (keyof BrowseFilters)[] = ['state', 'verified_only', 'open_to_twins', 'compensation_open', 'willing_to_travel', 'relationship_level', 'family_structure', 'embryos_status', 'experienced', 'termination_comfort', 'untested_embryos_ok', 'carry_donor_embryos', 'international_ips_ok', 'comp_max', 'open_to_ip_type', 'embryos_tested', 'consulted_attorney', 'experience', 'age_min', 'age_max'];
   return Object.fromEntries(Object.entries(f).filter(([k, v]) => keep.includes(k as keyof BrowseFilters) && v !== undefined && v !== null && v !== '' && v !== false)) as BrowseFilters;
 }
 
@@ -72,7 +71,9 @@ export function describeFilters(f: BrowseFilters): string {
   if (f.family_structure) parts.push(f.family_structure === 'couple' ? 'Couples' : 'Single parents');
   if (f.embryos_status) parts.push(`Embryos: ${f.embryos_status.replace(/_/g, ' ')}`);
   if (f.termination_comfort) parts.push(`Termination: ${f.termination_comfort.replace(/_/g, ' ')}`);
-  if (f.experienced) parts.push('Experienced');
+  if (f.experienced || f.experience === 'experienced') parts.push('Experienced surrogate');
+  if (f.experience === 'first_time') parts.push('First-time surrogate');
+  if (f.age_min || f.age_max) parts.push(f.age_min && f.age_max ? `Age ${f.age_min} to ${f.age_max}` : f.age_min ? `Age ${f.age_min}+` : `Age up to ${f.age_max}`);
   if (f.comp_max) parts.push(`Compensation up to $${Math.round(f.comp_max / 1000)}k`);
   if (f.untested_embryos_ok) parts.push('Untested embryos OK');
   if (f.carry_donor_embryos) parts.push('Donor embryos OK');

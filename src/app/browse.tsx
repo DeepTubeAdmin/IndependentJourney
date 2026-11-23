@@ -25,7 +25,7 @@ export function generateMetadata() {
   return pageMeta({
     title: 'Browse Surrogates and Intended Parents',
     description:
-      'Browse profiles of gestational surrogates and intended parents, independent members and agency clients clearly labelled. Filter by state, timeline and preferences. Free to look.',
+      'Browse profiles of gestational surrogates and intended parents, independent members and agency clients clearly labelled. Filter by state, age, timeline and preferences. Free for everyone.',
     path: '/browse',
   });
 }
@@ -33,6 +33,8 @@ export function generateMetadata() {
 const PAGE = 24;
 /** Filters that mean the same thing for surrogates and intended parents. */
 const SHARED_FILTERS: (keyof BrowseFilters)[] = ['state', 'verified_only', 'profile_type', 'sort', 'radius_miles', 'relationship_level', 'termination_comfort', 'start_before'];
+/** Age bands for the surrogate age filter: [youngest, oldest] in whole years. */
+const AGE_BANDS: Record<string, [number, number | undefined]> = { '21_29': [21, 29], '30_34': [30, 34], '35_39': [35, 39], '40_plus': [40, undefined] };
 const COMFORT = [{ value: 'comfortable', label: 'Comfortable' }, { value: 'to_discuss', label: 'To discuss' }, { value: 'not_comfortable', label: 'Not comfortable' }];
 
 export default function Browse() {
@@ -48,6 +50,7 @@ export default function Browse() {
 
   const [filters, setFilters] = useState<BrowseFilters>({});
   const [startMonths, setStartMonths] = useState<string | null>(null);
+  const [ageBand, setAgeBand] = useState<string | null>(null);
   const [rows, setRows] = useState<PreviewRow[]>([]);
   const [busy, setBusy] = useState(true);
   const [more, setMore] = useState(false);
@@ -124,13 +127,13 @@ export default function Browse() {
       title={anon ? 'A glimpse of who is here' : lookingFor === 'surrogate' ? 'Surrogates' : 'Intended parents'}
       intro={
         anon
-          ? 'Limited previews of our members. Join free to open full profiles and get in touch.'
+          ? 'A first look at our members. Join free to read full profiles and get in touch.'
           : isAgency
             ? 'Browse both sides. Open a profile to write to them on behalf of one of your client profiles.'
           : sameSide
             ? `See who else is here on your side of the journey. Messages are only between surrogates and intended parents, so there is no Message button on these profiles.`
           : lookingFor === 'surrogate'
-            ? 'Limited previews are free. A membership unlocks full profiles and messaging.'
+            ? 'Open any profile to read it in full. Complete your own profile to start conversations.'
             : 'You can read every intended parent’s full profile. Complete your own profile to start conversations.'
       }
     >
@@ -140,7 +143,7 @@ export default function Browse() {
           <Button label="Intended parents" variant={lookingFor === 'intended_parent' ? 'primary' : 'secondary'} size="sm" onPress={() => switchSide('intended_parent')} />
           <Button label={showFilters ? 'Hide filters' : activeCount > 0 ? `Filters (${activeCount})` : 'Filters'} variant="secondary" size="sm" onPress={() => setShowFilters((v) => !v)} />
           <Button label={view === 'map' ? 'List view' : 'Map view'} variant="secondary" size="sm" onPress={() => setView((v) => (v === 'map' ? 'list' : 'map'))} />
-          {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => { setFilters({}); setStartMonths(null); }} /> : null}
+          {Object.keys(filters).length > 0 ? <Button label="Clear" variant="secondary" size="sm" onPress={() => { setFilters({}); setStartMonths(null); setAgeBand(null); }} /> : null}
           {canSave ? <Button label="Save this search" variant="secondary" size="sm" onPress={() => { setSaving((v) => !v); setSaveMsg(null); }} /> : null}
         </View>
       ) : null}
@@ -195,6 +198,19 @@ export default function Browse() {
           {lookingFor === 'surrogate' ? (
             <>
               <ChoiceField
+                label="Surrogate's age"
+                options={[{ value: '21_29', label: '21 to 29' }, { value: '30_34', label: '30 to 34' }, { value: '35_39', label: '35 to 39' }, { value: '40_plus', label: '40 and over' }]}
+                value={filters.age_min || filters.age_max ? ageBand : null}
+                onChange={(v) => { const band = v ? AGE_BANDS[v as string] : undefined; setAgeBand((v as string) ?? null); set('age_min', band?.[0]); set('age_max', band?.[1]); }}
+              />
+              <ChoiceField
+                label="Surrogacy experience"
+                options={[{ value: 'first_time', label: 'First-time surrogate' }, { value: 'experienced', label: 'Experienced surrogate' }]}
+                value={filters.experience ?? null}
+                onChange={(v) => set('experience', v)}
+              />
+              <Text style={styles.small}>Experienced means she has completed at least one surrogacy journey before.</Text>
+              <ChoiceField
                 label="Base compensation"
                 options={[{ value: '50000', label: 'Up to $50k' }, { value: '60000', label: 'Up to $60k' }, { value: '75000', label: 'Up to $75k' }]}
                 value={filters.comp_max ? String(filters.comp_max) : null}
@@ -204,7 +220,6 @@ export default function Browse() {
               <ChoiceField label="Open to twins" options={[{ value: 'comfortable', label: 'Yes' }]} value={filters.open_to_twins ?? null} onChange={(v) => set('open_to_twins', v)} />
               <ChoiceField label="Open to working with" options={[{ value: 'single_parents', label: 'Single parents' }, { value: 'lgbtq_families', label: 'LGBTQ+ families' }]} value={filters.open_to_ip_type ?? null} onChange={(v) => set('open_to_ip_type', v)} />
               <View style={styles.checks}>
-                <Checkbox label="Experienced surrogate (completed a journey)" checked={Boolean(filters.experienced)} onChange={(v) => set('experienced', v)} />
                 <Checkbox label="OK with embryos that are not genetically tested" checked={filters.untested_embryos_ok === 'yes'} onChange={(v) => set('untested_embryos_ok', v ? 'yes' : undefined)} />
                 <Checkbox label="OK with donor egg or sperm embryos" checked={filters.carry_donor_embryos === 'yes'} onChange={(v) => set('carry_donor_embryos', v ? 'yes' : undefined)} />
                 <Checkbox label="Open to international parents" checked={filters.international_ips_ok === 'yes'} onChange={(v) => set('international_ips_ok', v ? 'yes' : undefined)} />
@@ -254,7 +269,7 @@ export default function Browse() {
       {anon ? (
         <View style={styles.wall}>
           <Text style={styles.wallTitle}>See everyone</Text>
-          <Text style={styles.wallText}>These are limited previews. Surrogates always join free and see full intended-parent profiles; intended parents join free and unlock full profiles and messaging with a membership.</Text>
+          <Text style={styles.wallText}>This is a first look. Join free to read full profiles and send messages. Independent Journey is free for everyone.</Text>
           <View style={styles.wallRow}>
             <Button label="Join free" onPress={() => router.push('/join')} />
             <Button label="Log in" variant="secondary" onPress={() => router.push('/log-in')} />

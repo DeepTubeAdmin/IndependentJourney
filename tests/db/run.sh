@@ -15,4 +15,7 @@ psql -q -d "$DB" -v ON_ERROR_STOP=1 -c "update public.app_settings set value = '
 # "BMI required for new surrogates" rule is pushed into the future here;
 # messaging_rules.sql switches it on for its own check.
 psql -q -d "$DB" -v ON_ERROR_STOP=1 -c "update public.app_settings set value = '\"infinity\"' where key = 'bmi_required_from'"
+# The older suites also assume intended parents need a membership, so "everything
+# is free" (migration 38) is switched off here; free_age_rules.sql turns it on.
+psql -q -d "$DB" -v ON_ERROR_STOP=1 -c "update public.app_settings set value = 'false' where key = 'free_access'"
 for t in tests/db/*_rules.sql; do psql -q -d "$DB" -v ON_ERROR_STOP=1 -f "$t"; done

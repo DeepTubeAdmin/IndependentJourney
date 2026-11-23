@@ -1,6 +1,5 @@
 /**
- * Step 0 of sign-up: choose a role. Surrogates are always free; intended
- * parents start free and can subscribe later.
+ * Step 0 of sign-up: choose a role. Every account type is free.
  */
 import { Link, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -13,7 +12,7 @@ export function generateMetadata() {
   return pageMeta({
     title: 'Join Free',
     description:
-      'Create a free Independent Journey profile. Surrogates always join free; intended parents browse previews free and unlock full profiles with a simple membership. Agencies can list the clients they represent.',
+      'Create a free Independent Journey profile. Free for surrogates, intended parents and agencies: full profiles, messaging and identity verification, with no match fees.',
     path: '/join',
   });
 }
@@ -23,17 +22,17 @@ export default function Join() {
     <Screen title="Join Independent Journey" intro="Tell us who you are so we can set up the right account. You can't change this later, so pick carefully.">
       <RoleCard
         title="I'm a surrogate"
-        body="Always free. Build a profile, decide who can see it, and connect with intended parents on your terms. You must be 21 or older."
+        body="Free. Build a profile and connect with intended parents on your terms. You must be 21 or older."
         onPress={() => router.push({ pathname: '/sign-up', params: { role: 'surrogate' } })}
       />
       <RoleCard
         title="We're intended parents"
-        body="Free to join and browse limited previews. A membership unlocks full profiles and messaging. You must be 18 or older."
+        body="Free. Build a profile, read full surrogate profiles and message the ones who feel right. You must be 18 or older."
         onPress={() => router.push({ pathname: '/sign-up', params: { role: 'intended_parent' } })}
       />
       <RoleCard
         title="We're an agency"
-        body="Post and manage profiles for the surrogates and intended parents you represent, clearly labelled as your clients. Free during our beta."
+        body="Post and manage profiles for the surrogates and intended parents you represent, clearly labelled as your clients. Free."
         onPress={() => router.push({ pathname: '/sign-up', params: { role: 'agency' } })}
       />
       <Text style={styles.footer}>

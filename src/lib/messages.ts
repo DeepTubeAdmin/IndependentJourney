@@ -18,9 +18,9 @@ export const CAN_MESSAGE_TEXT: Record<Exclude<CanMessage, 'ok'>, string> = {
   account_restricted: 'Your account is currently restricted. Contact us if you think this is a mistake.',
   blocked: 'Messaging is not available between you and this member.',
   profile_incomplete: 'Finish your profile to send messages. Members want to know who they are talking to.',
-  membership_required: 'A membership unlocks messaging and full surrogate profiles.',
+  membership_required: 'Messaging is not open on your account right now. Email support@independentjourney.com and we will sort it out.',
   agency_messages_off: 'This member has asked to hear from independent members only. They can still write to your client first.',
-  agency_access_required: 'Your agency account needs to be active (and, when pricing is on, paid up) before its profiles can message.',
+  agency_access_required: 'Your agency account needs to be active before its profiles can message.',
 };
 
 export const NEVER_SEND_MONEY = 'Never send money to anyone you meet here. Surrogacy payments go through an attorney-managed escrow after a signed contract.';

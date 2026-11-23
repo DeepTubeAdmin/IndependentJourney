@@ -57,7 +57,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "How much does it cost?",
-    "Surrogates always join free. Anyone can read a few full profiles as a guest; intended parents browse previews free, and a simple membership unlocks full profiles and messaging. There are no match fees and no fees tied to a pregnancy or birth.",
+    "Nothing. Independent Journey is free for everyone: surrogates, intended parents and agencies. Creating a profile, reading full profiles, messaging and identity verification are all free. There are no match fees and no fees tied to a pregnancy or birth.",
   ],
   [
     "How do I know a profile is real?",
@@ -69,7 +69,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Can surrogates message intended parents directly?",
-    "Yes. Once a surrogate's profile is complete she can write to any intended parent for free. Intended parents read and reply with an active membership.",
+    "Yes. Once a surrogate's profile is complete she can write to any intended parent, and intended parents can write to any surrogate the same way. Messaging is free for everyone.",
   ],
 ];
 
@@ -129,7 +129,7 @@ export default function Home() {
           <Text style={styles.lead}>
             One place for intended parents and gestational surrogates to find
             each other, independent or with an agency, with every profile
-            clearly labelled. No match fees. Surrogates always join free.
+            clearly labelled. Free for everyone, with no match fees.
           </Text>
           <View style={styles.ctaRow}>
             <Button label="I'm a surrogate" onPress={() => router.push('/sign-up?role=surrogate')} />
@@ -138,7 +138,7 @@ export default function Home() {
           </View>
           <View style={styles.soonPill}>
             <Text style={styles.soonText}>
-              Now open · in beta · surrogates always join free
+              Now open · free for everyone
             </Text>
           </View>
         </View>

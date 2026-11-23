@@ -49,7 +49,7 @@ export function BetaWelcome() {
           <Text style={styles.eyebrow}>Just launched · beta</Text>
           <Text style={styles.title}>You found us early</Text>
           <Text style={styles.body}>
-            Independent Journey is brand new, and we are growing it one family at a time. While we are in beta, intended parents get a full membership free, and surrogates are always free.
+            Independent Journey is brand new, and we are growing it one family at a time. It is free for everyone: surrogates, intended parents and agencies.
           </Text>
           <Text style={styles.body}>
             Every profile created now makes it easier for the next surrogate or family to find their match. We would love for yours to be one of the first.
