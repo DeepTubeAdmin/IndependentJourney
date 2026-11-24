@@ -43,3 +43,25 @@ a few hundred KB instead of 2 to 5 MB. Existing photos can be re-framed with
 the **Adjust** button in the photos step, which replaces the stored file.
 Photos uploaded before this change stay at their original size until the
 member adjusts them.
+
+## Card-sized photos (added 2026-11-24)
+
+Cards and profile pages no longer download the stored 1200-pixel photo. They
+ask Netlify's image service for a square copy at the size they need, for
+example:
+
+    /.netlify/images?url=https://independentjourney.com/photos/<member>/<file>&w=800&h=800&fit=cover&position=top&q=72
+
+Netlify makes that copy once, in a lighter format (WebP or AVIF), and caches
+it. The `[images]` block in `netlify.toml` is what allows it to fetch from our
+own `/photos` address. If the small copy ever fails to load, the page falls
+back to the original photo by itself (`src/components/Photo.tsx`).
+
+Also for speed: a card loads only its first photo until someone starts
+swiping, and on the website photos below the screen wait until they are
+scrolled near.
+
+Photos are framed and shown as squares. Only the framed copy (at most
+1200 x 1200) is ever uploaded; the original stays on the member's device.
+Older photos framed as tall rectangles are shown from the top down, so faces
+stay in view; members can tap Adjust to re-frame them.

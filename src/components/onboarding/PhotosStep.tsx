@@ -2,8 +2,8 @@
  * Upload 3 to 6 photos. Stored in the private "profile-photos" bucket.
  * All your photos appear on your limited preview; the first one shows first.
  *
- * Every photo is framed by the member first (PhotoCropper): a 4:5 portrait
- * crop, shrunk to at most 1200 px wide. Existing photos can be re-framed with
+ * Every photo is framed by the member first (PhotoCropper): a square crop,
+ * the shape of the card, shrunk to at most 1200 px wide. Existing photos can be re-framed with
  * the "Adjust" button, which replaces the stored file.
  */
 import * as ImagePicker from 'expo-image-picker';
@@ -182,7 +182,7 @@ export function PhotosStep({ profileId, managed, refresh, header, onBack, onNext
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  tile: { width: 150, height: 190, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
+  tile: { width: 160, height: 160, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
   img: { width: '100%', height: '100%' },
   tileActions: { position: 'absolute', bottom: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
   tileBtn: { backgroundColor: 'rgba(46,42,38,0.8)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },

@@ -43,6 +43,12 @@
   function = "photo"
   cache = "manual"
 
+# Small versions of member photos. Cards ask Netlify's image service for a
+# card-sized copy of a photo (see src/components/Photo.tsx); this line lets it
+# fetch the original from our own /photos address.
+[images]
+  remote_images = ['https://independentjourney\.com/photos/.*']
+
 # Tells iPhones and Android phones which independentjourney.com links the app
 # may open (see docs/MOBILE_APP.md, "Links that open the app").
 [[headers]]

@@ -1,14 +1,16 @@
 /**
  * PhotoCropper: lets a member frame a photo before it is saved.
  *
- * Why: profile cards show photos in a fixed portrait box, and an uncropped
- * phone photo often put the face outside that box. Every photo now goes
+ * Why: profile cards show photos in a square box, and an uncropped phone
+ * photo often put the face outside that box. Every photo now goes
  * through this screen first. The member drags the photo to move it and uses
  * the zoom buttons (or a pinch on a phone) to get closer. What is inside the
  * frame is exactly what the cards show.
  *
- * The result is cropped to a 4:5 portrait, shrunk to at most 1200 x 1500
- * pixels and saved as JPEG, so a 5 MB phone photo becomes a few hundred KB.
+ * The result is cropped to a square, the same shape as the card, shrunk to
+ * at most 1200 x 1200 pixels and saved as JPEG, so a 5 MB phone photo becomes
+ * a few hundred KB. Only that framed copy is uploaded; the original never
+ * leaves the member's device.
  * That keeps storage egress low (see docs/PHOTO_CACHE.md).
  *
  * Works on the website and in the apps: plain React Native gestures, no
@@ -21,8 +23,8 @@ import { ActivityIndicator, Image, PanResponder, Platform, Pressable, StyleSheet
 import { Button } from '@/components/Button';
 import { colors, fonts, radius, space } from '@/lib/theme';
 
-/** Portrait frame, the shape of the photo box on profile cards. */
-export const CROP_ASPECT = 4 / 5;
+/** Square frame, the shape of the photo box on profile cards (width divided by height). */
+export const CROP_ASPECT = 1;
 /** Longest edge of a saved photo, in pixels. */
 const MAX_WIDTH = 1200;
 const JPEG_QUALITY = 0.85;
@@ -41,7 +43,7 @@ type Layout = { scale: number; x: number; y: number };
 
 export function PhotoCropper({ uri, label, onDone, onCancel }: Props) {
   const { width: screenW } = useWindowDimensions();
-  const frameW = Math.min(screenW - 2 * space.lg, 340);
+  const frameW = Math.min(screenW - 2 * space.lg, 380);
   const frameH = Math.round(frameW / CROP_ASPECT);
 
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -164,7 +166,7 @@ export function PhotoCropper({ uri, label, onDone, onCancel }: Props) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{label ? `${label}: ` : ''}Frame your photo</Text>
-      <Text style={styles.hint}>Drag the photo so your face is inside the frame. Use the buttons (or pinch) to zoom. This is exactly what others will see.</Text>
+      <Text style={styles.hint}>The square is exactly what others will see on your card. Drag the photo up, down or sideways so your face is inside it, and use the buttons (or pinch) to zoom in.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View style={[styles.frame, { width: frameW, height: frameH }]} {...pan.panHandlers}>
         {size && layout ? (

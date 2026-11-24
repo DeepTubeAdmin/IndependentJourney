@@ -6,11 +6,20 @@
  * (Seth's decision, 2026-11-11). With several photos the card becomes a small
  * swiper: swipe or use the arrows, with dots underneath. Without a photo, a
  * soft silhouette.
+ *
+ * Speed: the photo box is square (the shape members frame their photos in),
+ * photos are asked for at card size rather than full size, only the first
+ * photo loads with the card (the rest load when someone starts swiping), and
+ * on the website cards below the screen wait until they are scrolled near.
  */
 import { useRef, useState } from 'react';
-import { Image, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { Photo } from '@/components/Photo';
 import { colors, fonts, radius, space } from '@/lib/theme';
+
+/** Pixels asked for per card photo: about twice the widest card, for sharp phone screens. */
+const CARD_PHOTO_SIZE = 800;
 
 export type ProfileCardProps = {
   name: string;
@@ -52,7 +61,7 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
         {urls.length > 1 ? (
           <PhotoSwiper urls={urls} name={name} />
         ) : urls.length === 1 ? (
-          <Image source={{ uri: urls[0] }} style={styles.img} accessibilityIgnoresInvertColors />
+          <Photo uri={urls[0]} size={CARD_PHOTO_SIZE} style={styles.img} label={`Photo of ${name}`} />
         ) : (
           <>
             <View style={styles.silhouetteHead} />
@@ -95,6 +104,8 @@ export function ProfileCard({ name, state, role, verified, headline, photoUrl, p
 function PhotoSwiper({ urls, name }: { urls: string[]; name: string }) {
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
+  // Only the first photo loads with the card. The others load once someone starts swiping.
+  const [loadAll, setLoadAll] = useState(false);
   const scroller = useRef<React.ElementRef<typeof ScrollView>>(null);
 
   function onLayout(e: LayoutChangeEvent) {
@@ -102,10 +113,12 @@ function PhotoSwiper({ urls, name }: { urls: string[]; name: string }) {
   }
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     if (!width) return;
+    if (e.nativeEvent.contentOffset.x > 4) setLoadAll(true);
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
     if (i !== index) setIndex(Math.max(0, Math.min(urls.length - 1, i)));
   }
   function goTo(i: number) {
+    setLoadAll(true);
     const next = (i + urls.length) % urls.length;
     scroller.current?.scrollTo({ x: next * width, animated: true });
     setIndex(next);
@@ -121,11 +134,14 @@ function PhotoSwiper({ urls, name }: { urls: string[]; name: string }) {
           showsHorizontalScrollIndicator={false}
           onScroll={onScroll}
           scrollEventThrottle={32}
+          onTouchStart={() => setLoadAll(true)}
           style={styles.swiper}
           contentContainerStyle={{ width: width * urls.length }}
         >
           {urls.map((u, i) => (
-            <Image key={u} source={{ uri: u }} style={{ width, height: '100%' }} accessibilityLabel={`Photo ${i + 1} of ${urls.length} of ${name}`} accessibilityIgnoresInvertColors />
+            i === 0 || loadAll
+              ? <Photo key={u} uri={u} size={CARD_PHOTO_SIZE} lazy={i === 0} style={{ width, height: '100%' }} label={`Photo ${i + 1} of ${urls.length} of ${name}`} />
+              : <View key={u} style={{ width, height: '100%' }} />
           ))}
         </ScrollView>
       ) : null}
@@ -158,7 +174,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photo: {
-    height: 340,
+    // Square, the same shape photos are framed in.
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     overflow: 'hidden',

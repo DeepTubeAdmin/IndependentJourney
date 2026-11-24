@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: 300,
     maxWidth: 560,
-    height: 400,
+    aspectRatio: 0.82,
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceSoft,
   },
