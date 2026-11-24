@@ -17,6 +17,7 @@ import {
   NEVER_SEND_MONEY, SCAM_WARNING, sendMessageAs, unblockMember, UNVERIFIED_WARNING,
   type ConversationRow, type Message,
 } from '@/lib/messages';
+import { sizedPhotoUrl } from '@/components/Photo';
 import { cachedPhotoUrl } from '@/lib/photos';
 import { reportMember, REPORT_OPTIONS, type ReportReason } from '@/lib/report';
 import { colors, fonts, radius, space } from '@/lib/theme';
@@ -73,7 +74,7 @@ export default function Conversation() {
   }
 
   // The other member's small photo, shown beside each of their messages. Tapping it opens their profile.
-  const otherPhoto = conv.other_photo_path ? cachedPhotoUrl(conv.other_photo_path) : null;
+  const otherPhoto = conv.other_photo_path ? sizedPhotoUrl(cachedPhotoUrl(conv.other_photo_path), 96) : null;
   const openOther = () => router.push(`/profile/${conv.other_id}`);
   // Members (not agencies, whose client profiles are checked by the server) must finish their own profile before writing.
   const mustFinish = Boolean(profile) && !profile?.is_complete && conv.mine_id === profile?.id;

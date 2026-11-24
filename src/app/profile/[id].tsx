@@ -5,7 +5,8 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Photo } from '@/components/Photo';
 
 import { Button } from '@/components/Button';
 import { ChoiceField, FormMessage, TextField } from '@/components/form';
@@ -239,7 +240,7 @@ export default function ProfilePage() {
           ) : null}
           <View style={styles.photos}>
             {full.photoUrls.map((u, i) => (
-              <Image key={i} source={{ uri: u }} style={styles.photo} accessibilityLabel={`Photo ${i + 1} of ${preview.display_name}`} />
+              <Photo key={i} uri={u} size={900} style={styles.photo} label={`Photo ${i + 1} of ${preview.display_name}`} />
             ))}
           </View>
           <View style={styles.tags}>
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   wallTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text },
   wallText: { fontFamily: fonts.body, fontSize: 15, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  photo: { width: 260, height: 320, borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, flexGrow: 1, maxWidth: 420 },
+  photo: { flexBasis: 260, aspectRatio: 1, borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, flexGrow: 1, maxWidth: 420 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   tag: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, backgroundColor: colors.surfaceSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5, overflow: 'hidden' },
   bio: { fontFamily: fonts.body, fontSize: 17, lineHeight: 27, color: colors.text },

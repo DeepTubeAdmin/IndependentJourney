@@ -4,7 +4,8 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Photo } from '@/components/Photo';
 
 import { Button } from '@/components/Button';
 import { Disclaimer } from '@/components/Disclaimer';
@@ -76,7 +77,7 @@ export default function ShareView() {
       ) : null}
       <View style={styles.photos}>
         {(view.photoUrls as string[]).map((u, i) => (
-          <Image key={i} source={{ uri: u }} style={styles.photo} accessibilityLabel={`Photo ${i + 1}`} />
+          <Photo key={i} uri={u} size={900} style={styles.photo} label={`Photo ${i + 1}`} />
         ))}
       </View>
       <View style={styles.tags}>
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
   ownerLink: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.secondary },
   ownerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.xs },
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  photo: { width: 260, height: 320, borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, flexGrow: 1, maxWidth: 420 },
+  photo: { flexBasis: 260, aspectRatio: 1, borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, flexGrow: 1, maxWidth: 420 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   tag: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.secondary, backgroundColor: colors.surfaceSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5, overflow: 'hidden' },
   bio: { fontFamily: fonts.body, fontSize: 17, lineHeight: 27, color: colors.text },
