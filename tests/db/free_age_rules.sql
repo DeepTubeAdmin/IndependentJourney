@@ -68,5 +68,21 @@ begin
   assert not ('clinic_requires_covid_vaccine' = any (public.profile_missing(ip))), 'answered: no longer missing';
 end $$;
 
+-- Migration 40: public state pages show two numbers per state and nothing else.
+do $$
+declare r record; base record;
+begin
+  select * into r from public.state_member_counts('tx');
+  assert r.surrogates >= 2, 'both Texas surrogates are counted: ' || r.surrogates;
+  select * into base from public.state_member_counts('TX');
+  assert base.surrogates = r.surrogates, 'state code is not case sensitive';
+  update public.profiles set banned_at = now() where id = '00000000-0000-0000-0000-0000000000a1';
+  select * into r from public.state_member_counts('TX');
+  assert r.surrogates = base.surrogates - 1, 'banned members are not counted';
+  select * into r from public.state_member_counts('Texas');
+  assert r.surrogates = 0 and r.intended_parents = 0, 'anything but a two-letter code counts nothing';
+  assert has_function_privilege('anon', 'public.state_member_counts(text)', 'execute'), 'visitors may read the counts';
+end $$;
+
 rollback;
 select 'FREE ACCESS AND AGE RULES OK' as result;

@@ -17,7 +17,11 @@ export type ArticleBlock =
   | { kind: 'note'; text: string }
   | { kind: 'bullets'; items: string[] }
   | { kind: 'numbered'; items: string[] }
-  | { kind: 'table'; header: string[]; rows: string[][] };
+  | { kind: 'table'; header: string[]; rows: string[][] }
+  /** Links to other pages on this site, e.g. related guides. */
+  | { kind: 'links'; items: { label: string; path: string }[] }
+  /** Numbered list of outside sources, each a link that opens in a new tab. */
+  | { kind: 'sources'; items: { label: string; url: string }[] };
 
 export const FIRST_CONVERSATION_TITLE = 'The First Conversation: What to Ask Before You Match';
 

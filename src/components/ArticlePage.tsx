@@ -3,7 +3,7 @@
  * of simple blocks (see src/content/firstConversation.ts), so writers edit
  * content files and never this file.
  */
-import { router } from 'expo-router';
+import { type Href, Link, router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -58,6 +58,28 @@ function Block({ block }: { block: ArticleBlock }) {
           ))}
         </View>
       );
+    case 'links':
+      return (
+        <View style={styles.list}>
+          {block.items.map((l) => (
+            <View key={l.path} style={styles.row}>
+              <Text style={styles.marker}>•</Text>
+              <Link href={l.path as Href} style={[styles.item, styles.link]}>{l.label}</Link>
+            </View>
+          ))}
+        </View>
+      );
+    case 'sources':
+      return (
+        <View style={styles.list}>
+          {block.items.map((s, i) => (
+            <View key={s.url} style={styles.row}>
+              <Text style={styles.sourceMarker}>{i + 1}.</Text>
+              <Link href={s.url as Href} target="_blank" rel="noopener noreferrer" style={[styles.source, styles.link]}>{s.label}</Link>
+            </View>
+          ))}
+        </View>
+      );
     case 'table':
       // Scrolls sideways on narrow phones rather than squeezing the columns.
       return (
@@ -81,18 +103,33 @@ function Block({ block }: { block: ArticleBlock }) {
   }
 }
 
-type Props = { title: string; intro: string; blocks: ArticleBlock[] };
+type Props = {
+  title: string;
+  intro: string;
+  blocks: ArticleBlock[];
+  /** Month the facts were last checked, e.g. "November 2026". Shown under the notice. */
+  reviewed?: string;
+  /** Stronger notice for guides that touch law, tax or medicine. */
+  notice?: string;
+  /** Extra content shown above the article, e.g. the member count on state pages. */
+  children?: React.ReactNode;
+  /** Where the button at the bottom goes. Defaults to the Resources page. */
+  backLabel?: string;
+  backPath?: Href;
+};
 
-export function ArticlePage({ title, intro, blocks }: Props) {
+export function ArticlePage({ title, intro, blocks, reviewed, notice, children, backLabel = 'Back to resources', backPath = '/resources' }: Props) {
   return (
     <Screen width={760} title={title} intro={intro}>
-      <FormMessage kind="info" text="This article is general information, not legal, medical or financial advice. Please consult your own attorney and clinic." />
+      <FormMessage kind="info" text={notice ?? 'This article is general information, not legal, medical or financial advice. Please consult your own attorney and clinic.'} />
+      {reviewed ? <Text style={styles.reviewed}>Last reviewed: {reviewed}. Laws, costs and medical guidance change, so check anything important with a professional.</Text> : null}
+      {children}
       <View style={styles.article}>
         {blocks.map((b, i) => (
           <Block key={i} block={b} />
         ))}
       </View>
-      <Button label="Back to resources" variant="secondary" onPress={() => router.push('/resources')} />
+      <Button label={backLabel} variant="secondary" onPress={() => router.push(backPath)} />
       <Disclaimer />
     </Screen>
   );
@@ -104,6 +141,10 @@ const styles = StyleSheet.create({
   h3: { fontFamily: fonts.heading, fontSize: 18, lineHeight: 24, color: colors.text, marginTop: space.sm },
   p: { fontFamily: fonts.body, fontSize: 16, lineHeight: 25, color: colors.text },
   list: { gap: 6 },
+  link: { color: colors.primary, textDecorationLine: 'underline' },
+  sourceMarker: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.textMuted, minWidth: 22 },
+  source: { flex: 1, fontFamily: fonts.body, fontSize: 14, lineHeight: 21 },
+  reviewed: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.textMuted },
   row: { flexDirection: 'row', gap: 8 },
   marker: { fontFamily: fonts.body, fontSize: 16, lineHeight: 25, color: colors.textMuted, minWidth: 18 },
   item: { flex: 1, fontFamily: fonts.body, fontSize: 16, lineHeight: 25, color: colors.text },
