@@ -56,5 +56,17 @@ begin
   assert not has_function_privilege('authenticated', 'public.surrogate_age(uuid)', 'execute'), 'age helper is not callable directly';
 end $$;
 
+-- Migration 39: the fertility-center COVID vaccine question is required only for intended parents who join after it was added.
+do $$
+declare ip uuid := '00000000-0000-0000-0000-0000000000a3';
+begin
+  update public.app_settings set value = '"infinity"' where key = 'clinic_covid_required_from';
+  assert not ('clinic_requires_covid_vaccine' = any (public.profile_missing(ip))), 'earlier members are not asked';
+  update public.app_settings set value = '"2000-01-01T00:00:00Z"' where key = 'clinic_covid_required_from';
+  assert 'clinic_requires_covid_vaccine' = any (public.profile_missing(ip)), 'new intended parents must answer';
+  update public.ip_details set clinic_requires_covid_vaccine = 'not_sure' where id = ip;
+  assert not ('clinic_requires_covid_vaccine' = any (public.profile_missing(ip))), 'answered: no longer missing';
+end $$;
+
 rollback;
 select 'FREE ACCESS AND AGE RULES OK' as result;
