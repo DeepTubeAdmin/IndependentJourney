@@ -4,7 +4,7 @@
  *  - Surrogates see intended parents; intended parents see surrogates.
  * Filters never include protected characteristics.
  */
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -48,7 +48,13 @@ export default function Browse() {
   const lookingFor: 'surrogate' | 'intended_parent' | null = sideChoice ?? otherSide ?? (isAgency ? 'surrogate' : null);
   const sameSide = Boolean(profile) && lookingFor === profile?.role;
 
+  // State pages link here with ?state=TX so the list opens on that state.
+  const { state: stateParam } = useLocalSearchParams<{ state?: string }>();
+  const startState = typeof stateParam === 'string' && /^[A-Za-z]{2}$/.test(stateParam) ? stateParam.toUpperCase() : undefined;
   const [filters, setFilters] = useState<BrowseFilters>({});
+  useEffect(() => {
+    if (startState) setFilters((f) => (f.state ? f : { ...f, state: startState }));
+  }, [startState]);
   const [startMonths, setStartMonths] = useState<string | null>(null);
   const [ageBand, setAgeBand] = useState<string | null>(null);
   const [rows, setRows] = useState<PreviewRow[]>([]);

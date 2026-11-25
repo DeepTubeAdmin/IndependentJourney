@@ -62,6 +62,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
 
 /** Articles that live on their own page under /resources/. */
 const ARTICLES: { title: string; blurb: string; path: Href }[] = [
+  { title: 'Surrogacy Laws by State', blurb: 'Law in brief for all 50 states and DC, each checked against two published sources, with the members in each state.', path: '/surrogacy' },
   { title: 'How to Find a Surrogate Without an Agency', blurb: 'Where intended parents find surrogates on their own, how to screen, and the professionals you still need.', path: '/resources/find-a-surrogate-without-an-agency' },
   { title: 'How to Become an Independent Surrogate', blurb: 'What clinics look for, the steps, and how to protect yourself without an agency.', path: '/resources/become-an-independent-surrogate' },
   { title: 'What Independent Surrogacy Costs Compared With an Agency', blurb: 'Published cost ranges with sources, what going independent removes, and what stays the same.', path: '/resources/independent-surrogacy-cost' },

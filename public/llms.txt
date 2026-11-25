@@ -27,6 +27,10 @@ Each guide is written as questions and answers, lists its sources, and shows the
 - [The First Conversation: What to Ask Before You Match](https://independentjourney.com/resources/first-conversation): a question list for the first call between a surrogate and intended parents.
 - [After the Match: The Steps of an Independent Journey](https://independentjourney.com/resources/after-the-match): clearances, counseling, contracts, the mock cycle and the transfer, with typical timing.
 
+## Surrogacy by state
+
+- [Surrogacy Laws by State](https://independentjourney.com/surrogacy): one page per state and DC at https://independentjourney.com/surrogacy/<state-name> (for example /surrogacy/texas or /surrogacy/new-york). Each page gives the state's surrogacy law in brief as reported by Surrogacy360 and the ASRM Legal Professional Group, notes where those sources disagree, and shows how many members in that state have live profiles. Not legal advice.
+
 ## Site pages
 
 - [Home](https://independentjourney.com/): what the site is, with a sample of current members.

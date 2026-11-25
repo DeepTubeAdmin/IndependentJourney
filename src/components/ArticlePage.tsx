@@ -111,19 +111,25 @@ type Props = {
   reviewed?: string;
   /** Stronger notice for guides that touch law, tax or medicine. */
   notice?: string;
+  /** Extra content shown above the article, e.g. the member count on state pages. */
+  children?: React.ReactNode;
+  /** Where the button at the bottom goes. Defaults to the Resources page. */
+  backLabel?: string;
+  backPath?: Href;
 };
 
-export function ArticlePage({ title, intro, blocks, reviewed, notice }: Props) {
+export function ArticlePage({ title, intro, blocks, reviewed, notice, children, backLabel = 'Back to resources', backPath = '/resources' }: Props) {
   return (
     <Screen width={760} title={title} intro={intro}>
       <FormMessage kind="info" text={notice ?? 'This article is general information, not legal, medical or financial advice. Please consult your own attorney and clinic.'} />
       {reviewed ? <Text style={styles.reviewed}>Last reviewed: {reviewed}. Laws, costs and medical guidance change, so check anything important with a professional.</Text> : null}
+      {children}
       <View style={styles.article}>
         {blocks.map((b, i) => (
           <Block key={i} block={b} />
         ))}
       </View>
-      <Button label="Back to resources" variant="secondary" onPress={() => router.push('/resources')} />
+      <Button label={backLabel} variant="secondary" onPress={() => router.push(backPath)} />
       <Disclaimer />
     </Screen>
   );
