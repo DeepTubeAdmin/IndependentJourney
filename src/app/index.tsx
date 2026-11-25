@@ -21,9 +21,9 @@ import { isApp } from '@/lib/platform';
 
 export function generateMetadata() {
   return pageMeta({
-    title: `${SITE.name}: Find a Surrogate or Intended Parents, Independent or With an Agency`,
+    title: `Find a Surrogate Without an Agency, or With One | ${SITE.name}`,
     description:
-      "One place for intended parents and gestational surrogates to find each other: independent members and agency-represented clients, clearly labelled. Create a free profile, browse verified members and message directly. No match fees.",
+      "Find a surrogate or intended parents without an agency, or with one. Free profiles, verified members and direct messaging for independent surrogacy journeys. No match fees.",
     path: "/",
   });
 }
@@ -128,7 +128,7 @@ export default function Home() {
           </Text>
           <Text style={styles.lead}>
             One place for intended parents and gestational surrogates to find
-            each other, independent or with an agency, with every profile
+            each other, without an agency or with one, with every profile
             clearly labelled. Free for everyone, with no match fees.
           </Text>
           <View style={styles.ctaRow}>

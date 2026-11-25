@@ -3,8 +3,8 @@
  * surrogacy. PLACEHOLDER CONTENT for Seth and the attorney to review; it is
  * general information, not legal or medical advice.
  */
-import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { type Href, Link } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Disclaimer } from '@/components/Disclaimer';
 import { FormMessage } from '@/components/form';
@@ -61,7 +61,13 @@ const SECTIONS: { title: string; items: string[] }[] = [
 ];
 
 /** Articles that live on their own page under /resources/. */
-const ARTICLES: { title: string; blurb: string; path: '/resources/first-conversation' | '/resources/after-the-match' }[] = [
+const ARTICLES: { title: string; blurb: string; path: Href }[] = [
+  { title: 'How to Find a Surrogate Without an Agency', blurb: 'Where intended parents find surrogates on their own, how to screen, and the professionals you still need.', path: '/resources/find-a-surrogate-without-an-agency' },
+  { title: 'How to Become an Independent Surrogate', blurb: 'What clinics look for, the steps, and how to protect yourself without an agency.', path: '/resources/become-an-independent-surrogate' },
+  { title: 'What Independent Surrogacy Costs Compared With an Agency', blurb: 'Published cost ranges with sources, what going independent removes, and what stays the same.', path: '/resources/independent-surrogacy-cost' },
+  { title: 'How Surrogate Compensation Works', blurb: 'Base compensation, what is paid on top, escrow, state limits and the tax question.', path: '/resources/surrogate-compensation' },
+  { title: 'Independent Surrogacy Versus an Agency', blurb: 'What an agency does, what you take on yourself, and who each route suits.', path: '/resources/independent-vs-agency-surrogacy' },
+  { title: 'The Legal Steps of a Surrogacy Journey', blurb: 'Attorneys, the carrier agreement, escrow, and pre-birth and post-birth parentage orders.', path: '/resources/surrogacy-legal-steps' },
   {
     title: 'The First Conversation: What to Ask Before You Match',
     blurb: 'A thorough question list for the first call between a surrogate and intended parents, with the hard questions first.',
@@ -80,12 +86,13 @@ export default function Resources() {
       <FormMessage kind="info" text="This page is general information, not legal, medical or financial advice. Please consult your own attorney and clinic." />
       {/* Longer articles get their own page; list them here. */}
       <View style={styles.card}>
-        <Text style={styles.title} accessibilityRole="header" aria-level={2}>Articles</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={2}>Guides</Text>
         {ARTICLES.map((a) => (
-          <Pressable key={a.path} onPress={() => router.push(a.path)} accessibilityRole="link" style={styles.article}>
-            <Text style={styles.articleTitle}>{a.title}</Text>
+          <View key={String(a.path)} style={styles.article}>
+            {/* A real link, so search engines and AI tools can follow it. */}
+            <Link href={a.path} style={styles.articleTitle}>{a.title}</Link>
             <Text style={styles.item}>{a.blurb}</Text>
-          </Pressable>
+          </View>
         ))}
       </View>
       {SECTIONS.map((s) => (
