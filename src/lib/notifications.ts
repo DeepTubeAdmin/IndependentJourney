@@ -13,7 +13,7 @@ type EmailKey = Exclude<keyof NotificationSettings, 'push_messages'>;
 export const NOTIFICATION_LABELS: { key: EmailKey; label: string; help: string }[] = [
   { key: 'new_messages', label: 'New messages', help: 'When someone writes to you. At most one email per conversation per hour.' },
   { key: 'saved_searches', label: 'Saved-search alerts', help: 'A daily email when new profiles match a search you saved.' },
-  { key: 'nudges', label: 'Tips and reminders', help: 'An occasional nudge, such as a reminder to verify your identity.' },
+  { key: 'nudges', label: 'Tips and reminders', help: 'An occasional nudge, such as a reminder to finish your profile or verify your identity.' },
 ];
 
 export async function myNotificationSettings(): Promise<NotificationSettings> {

@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
   // 1. Queue anything that is due today.
   const due: Record<string, number> = {};
-  for (const fn of ['enqueue_membership_reminders', 'enqueue_verify_nudges', 'run_saved_search_alerts']) {
+  for (const fn of ['enqueue_membership_reminders', 'enqueue_verify_nudges', 'enqueue_profile_nudges', 'run_saved_search_alerts']) {
     const { data, error } = await db.rpc(fn);
     if (error) console.error(fn, error.message);
     due[fn] = Number(data ?? 0);
@@ -129,6 +129,14 @@ function render(row: Row): { subject: string; body: string; text: string } {
       return msg('A free two-minute step that helps most',
         `<p>Hi ${first},</p><p>Your profile is complete, nice work. Members contact verified profiles far more often, and verification is free: a photo of your ID and a selfie, checked by Stripe. We never see or store the images.</p>${btn(`${url}/home`, 'Verify my identity')}`,
         `Verify your identity for free at ${url}/home`);
+    case 'profile_nudge': {
+      // Sent 2 days after joining if the profile is still unfinished, and once more a week later.
+      const others = p.role === 'surrogate' ? 'intended parents' : 'surrogates';
+      const lastLine = p.last ? '<p style="color:#6E6760;font-size:13px">This is the last reminder we will send about this.</p>' : '';
+      return msg(p.last ? 'Your profile is still hidden' : 'Your profile is not visible yet',
+        `<p>Hi ${first},</p><p>Thanks for joining ${SITE_NAME}. Your profile is not finished yet, so it is hidden: ${others} browsing the site cannot see you, and nobody can send you a message.</p><p>Members are looking for a match right now. Finishing your profile is what lets them find you and write to you, and it lets you message them too. You can pick up where you left off, and your answers so far are saved.</p>${btn(`${url}/home`, 'Finish my profile')}<p>It is free, and you can edit anything later.</p>${lastLine}<p style="color:#6E6760;font-size:13px">You can turn off reminders like this under Settings, Tips and reminders.</p>`,
+        `Hi ${first}, your ${SITE_NAME} profile is not finished yet, so other members cannot see it or message you. Finish it at ${url}/home . You can turn off reminders in Settings.`);
+    }
     case 'saved_search': {
       const items: any[] = Array.isArray(p.items) ? p.items : [];
       const list = items.map((i) =>
