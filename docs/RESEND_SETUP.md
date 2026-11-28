@@ -84,5 +84,6 @@ domain.
 | Receipt | Stripe payment confirmed | Yes (Membership) |
 | Ending in a week / ended | 7 days before, and the day after | Yes (Membership) |
 | Verified / could not verify | Stripe Identity result | No |
+| Finish your profile | Account created but profile not complete after 2 days; one more a week later; at most 30 queued per day | Yes (Tips) |
 | Verify reminder | Complete but unverified profile, 3 days old; at most two, a week apart | Yes (Tips) |
 | Saved-search alert | Daily, when new or updated profiles match | Yes (Saved-search alerts, or per search) |
